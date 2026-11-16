@@ -14,12 +14,24 @@
 #include "pergunta.h"
 
 /**
- * @brief Vetor dinâmico de perguntas.
+ * @struct Banco
+ * @brief Coleção dinâmica de perguntas (vetor que cresce e encolhe).
+ *
+ * Invariantes:
+ * - quantidade <= capacidade;
+ * - itens é NULL se, e somente se, capacidade == 0;
+ * - as posições 0 a quantidade-1 contêm perguntas válidas.
+ *
+ * @warning Não grave o Banco inteiro com fwrite(): itens é um ponteiro.
+ *          Grave quantidade e depois o bloco apontado por itens.
  */
 typedef struct {
-    Pergunta *itens;    /**< Vetor alocado dinamicamente (NULL se vazio). */
-    size_t quantidade;  /**< Quantas perguntas estão em uso. */
-    size_t capacidade;  /**< Quantas perguntas cabem sem realocar. */
+    /** Vetor alocado dinamicamente (NULL se vazio). */
+    Pergunta *itens;
+    /** Quantas perguntas estão em uso. */
+    size_t quantidade;
+    /** Quantas perguntas cabem sem realocar. */
+    size_t capacidade;
 } Banco;
 
 /**

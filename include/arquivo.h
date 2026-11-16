@@ -7,7 +7,7 @@
  * nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,dica
  * 1,"Qual mob explode?",Zumbi,Creeper,Esqueleto,Aranha,B,"Ele chia antes."
  * @endcode
- * Campos que contêm vírgula devem vir entre aspas duplas.
+ * enunciado e alternativas SEMPRE devem possuir aspas
  *
  * Formato do binário: um size_t com a quantidade de perguntas, seguido do
  * bloco de structs Pergunta gravado com fwrite().
@@ -22,8 +22,9 @@
 /**
  * @brief Carrega os dados no início do programa.
  *
- * Se CAMINHO_BIN existir, lê dele; caso contrário (primeira execução),
- * lê CAMINHO_CSV.
+ * Se CAMINHO_BIN existir, lê dele. Caso contrário (primeira execução),
+ * lê CAMINHO_CSV e já cria o binário para as próximas execuções. Falha
+ * ao criar o binário gera apenas um aviso, sem impedir o carregamento.
  *
  * @param banco Banco (vazio) que receberá as perguntas.
  * @return STATUS_OK ou um código de erro.

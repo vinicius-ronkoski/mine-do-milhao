@@ -8,12 +8,7 @@
 #include "pergunta.h"
 #include "utils.h"
 
-/**
- * @brief Recebe o número de dificuldade e devolve em texto
- * 
- * @param nivel número em entrada 
- * @return const char* nome do 
- */
+
 const char *pergunta_nome_nivel(int nivel)
 {
     // Define os níveis de dificuldade
@@ -28,22 +23,25 @@ const char *pergunta_nome_nivel(int nivel)
     return nomes[nivel - NIVEL_MIN];
 }
 
-int pergunta_valida(const Pergunta *p)
+Status pergunta_validar(const Pergunta *p)
 {
     int i;
 
     if (p == NULL || p->enunciado[0] == '\0') {
-        return 0;
+        return STATUS_ERRO_PARAMETRO;
     }
     for (i = 0; i < NUM_ALTERNATIVAS; i++) {
         if (p->alternativas[i][0] == '\0') {
-            return 0;
+            return STATUS_ERRO_PARAMETRO;
         }
     }
     if (p->correta < 'A' || p->correta > 'A' + NUM_ALTERNATIVAS - 1) {
-        return 0;
+        return STATUS_ERRO_PARAMETRO;
     }
-    return p->nivel >= NIVEL_MIN && p->nivel <= NIVEL_MAX;
+    if (p->nivel < NIVEL_MIN || p->nivel > NIVEL_MAX) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    return STATUS_OK;
 }
 
 void pergunta_imprimir(const Pergunta *p)

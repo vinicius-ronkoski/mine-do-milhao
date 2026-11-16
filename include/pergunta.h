@@ -38,9 +38,10 @@ const char *pergunta_nome_nivel(int nivel);
  * nível entre NIVEL_MIN e NIVEL_MAX.
  *
  * @param p Pergunta a validar.
- * @return 1 se válida; 0 caso contrário (inclusive se p for NULL).
+ * @return STATUS_OK (0) se a pergunta é válida; STATUS_ERRO_PARAMETRO se
+ *         algum campo estiver inválido (inclusive se p for NULL).
  */
-int pergunta_valida(const Pergunta *p);
+Status pergunta_validar(const Pergunta *p);
 
 /**
  * @brief Imprime a pergunta formatada e colorida no terminal.

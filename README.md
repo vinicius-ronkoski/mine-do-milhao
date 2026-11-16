@@ -66,7 +66,7 @@ nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,
 
 - `nivel`: 1 (muito fácil) a 5 (muito difícil)
 - `correta`: letra `A`, `B`, `C` ou `D`
-- campos com vírgula devem vir entre aspas duplas
+- campos de enunciado, alterntivas e dicas devem estar entre aspas
 - mínimo exigido: 20 muito fácil, 20 fácil, 15 médio, 15 difícil, 10 muito difícil (80 no total)
 
 ## Plano do jogo
@@ -80,3 +80,7 @@ nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,
 3. **Esmeraldas e loja:** esmeraldas ganhas a cada acerto; a loja abre a cada marco de segurança, com buffs de tempo extra e de reduzir alternativas. A dica da pergunta também pode ser recuperada com esmeraldas.
 4. **Minigame das dicas:** 3 baús, cada um com um tipo de bloco; o jogador recebe 10 blocos aleatórios e aperta 1, 2 ou 3 para guardá-los. Errar diminui o tempo restante; se falhar, perde a dica.
 5. **Polimento:** tela inicial no estilo do menu do Minecraft, animações, músicas e arte feita à mão.
+
+
+## Observações
+- Os comentários feitos no arquivo.c tem uma representação educativa também, servindo como base de explicação para a compreensão do código de funções e técnicas não utilizadas regularmente na disciplina de Fundamentos de Programação.
