@@ -25,9 +25,10 @@ int main(void)
 
     status = dados_carregar(&banco);
     if (status != STATUS_OK) {
-        printf(COR_AMARELO "Aviso ao carregar dados: %s\n" COR_RESET,
-               utils_mensagem_status(status));
-        utils_pausar();
+        printf(COR_VERMELHO "Erro ao carregar dados: %s\n" COR_RESET,
+        utils_mensagem_status(status));
+        banco_liberar(&banco);
+        return 1;   /* não chama dados_salvar: preserva o .bin */
     }
 
     menu_principal(&banco);

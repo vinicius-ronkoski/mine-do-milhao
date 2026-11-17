@@ -17,3 +17,8 @@ data/exportados/*
 .idea/
 *.swp
 .DS_Store
+
+# Executável do teste manual (tests/teste_arquivo.c)
+teste_arquivo.c
+teste_arquivo.exe
+banco_falso.c

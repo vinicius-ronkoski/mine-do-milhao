@@ -12,13 +12,14 @@
 /** Quantidade de alternativas por pergunta (A, B, C e D). */
 #define NUM_ALTERNATIVAS 4
 
-/** @name Tamanhos de texto
+/** Tamanhos de texto
  *  Só mexa nos MAX_*: os TAM_* (vetores da Pergunta) e o buffer do CSV derivam deles,
  *  e o formato do sscanf em arquivo.c também. MAX_* não conta o '\0' final. */
 /**@{*/
 #define MAX_ENUNCIADO   255
 #define MAX_ALTERNATIVA 127
 #define MAX_DICA        191
+/**@}*/
 
 // O +1 serve para o \0
 #define TAM_ENUNCIADO   (MAX_ENUNCIADO + 1)
@@ -27,7 +28,9 @@
 
 /** Buffer de uma linha do CSV : todos os campos + aspas, vírgulas, nível, letra e \r\n. */
 #define TAM_LINHA_CSV   (TAM_ENUNCIADO + NUM_ALTERNATIVAS * TAM_ALTERNATIVA + TAM_DICA + 64)
-/**@}*/
+
+/** Primeira linha do CSV: nomes das colunas, na ordem em que são lidas e gravadas. */
+#define CSV_CABECALHO "nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,dica"
 
 /** Menor nível de dificuldade (1 = muito fácil). */
 #define NIVEL_MIN 1

@@ -18,21 +18,23 @@ Status dados_carregar(Banco *banco)
 {
     // Abre o arquivo
     FILE *arquivo; 
-    arquivo = fopen(CAMINHO_BIN, "rb");
+    Status status;
     
     // Confere erro de parametro
     if (banco == NULL) {
         return STATUS_ERRO_PARAMETRO;
     }
-
-
+    
+    arquivo = fopen(CAMINHO_BIN, "rb");
     if (arquivo != NULL) {
-        fclose(arquivo);
+        if (fclose(arquivo) != 0) {
+            return STATUS_ERRO_ARQUIVO;
+        }
         return bin_carregar(CAMINHO_BIN, banco);
     } 
 
     /*Primeira execução na qual não existe bin e confere o CSV*/
-    Status status = csv_carregar(CAMINHO_CSV, banco);
+    status = csv_carregar(CAMINHO_CSV, banco);
     if (status != STATUS_OK) {
         return status;
     }
@@ -47,7 +49,7 @@ Status dados_carregar(Banco *banco)
 
 Status dados_salvar(const Banco *banco)
 {
-    return bin_salvar(CAMINHO_BIN, banco);;
+    return bin_salvar(CAMINHO_BIN, banco);
 }
 
 // Não verificada
@@ -66,7 +68,6 @@ Status csv_carregar(const char *caminho, Banco *banco)
         return STATUS_ERRO_PARAMETRO;
     }
     
-
     // Abre o arquivo
     arquivo = fopen(caminho, "r");
     if (arquivo == NULL) {
@@ -113,15 +114,17 @@ Status csv_carregar(const char *caminho, Banco *banco)
             &pergunta.correta, pergunta.dica, &consumidos
         );
 
+        // Confere se todo o sscanf funcionou corretamente ou se teve falhas
         if (
             lidos != 8 || consumidos == 0 ||
-            linha[consumidos] != '\0' || !pergunta_validar(&pergunta)
-        ) {
+            linha[consumidos] != '\0' || pergunta_validar(&pergunta) != STATUS_OK
+        ) { // Caso com erro
             status = STATUS_ERRO_FORMATO;
         } else {
             status = banco_inserir(banco, &pergunta);
         }
 
+        // Printa mensagem de erro
         if (status != STATUS_OK) {
             fprintf(
                 stderr, "%s, linha %d: %s\n", 
@@ -130,19 +133,56 @@ Status csv_carregar(const char *caminho, Banco *banco)
         }
 
     }
-
-    fclose(arquivo);
+    
+    // Fecha o arquivo
+    if (fclose(arquivo) != 0) {
+        return STATUS_ERRO_ARQUIVO;
+    }
 
     return status;
 }
 
 Status csv_exportar(const char *caminho, const Banco *banco)
 {
-    /* TODO: abrir com "w", gravar o cabeçalho e uma linha por pergunta,
-     *       colocando entre aspas os campos de texto. */
-    (void)caminho;
-    (void)banco;
-    return STATUS_NAO_IMPLEMENTADO;
+    FILE *arquivo;
+    size_t i;
+    int j;
+
+    // Confere parametros
+    if (caminho == NULL || banco == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    // Abre o arquivo
+    arquivo = fopen(caminho, "w");
+    if (arquivo == NULL) {
+        perror(caminho);
+        return STATUS_ERRO_ARQUIVO;
+    }
+
+    // Salva o cabeçalho
+    fprintf(arquivo, "%s\n", CSV_CABECALHO);
+
+    for (i = 0; i < banco->quantidade; i++) {
+        const Pergunta *pergunta = &banco->itens[i]; // Pergunta imutavel, por isso const
+
+        // Salva o enunciado
+        fprintf(arquivo, "%d,\"%s\"", pergunta->nivel, pergunta->enunciado);
+
+        // Salva as alternativas
+        for (j = 0; j < NUM_ALTERNATIVAS; j++) {
+            fprintf(arquivo, ",\"%s\"", pergunta->alternativas[j]);
+        }
+        // Salva resposta correta e a dica
+        fprintf(arquivo, ",%c,\"%s\"\n", pergunta->correta, pergunta->dica);
+    }
+
+    // Fecha o arquivo
+    if (fclose(arquivo) != 0) {
+        return STATUS_ERRO_ARQUIVO;
+    }
+
+    return STATUS_OK;
 }
 
 Status bin_carregar(const char *caminho, Banco *banco)
