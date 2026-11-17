@@ -22,3 +22,4 @@ data/exportados/*
 teste_arquivo.c
 teste_arquivo.exe
 banco_falso.c
+tests/
