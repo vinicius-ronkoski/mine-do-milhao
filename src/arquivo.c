@@ -1,8 +1,6 @@
 /**
  * @file arquivo.c
  * @brief Implementação da persistência (CSV e binário).
- *
- * TODO (equipe): implementar todas as funções abaixo.
  */
 
 #include "arquivo.h"
@@ -185,19 +183,148 @@ Status csv_exportar(const char *caminho, const Banco *banco)
     return STATUS_OK;
 }
 
+/**
+ * @brief Confere se todos os textos de uma Pergunta terminam com '\0'.
+ *
+ * Um .bin corrompido pode trazer textos sem terminador. Sem essa conferência,
+ * printf("%s") e strlen() leriam além do vetor.
+ *
+ * @param p Pergunta lida do arquivo binário.
+ * @return 1 se todos os textos têm '\0' dentro do próprio vetor; 0 caso contrário.
+ */
+static int textos_terminados(const Pergunta *p)
+{
+    int i;
+
+    // memchr procura o '\0' dentro do vetor inteiro; NULL significa que não achou
+    if (memchr(p->enunciado, '\0', sizeof p->enunciado) == NULL ||
+        memchr(p->dica, '\0', sizeof p->dica) == NULL) {
+        return 0;
+    }
+    for (i = 0; i < NUM_ALTERNATIVAS; i++) {
+        if (memchr(p->alternativas[i], '\0', sizeof p->alternativas[i]) == NULL) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 Status bin_carregar(const char *caminho, Banco *banco)
 {
-    /* TODO: abrir com "rb", fread da quantidade (size_t), alocar o vetor
-     *       e fread do bloco de Pergunta. */
-    (void)caminho;
-    (void)banco;
-    return STATUS_NAO_IMPLEMENTADO;
+    FILE *arquivo;
+    Banco carregado;    // Banco temporário: só substitui o original se o arquivo estiver íntegro
+    Pergunta pergunta;
+    size_t quantidade, bytes_de_perguntas, i;
+    long tamanho_arquivo;
+    Status status = STATUS_OK;
+
+    // Confere parametros
+    if (caminho == NULL || banco == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    // Abre o arquivo
+    arquivo = fopen(caminho, "rb");
+    if (arquivo == NULL) {
+        perror(caminho);
+        return STATUS_ERRO_ARQUIVO;
+    }
+
+    // Descobre o tamanho do arquivo: vai até o fim, lê a posição e volta ao início
+    if (fseek(arquivo, 0, SEEK_END) != 0) {
+        fclose(arquivo);
+        return STATUS_ERRO_ARQUIVO;
+    }
+    tamanho_arquivo = ftell(arquivo);
+    if (tamanho_arquivo < 0 || fseek(arquivo, 0, SEEK_SET) != 0) {
+        fclose(arquivo);
+        return STATUS_ERRO_ARQUIVO;
+    }
+
+    // Lê a quantidade de perguntas que o arquivo diz ter
+    if (fread(&quantidade, sizeof quantidade, 1, arquivo) != 1) {
+        fclose(arquivo);
+        return STATUS_ERRO_FORMATO;
+    }
+
+    /*
+     * O tamanho do arquivo precisa ser exatamente: quantidade + N structs Pergunta.
+     * Isso evita alocar memória com base em um número absurdo lido de um arquivo
+     * corrompido, e também detecta um .bin gerado antes de a struct Pergunta mudar
+     * (a divisão é feita assim para não correr risco de overflow na multiplicação).
+     */
+    bytes_de_perguntas = (size_t)tamanho_arquivo - sizeof quantidade;
+    if (bytes_de_perguntas % sizeof(Pergunta) != 0 ||
+        bytes_de_perguntas / sizeof(Pergunta) != quantidade) {
+        fclose(arquivo);
+        return STATUS_ERRO_FORMATO;
+    }
+
+    // Lê as perguntas uma a uma, validando cada uma antes de inserir
+    banco_iniciar(&carregado);
+    for (i = 0; i < quantidade && status == STATUS_OK; i++) {
+        if (fread(&pergunta, sizeof pergunta, 1, arquivo) != 1) {
+            status = STATUS_ERRO_ARQUIVO;
+        } else if (!textos_terminados(&pergunta)) {
+            status = STATUS_ERRO_FORMATO;
+        } else {
+            status = banco_inserir(&carregado, &pergunta);
+            if (status == STATUS_ERRO_PARAMETRO) {
+                // banco_inserir recusou os dados: a pergunta gravada no arquivo era inválida
+                status = STATUS_ERRO_FORMATO;
+            }
+        }
+    }
+
+    // Fecha o arquivo
+    if (fclose(arquivo) != 0 && status == STATUS_OK) {
+        status = STATUS_ERRO_ARQUIVO;
+    }
+
+    if (status != STATUS_OK) {
+        banco_liberar(&carregado);  // Descarta o que foi lido e deixa o banco original intacto
+        return status;
+    }
+
+    // Deu tudo certo: troca o conteúdo do banco pelo que foi lido
+    banco_liberar(banco);
+    *banco = carregado;
+
+    return STATUS_OK;
 }
 
 Status bin_salvar(const char *caminho, const Banco *banco)
 {
-    /* TODO: abrir com "wb", fwrite da quantidade e depois do vetor. */
-    (void)caminho;
-    (void)banco;
-    return STATUS_NAO_IMPLEMENTADO;
+    FILE *arquivo;
+    Status status = STATUS_OK;
+
+    // Confere parametros
+    if (caminho == NULL || banco == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    // Abre o arquivo
+    arquivo = fopen(caminho, "wb");
+    if (arquivo == NULL) {
+        perror(caminho);
+        return STATUS_ERRO_ARQUIVO;
+    }
+
+    // Grava a quantidade primeiro (não dá para gravar o Banco inteiro: itens é ponteiro)
+    if (fwrite(&banco->quantidade, sizeof banco->quantidade, 1, arquivo) != 1) {
+        status = STATUS_ERRO_ARQUIVO;
+    }
+
+    // Grava o bloco de perguntas de uma vez (só se existir: banco vazio tem itens == NULL)
+    if (status == STATUS_OK && banco->quantidade > 0 &&
+        fwrite(banco->itens, sizeof(Pergunta), banco->quantidade, arquivo) != banco->quantidade) {
+        status = STATUS_ERRO_ARQUIVO;
+    }
+
+    // Fecha o arquivo (o fclose descarrega o buffer, então ele também pode falhar)
+    if (fclose(arquivo) != 0) {
+        status = STATUS_ERRO_ARQUIVO;
+    }
+
+    return status;
 }

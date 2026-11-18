@@ -1,9 +1,6 @@
 /**
  * @file menu.c
  * @brief Implementação do menu principal em modo texto.
- *
- * TODO (equipe): trocar as chamadas restantes a tela_em_construcao() pela
- * função real da opção (cadastrar, listar, navegar por nível, exportar).
  */
 
 #include <ctype.h>
@@ -11,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "arquivo.h"
 #include "menu.h"
 #include "utils.h"
 
@@ -19,6 +17,15 @@
 
 /** Maior número de opção do menu. */
 #define OPCAO_MAX 7
+
+/** Quantas perguntas aparecem por tela ao listar todas (cabem em um terminal de 30 linhas). */
+#define PERGUNTAS_POR_PAGINA 2
+
+/** Tamanho do buffer com o nome do arquivo exportado (inclui o ".csv"). */
+#define TAM_NOME_EXPORTACAO 64
+
+/** Nome sugerido quando o usuário só aperta ENTER ao exportar. */
+#define NOME_EXPORTACAO_PADRAO "perguntas.csv"
 
 /**
  * @brief Desenha as opções do menu principal.
@@ -36,21 +43,6 @@ static void exibir_menu(void)
     printf(" 6 - Navegar por nível de dificuldade\n");
     printf(" 7 - Exportar perguntas para CSV\n");
     printf(" 0 - Sair\n\n");
-}
-
-/**
- * @brief Tela provisória de uma opção ainda não implementada.
- *
- * @param titulo Nome da opção.
- * @param banco  Banco de perguntas (usado só para mostrar o total).
- */
-static void tela_em_construcao(const char *titulo, const Banco *banco)
-{
-    utils_limpar_tela();
-    printf(COR_AMARELO "== %s ==\n" COR_RESET, titulo);
-    printf("Perguntas no banco: %zu\n", banco->quantidade);
-    printf("Em construção...\n");
-    utils_pausar();
 }
 
 /**
@@ -170,22 +162,29 @@ static int ler_campo(const char *rotulo, char *destino, size_t tamanho, const ch
 }
 
 /**
- * @brief Lê a letra da alternativa correta (A a D); ENTER mantém a atual.
+ * @brief Lê a letra da alternativa correta (A a D).
  *
+ * Se *correta já contém uma letra válida (alterar), ENTER mantém o valor atual.
+ * Se não (cadastrar, com a Pergunta zerada), o campo é obrigatório.
+ *
+ * @param correta Letra atual (entrada) e letra lida (saída).
  * @return 1 se leu; 0 se a entrada terminou.
  */
 static int ler_correta(char *correta)
 {
     char buffer[16];
+    int tem_valor_atual = (*correta >= 'A' && *correta < 'A' + NUM_ALTERNATIVAS);
+    const char *prompt = tem_valor_atual ? "Alternativa correta A-D (ENTER mantém): "
+                                         : "Alternativa correta A-D: ";
 
     for (;;) {
-        if (!utils_ler_linha("Alternativa correta A-D (ENTER mantém): ", buffer, sizeof buffer)) {
+        if (!utils_ler_linha(prompt, buffer, sizeof buffer)) {
             return 0;
         }
-        if (buffer[0] == '\0') {
+        if (buffer[0] == '\0' && tem_valor_atual) {
             return 1;
         }
-        if (buffer[1] == '\0' && toupper((unsigned char)buffer[0]) >= 'A'
+        if (buffer[0] != '\0' && buffer[1] == '\0' && toupper((unsigned char)buffer[0]) >= 'A'
             && toupper((unsigned char)buffer[0]) < 'A' + NUM_ALTERNATIVAS) {
             *correta = (char)toupper((unsigned char)buffer[0]);
             return 1;
@@ -196,31 +195,205 @@ static int ler_correta(char *correta)
 }
 
 /**
- * @brief Lê o nível de dificuldade; ENTER mantém o atual.
+ * @brief Lê o nível de dificuldade.
  *
+ * Se *nivel já contém um nível válido (alterar), ENTER mantém o valor atual.
+ * Se não (cadastrar, com a Pergunta zerada), o campo é obrigatório.
+ *
+ * @param nivel Nível atual (entrada) e nível lido (saída).
  * @return 1 se leu; 0 se a entrada terminou.
  */
 static int ler_nivel(int *nivel)
 {
     char buffer[16];
+    char prompt[64];
     char *fim;
     long n;
+    int tem_valor_atual = (*nivel >= NIVEL_MIN && *nivel <= NIVEL_MAX);
+
+    snprintf(prompt, sizeof prompt, "Nível %d-%d%s: ", NIVEL_MIN, NIVEL_MAX,
+             tem_valor_atual ? " (ENTER mantém)" : "");
 
     for (;;) {
-        if (!utils_ler_linha("Nível 1-5 (ENTER mantém): ", buffer, sizeof buffer)) {
+        if (!utils_ler_linha(prompt, buffer, sizeof buffer)) {
             return 0;
         }
-        if (buffer[0] == '\0') {
+        if (buffer[0] == '\0' && tem_valor_atual) {
             return 1;
         }
         n = strtol(buffer, &fim, 10);
-        if (*fim == '\0' && n >= NIVEL_MIN && n <= NIVEL_MAX) {
+        if (buffer[0] != '\0' && *fim == '\0' && n >= NIVEL_MIN && n <= NIVEL_MAX) {
             *nivel = (int)n;
             return 1;
         }
         utils_beep();
         printf(COR_VERMELHO "Digite um número de %d a %d.\n" COR_RESET, NIVEL_MIN, NIVEL_MAX);
     }
+}
+
+/**
+ * @brief Mostra perguntas página a página e deixa o usuário navegar entre elas.
+ *
+ * Usada por "Listar todas" (várias perguntas por tela) e por "Navegar por nível"
+ * (uma pergunta por tela). Comandos: P (ou ENTER) próxima, A anterior, S sai e um
+ * número pula direto para aquela pergunta.
+ *
+ * @param banco      Banco consultado.
+ * @param indices    Posições, dentro do banco, das perguntas a mostrar.
+ * @param total      Quantidade de posições em indices (maior que zero).
+ * @param titulo     Título exibido no topo da tela.
+ * @param por_pagina Quantas perguntas aparecem por tela (maior que zero).
+ */
+static void exibir_paginas(const Banco *banco, const size_t *indices, size_t total,
+                           const char *titulo, size_t por_pagina)
+{
+    size_t primeira = 0;        /* Posição, em indices, da primeira pergunta da tela */
+    size_t ultima, i;           /* ultima = uma posição depois da última exibida */
+    const char *aviso = NULL;   /* Mensagem de erro do comando anterior */
+    char comando[8];
+    char *fim;
+    long numero;
+
+    for (;;) {
+        utils_limpar_tela();
+        printf(COR_AMARELO "== %s ==\n\n" COR_RESET, titulo);
+
+        ultima = primeira + por_pagina;
+        if (ultima > total) {
+            ultima = total;
+        }
+
+        for (i = primeira; i < ultima; i++) {
+            printf(COR_AZUL "Pergunta %zu de %zu" COR_RESET "\n", i + 1, total);
+            pergunta_imprimir(banco_obter(banco, indices[i]));
+            printf("\n");
+        }
+
+        if (aviso != NULL) {
+            printf(COR_VERMELHO "%s\n" COR_RESET, aviso);
+            aviso = NULL;
+        }
+        printf("[P] próxima  [A] anterior  [S] sair  ou digite o nº da pergunta\n");
+
+        if (!utils_ler_linha("Comando: ", comando, sizeof comando)) {
+            return; /* fim da entrada (EOF) */
+        }
+
+        switch (toupper((unsigned char)comando[0])) {
+        case '\0':  /* ENTER sozinho também avança */
+        case 'P':
+            if (ultima < total) {
+                primeira = ultima;
+            } else {
+                aviso = "Esta é a última página.";
+                utils_beep();
+            }
+            break;
+        case 'A':
+            if (primeira == 0) {
+                aviso = "Esta é a primeira página.";
+                utils_beep();
+            } else if (primeira >= por_pagina) {
+                primeira -= por_pagina;
+            } else {
+                primeira = 0;
+            }
+            break;
+        case 'S':
+            return;
+        default:
+            numero = strtol(comando, &fim, 10);
+            if (isdigit((unsigned char)comando[0]) && *fim == '\0'
+                && numero >= 1 && (size_t)numero <= total) {
+                /* Arredonda para o começo da página que contém a pergunta pedida */
+                primeira = ((size_t)numero - 1) / por_pagina * por_pagina;
+            } else {
+                aviso = "Comando inválido. Use P, A, S ou o número de uma pergunta.";
+                utils_beep();
+            }
+            break;
+        }
+    }
+}
+
+/**
+ * @brief Tela "Cadastrar pergunta": lê todos os campos e insere no banco.
+ *
+ * A Pergunta começa zerada, então todos os campos são obrigatórios.
+ */
+static void tela_cadastrar(Banco *banco)
+{
+    Pergunta nova;
+    Status status;
+    int i, ok;
+
+    utils_limpar_tela();
+    printf(COR_AMARELO "== Cadastrar pergunta ==\n\n" COR_RESET);
+
+    printf("Níveis: ");
+    for (i = NIVEL_MIN; i <= NIVEL_MAX; i++) {
+        printf("%d=%s%s", i, pergunta_nome_nivel(i), i < NIVEL_MAX ? ", " : "\n\n");
+    }
+
+    /* Zera tudo: os campos vazios são o sinal de "ainda não preenchido" */
+    memset(&nova, 0, sizeof nova);
+
+    ok = ler_campo("Enunciado", nova.enunciado, TAM_ENUNCIADO, NULL);
+    for (i = 0; ok && i < NUM_ALTERNATIVAS; i++) {
+        char rotulo[32];
+
+        snprintf(rotulo, sizeof rotulo, "Alternativa %c", 'A' + i);
+        ok = ler_campo(rotulo, nova.alternativas[i], TAM_ALTERNATIVA, NULL);
+    }
+    ok = ok && ler_correta(&nova.correta);
+    ok = ok && ler_nivel(&nova.nivel);
+    ok = ok && ler_campo("Dica", nova.dica, TAM_DICA, NULL);
+
+    if (ok) {
+        status = banco_inserir(banco, &nova);
+        if (status == STATUS_OK) {
+            printf(COR_VERDE "\nPergunta cadastrada com sucesso! Total no banco: %zu\n\n" COR_RESET,
+                   banco->quantidade);
+            pergunta_imprimir(&nova);
+        } else {
+            utils_beep();
+            printf(COR_VERMELHO "\nNão foi possível cadastrar: %s\n" COR_RESET,
+                   utils_mensagem_status(status));
+        }
+    }
+
+    utils_pausar();
+}
+
+/**
+ * @brief Tela "Listar todas as perguntas": mostra o banco inteiro, página a página.
+ */
+static void tela_listar(const Banco *banco)
+{
+    size_t *indices, i;
+
+    if (banco->quantidade == 0) {
+        utils_limpar_tela();
+        printf(COR_AMARELO "== Listar perguntas ==\n\n" COR_RESET);
+        printf("O banco está vazio.\n");
+        utils_pausar();
+        return;
+    }
+
+    /* Todas as posições, na ordem: reaproveita o mesmo visualizador da navegação por nível */
+    indices = malloc(banco->quantidade * sizeof *indices);
+    if (indices == NULL) {
+        printf(COR_VERMELHO "%s\n" COR_RESET, utils_mensagem_status(STATUS_ERRO_MEMORIA));
+        utils_pausar();
+        return;
+    }
+    for (i = 0; i < banco->quantidade; i++) {
+        indices[i] = i;
+    }
+
+    exibir_paginas(banco, indices, banco->quantidade, "Todas as perguntas", PERGUNTAS_POR_PAGINA);
+
+    free(indices);
 }
 
 /**
@@ -366,6 +539,148 @@ static void tela_excluir(Banco *banco)
     utils_pausar();
 }
 
+/**
+ * @brief Tela "Navegar por nível": escolhe um nível e percorre suas perguntas uma a uma.
+ */
+static void tela_navegar_nivel(const Banco *banco)
+{
+    size_t *indices, total;
+    char titulo[64];
+    int nivel, opcao = 0;
+
+    if (banco->quantidade == 0) {
+        utils_limpar_tela();
+        printf(COR_AMARELO "== Navegar por nível ==\n\n" COR_RESET);
+        printf("O banco está vazio.\n");
+        utils_pausar();
+        return;
+    }
+
+    indices = malloc(banco->quantidade * sizeof *indices);
+    if (indices == NULL) {
+        printf(COR_VERMELHO "%s\n" COR_RESET, utils_mensagem_status(STATUS_ERRO_MEMORIA));
+        utils_pausar();
+        return;
+    }
+
+    do {
+        utils_limpar_tela();
+        printf(COR_AMARELO "== Navegar por nível de dificuldade ==\n\n" COR_RESET);
+
+        /* Mostra quantas perguntas existem em cada nível */
+        for (nivel = NIVEL_MIN; nivel <= NIVEL_MAX; nivel++) {
+            total = banco_filtrar_nivel(banco, nivel, indices, banco->quantidade);
+            printf(" %d - %s (%zu pergunta(s))\n", nivel, pergunta_nome_nivel(nivel), total);
+        }
+        printf(" 0 - Voltar\n\n");
+
+        if (!utils_ler_inteiro("Escolha o nível: ", 0, NIVEL_MAX, &opcao)) {
+            break; /* fim da entrada (EOF) */
+        }
+
+        if (opcao != 0) {
+            total = banco_filtrar_nivel(banco, opcao, indices, banco->quantidade);
+            if (total == 0) {
+                utils_beep();
+                printf(COR_VERMELHO "\nNenhuma pergunta neste nível.\n" COR_RESET);
+                utils_pausar();
+            } else {
+                snprintf(titulo, sizeof titulo, "Nível %d - %s", opcao, pergunta_nome_nivel(opcao));
+                exibir_paginas(banco, indices, total, titulo, 1);
+            }
+        }
+    } while (opcao != 0);
+
+    free(indices);
+}
+
+/**
+ * @brief Confere se o nome do arquivo termina com ".csv".
+ *
+ * @param nome Nome do arquivo.
+ * @return 1 se termina com ".csv"; 0 caso contrário.
+ */
+static int termina_com_csv(const char *nome)
+{
+    size_t tamanho = strlen(nome);
+
+    return tamanho >= 4 && strcmp(nome + tamanho - 4, ".csv") == 0;
+}
+
+/**
+ * @brief Tela "Exportar CSV": grava o banco atual em PASTA_EXPORTADOS.
+ *
+ * O arquivo gerado tem o mesmo formato do CSV inicial, então pode ser lido de volta.
+ */
+static void tela_exportar(const Banco *banco)
+{
+    char nome[TAM_NOME_EXPORTACAO];
+    char caminho[sizeof PASTA_EXPORTADOS + TAM_NOME_EXPORTACAO];
+    char resposta[8];
+    FILE *existente;
+    Status status;
+
+    utils_limpar_tela();
+    printf(COR_AMARELO "== Exportar perguntas para CSV ==\n\n" COR_RESET);
+
+    if (banco->quantidade == 0) {
+        printf("O banco está vazio, não há o que exportar.\n");
+        utils_pausar();
+        return;
+    }
+
+    printf("Os arquivos são gravados na pasta %s\n\n", PASTA_EXPORTADOS);
+    if (!utils_ler_linha("Nome do arquivo (ENTER = " NOME_EXPORTACAO_PADRAO "): ", nome, sizeof nome)) {
+        return; /* fim da entrada (EOF) */
+    }
+    if (nome[0] == '\0') {
+        strcpy(nome, NOME_EXPORTACAO_PADRAO);
+    }
+
+    /* Barras e outros símbolos permitiriam gravar fora da pasta ou gerar nome inválido no Windows */
+    if (strpbrk(nome, "/\\:*?\"<>|") != NULL) {
+        utils_beep();
+        printf(COR_VERMELHO "\nNome inválido: não use / \\ : * ? \" < > |\n" COR_RESET);
+        utils_pausar();
+        return;
+    }
+    if (!termina_com_csv(nome)) {
+        if (strlen(nome) + strlen(".csv") >= sizeof nome) {
+            utils_beep();
+            printf(COR_VERMELHO "\nNome muito longo.\n" COR_RESET);
+            utils_pausar();
+            return;
+        }
+        strcat(nome, ".csv");
+    }
+    snprintf(caminho, sizeof caminho, "%s%s", PASTA_EXPORTADOS, nome);
+
+    /* Se o arquivo já existe (conseguiu abrir para leitura), pede confirmação antes de sobrescrever */
+    existente = fopen(caminho, "r");
+    if (existente != NULL) {
+        fclose(existente);
+        if (!utils_ler_linha(COR_AMARELO "\nO arquivo já existe. Sobrescrever? (s/N): " COR_RESET,
+                             resposta, sizeof resposta)
+            || (resposta[0] != 's' && resposta[0] != 'S')) {
+            printf("\nExportação cancelada.\n");
+            utils_pausar();
+            return;
+        }
+    }
+
+    status = csv_exportar(caminho, banco);
+    if (status == STATUS_OK) {
+        printf(COR_VERDE "\n%zu pergunta(s) exportada(s) para %s\n" COR_RESET,
+               banco->quantidade, caminho);
+    } else {
+        utils_beep();
+        printf(COR_VERMELHO "\nNão foi possível exportar: %s\n" COR_RESET,
+               utils_mensagem_status(status));
+    }
+
+    utils_pausar();
+}
+
 void menu_principal(Banco *banco)
 {
     int opcao = OPCAO_SAIR;
@@ -379,13 +694,13 @@ void menu_principal(Banco *banco)
         }
 
         switch (opcao) {
-        case 1: tela_em_construcao("Cadastrar pergunta", banco); break;
-        case 2: tela_em_construcao("Listar perguntas", banco); break;
+        case 1: tela_cadastrar(banco); break;
+        case 2: tela_listar(banco); break;
         case 3: tela_pesquisar(banco); break;
         case 4: tela_alterar(banco); break;
         case 5: tela_excluir(banco); break;
-        case 6: tela_em_construcao("Navegar por nível", banco); break;
-        case 7: tela_em_construcao("Exportar CSV", banco); break;
+        case 6: tela_navegar_nivel(banco); break;
+        case 7: tela_exportar(banco); break;
         default: break;
         }
     } while (opcao != OPCAO_SAIR);
