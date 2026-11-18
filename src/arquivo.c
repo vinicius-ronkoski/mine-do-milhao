@@ -186,27 +186,31 @@ Status csv_exportar(const char *caminho, const Banco *banco)
 /**
  * @brief Confere se todos os textos de uma Pergunta terminam com '\0'.
  *
- * Um .bin corrompido pode trazer textos sem terminador. Sem essa conferência,
- * printf("%s") e strlen() leriam além do vetor.
+ * Essa função faz essa conferencia em cada pergunta caso exista alguma corrpção
  *
  * @param p Pergunta lida do arquivo binário.
  * @return 1 se todos os textos têm '\0' dentro do próprio vetor; 0 caso contrário.
  */
-static int textos_terminados(const Pergunta *p)
+static Status textos_terminados(const Pergunta *p)
 {
-    int i;
+    if (p == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
 
     // memchr procura o '\0' dentro do vetor inteiro; NULL significa que não achou
+    // ENUNCIADO e DICA
     if (memchr(p->enunciado, '\0', sizeof p->enunciado) == NULL ||
         memchr(p->dica, '\0', sizeof p->dica) == NULL) {
-        return 0;
+        return STATUS_ERRO_FORMATO;
     }
-    for (i = 0; i < NUM_ALTERNATIVAS; i++) {
+
+    // ALTERNATIVAS
+    for (int i = 0; i < NUM_ALTERNATIVAS; i++) {
         if (memchr(p->alternativas[i], '\0', sizeof p->alternativas[i]) == NULL) {
-            return 0;
+            return STATUS_ERRO_FORMATO;
         }
     }
-    return 1;
+    return STATUS_OK;
 }
 
 Status bin_carregar(const char *caminho, Banco *banco)
@@ -236,6 +240,8 @@ Status bin_carregar(const char *caminho, Banco *banco)
         return STATUS_ERRO_ARQUIVO;
     }
     tamanho_arquivo = ftell(arquivo);
+
+    // Caso o arquivo tenha 0 bytes escrito ou que a volta para o inicio de erro
     if (tamanho_arquivo < 0 || fseek(arquivo, 0, SEEK_SET) != 0) {
         fclose(arquivo);
         return STATUS_ERRO_ARQUIVO;
@@ -249,9 +255,6 @@ Status bin_carregar(const char *caminho, Banco *banco)
 
     /*
      * O tamanho do arquivo precisa ser exatamente: quantidade + N structs Pergunta.
-     * Isso evita alocar memória com base em um número absurdo lido de um arquivo
-     * corrompido, e também detecta um .bin gerado antes de a struct Pergunta mudar
-     * (a divisão é feita assim para não correr risco de overflow na multiplicação).
      */
     bytes_de_perguntas = (size_t)tamanho_arquivo - sizeof quantidade;
     if (bytes_de_perguntas % sizeof(Pergunta) != 0 ||
@@ -265,7 +268,7 @@ Status bin_carregar(const char *caminho, Banco *banco)
     for (i = 0; i < quantidade && status == STATUS_OK; i++) {
         if (fread(&pergunta, sizeof pergunta, 1, arquivo) != 1) {
             status = STATUS_ERRO_ARQUIVO;
-        } else if (!textos_terminados(&pergunta)) {
+        } else if (textos_terminados(&pergunta) != STATUS_OK) {
             status = STATUS_ERRO_FORMATO;
         } else {
             status = banco_inserir(&carregado, &pergunta);
