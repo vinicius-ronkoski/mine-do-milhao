@@ -15,13 +15,14 @@ Projeto prático de Fundamentos de Programação 2 (FDCO2B) — UTFPR, campus Ap
 
 Requer `gcc` e `make`. Execute sempre a partir da **raiz do projeto** (os caminhos `data/...` são relativos a ela).
 
-| Comando        | O que faz                                              |
-|----------------|--------------------------------------------------------|
-| `make`         | Compila (objetos em `build/`, executável `milhao`)     |
-| `make run`     | Compila (se preciso) e executa                         |
-| `make clean`   | Remove objetos e executável                            |
-| `make valgrind`| Executa sob o Valgrind (checa vazamentos de memória)   |
-| `make debug`   | Abre o executável no `gdb`                             |
+| Comando           | O que faz                                              |
+|-------------------|--------------------------------------------------------|
+| `make`            | Compila (objetos em `build/`, executável `milhao`)     |
+| `make run`        | Compila (se preciso) e executa                         |
+| `make clean`      | Remove objetos e executável                            |
+| `make valgrind`   | Executa sob o Valgrind (checa vazamentos de memória)   |
+| `make debug`      | Abre o executável no `gdb`                             |
+| `make clear_data` | Limpa os arquivos binarios em `data/`                  |
 
 Na 2ª entrega (raylib): `make USE_RAYLIB=1`, com `raylib.h` em `include/` e a biblioteca em `lib/` (Linux) ou `libwin/` (Windows).
 
