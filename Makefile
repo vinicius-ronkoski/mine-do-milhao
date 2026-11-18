@@ -14,10 +14,12 @@ BINNAME   = milhao
 SRC_DIR   = src
 INC_DIR   = include
 BUILD_DIR = build
+DATA_DIR = data
 
 SRC = $(wildcard $(SRC_DIR)/*.c)
 OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC))
 DEP = $(OBJ:.o=.d)
+DATA = $(wildcard $(DATA_DIR)/*.dat)
 
 CC       = gcc
 CFLAGS   = -Wall -Wextra -Werror -std=c99 -g -I./$(INC_DIR)
@@ -29,6 +31,7 @@ ifeq ($(OS),Windows_NT)
 	RUN       = $(BIN)
 	RM        = del /Q /F
 	CLEAN_FILES = $(subst /,\,$(OBJ) $(DEP)) $(BIN)
+	CLEAN_DATA = $(subst /,\,$(DATA))
 	ifeq ($(USE_RAYLIB),1)
 		LIBDIR = -L./libwin
 		LDLIBS += -lraylib -lopengl32 -lgdi32 -lwinmm
@@ -38,6 +41,7 @@ else
 	RUN       = ./$(BIN)
 	RM        = rm -f
 	CLEAN_FILES = $(OBJ) $(DEP) $(BIN)
+	CLEAN_DATA = $(DATA)
 	ifeq ($(USE_RAYLIB),1)
 		LIBDIR = -L./lib
 		LDLIBS += -lraylib -lGL -lpthread -ldl -lrt -lX11
@@ -77,8 +81,12 @@ valgrind: all
 clean:
 	-$(RM) $(CLEAN_FILES)
 
+# Limpa arquivos.dat em (data/)
+clear_data:
+	-$(RM) $(CLEAN_DATA)
+
 help:
-	@echo Alvos: all, run, clean, debug, valgrind
+	@echo Alvos: all, run, clean, debug, valgrind, clear_data
 	@echo Raylib: make USE_RAYLIB=1
 
 -include $(DEP)
