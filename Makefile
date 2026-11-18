@@ -1,13 +1,5 @@
 # =============================================================================
 #  Makefile - Mine do Milhão (FDCO2B - UTFPR Apucarana)
-#
-#  Alvos obrigatórios:  all (compila) | run (executa) | clean (limpa)
-#  Alvos extras:        debug (gdb) | valgrind | help
-#
-#  1ª entrega (sem raylib):   make
-#  2ª entrega (com raylib):   make USE_RAYLIB=1
-#    -> coloque raylib.h em include/ e a biblioteca em lib/ (Linux) ou
-#       libwin/ (Windows), como no Makefile-base do professor.
 # =============================================================================
 
 ifdef OS
