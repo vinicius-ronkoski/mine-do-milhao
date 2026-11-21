@@ -1,4 +1,8 @@
-/** @file botao.c @brief Esqueleto dos botões (ver botao.h). Compila só com USE_RAYLIB. */
+/** 
+ * @file botao.c 
+ * @brief Esqueleto dos botões (ver botao.h). Compila só com USE_RAYLIB. 
+ * 
+ * */
 #ifdef USE_RAYLIB
 #include <string.h>
 #include "botao.h"

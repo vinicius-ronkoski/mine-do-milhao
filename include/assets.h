@@ -9,7 +9,7 @@
  *   - fonte   -> fonte padrão da raylib;
  *   - frames  -> um único quadro gerado.
  *
- * COMO ADICIONAR UM ASSET NOVO (3 passos):
+ * COMO ADICIONAR UM ASSET NOVO:
  *   1. Coloque o arquivo em assets/sprites, assets/sounds ou assets/fonts.
  *   2. Acrescente o id no enum correspondente abaixo (ANTES do *_QUANTIDADE).
  *   3. Acrescente o nome do arquivo em assets_nome_arquivo_imagem() / _som() (assets.c).

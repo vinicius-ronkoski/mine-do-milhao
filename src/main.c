@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "arquivo.h"
 #include "banco.h"
@@ -23,26 +24,29 @@ int main(void)
     Banco banco;
     Status status;
 
+    // Inicializa o terminal e o Banco de Dados
     utils_configurar_terminal();
     banco_iniciar(&banco);
 
+    // Carrega os dados e confere o status
     status = dados_carregar(&banco);
     if (status != STATUS_OK) {
         printf(COR_VERMELHO "Erro ao carregar dados: %s\n" COR_RESET,
         utils_mensagem_status(status));
         banco_liberar(&banco);
-        return 1;   /* não chama dados_salvar: preserva o .bin */
+        return EXIT_FAILURE;   /* não chama dados_salvar: preserva o .bin */
     }
 
-    
+    // Verifica se RAYLIB está sendo utilizado
     #ifdef USE_RAYLIB
         status = jogo_executar(&banco);
         if (status != STATUS_OK && status != STATUS_ASSET_FALLBACK)
         printf(COR_VERMELHO "Erro no jogo: %s\n" COR_RESET, utils_mensagem_status(status));
     #else
-        menu_principal(&banco);
+        menu_principal(&banco); // caso contrário inicia o menu principal
     #endif
 
+    // Sai do programa, verificando se os dados foram salvos
     status = dados_salvar(&banco);
     if (status != STATUS_OK) {
         printf(COR_AMARELO "Aviso ao salvar dados: %s\n" COR_RESET,
@@ -50,5 +54,5 @@ int main(void)
     }
 
     banco_liberar(&banco);
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -1,4 +1,9 @@
-/** @file boss.c @brief Esqueleto da estrutura de BOSS (ver boss.h). */
+/** 
+ * @file boss.c 
+ * 
+ * @brief Esqueleto da estrutura de BOSS (ver boss.h). 
+ * 
+ * */
 #include "boss.h"
 
 Status boss_iniciar(Boss *boss, BossId id, int vida_maxima)
@@ -36,9 +41,9 @@ int boss_derrotado(const Boss *boss)
     return 0;
 }
 
-float boss_fracao_vida(const Boss *boss)
+int boss_calculo_vida(const Boss *boss)
 {
     /* TODO: vida_atual / vida_maxima. */
     (void)boss;
-    return 0.0f;
+    return 0;
 }
