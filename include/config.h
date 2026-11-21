@@ -45,7 +45,7 @@
 #define CAMINHO_BIN "data/perguntas.bin"
 
 /** Pasta onde a função "exportar CSV" grava seus arquivos. */
-#define PASTA_EXPORTADOS "data/exportados/"
+#define CAMINHO_EXPORTADOS "data/exportados/"
 
 
 #define PERGUNTAS_POR_PARTIDA   15
@@ -68,7 +68,7 @@
 #define CAMINHO_FRAMES     "assets/sprites/frames/"
 #define CAMINHO_SONS       "assets/sounds/"
 #define CAMINHO_FONTES     "assets/fonts/"
-#define ARQUIVO_FONTE    PASTA_FONTES "minecraft.ttf"
+#define ARQUIVO_FONTE    CAMINHO_FONTES "minecraft.ttf"
 #define TAM_FONTE_BASE   32
 
 #define DIALOGO_MAX_FALAS          16

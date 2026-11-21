@@ -109,10 +109,10 @@ Status assets_carregar(Assets *assets);
 /** @brief Libera tudo (UnloadTexture/UnloadSound/UnloadMusicStream/UnloadFont, CloseAudioDevice, free dos quadros). */
 void assets_descarregar(Assets *assets);
 
-/** @brief Caminho do arquivo de uma imagem (monta com PASTA_SPRITES). Tabela local, sem global. Nunca NULL. */
+/** @brief Caminho do arquivo de uma imagem (monta com CAMINHO_SPRITES). Tabela local, sem global. Nunca NULL. */
 const char *assets_nome_arquivo_imagem(ImagemId id);
 
-/** @brief Caminho do arquivo de um som (monta com PASTA_SONS). Nunca NULL. */
+/** @brief Caminho do arquivo de um som (monta com CAMINHO_SONS). Nunca NULL. */
 const char *assets_nome_arquivo_som(SomId id);
 
 /**
@@ -138,7 +138,7 @@ Status assets_carregar_fonte(Assets *assets);
 
 /**
  * @brief Carrega frames "prefixo_00.png".."prefixo_NN.png" até o primeiro que não existir
- *        (PASTA_FRAMES). Nenhum encontrado -> 1 quadro de fallback.
+ *        (CAMINHO_FRAMES). Nenhum encontrado -> 1 quadro de fallback.
  */
 Status assets_carregar_animacao(Animacao *alvo, const char *prefixo, float segundos_por_quadro);
 

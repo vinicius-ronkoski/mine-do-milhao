@@ -21,7 +21,7 @@ void assets_descarregar(Assets *assets)
 
 const char *assets_nome_arquivo_imagem(ImagemId id)
 {
-    /* TODO: static const char *const nomes[IMG_QUANTIDADE] LOCAL; ex.: PASTA_SPRITES "fundo_pergunta.png".
+    /* TODO: static const char *const nomes[IMG_QUANTIDADE] LOCAL; ex.: CAMINHO_SPRITES "fundo_pergunta.png".
      *       PARA TROCAR UM ASSET: altere só o nome aqui. */
     (void)id;
     return "";
@@ -29,7 +29,7 @@ const char *assets_nome_arquivo_imagem(ImagemId id)
 
 const char *assets_nome_arquivo_som(SomId id)
 {
-    /* TODO: idem, com PASTA_SONS (.wav para efeitos; .ogg/.mp3 para música). */
+    /* TODO: idem, com CAMINHO_SONS (.wav para efeitos; .ogg/.mp3 para música). */
     (void)id;
     return "";
 }
@@ -59,7 +59,7 @@ Status assets_carregar_som(Efeito *alvo, SomId id)
 
 Status assets_carregar_musica(Assets *assets)
 {
-    /* TODO: LoadMusicStream(PASTA_SONS "musica.ogg"); IsMusicValid. */
+    /* TODO: LoadMusicStream(CAMINHO_SONS "musica.ogg"); IsMusicValid. */
     (void)assets;
     return STATUS_NAO_IMPLEMENTADO;
 }
@@ -74,7 +74,7 @@ Status assets_carregar_fonte(Assets *assets)
 
 Status assets_carregar_animacao(Animacao *alvo, const char *prefixo, float segundos_por_quadro)
 {
-    /* TODO: laço com TextFormat("%s%s_%02d.png", PASTA_FRAMES, prefixo, i) + realloc do vetor de quadros.
+    /* TODO: laço com TextFormat("%s%s_%02d.png", CAMINHO_FRAMES, prefixo, i) + realloc do vetor de quadros.
      *       ALTERNATIVA futura: spritesheet única + DrawTextureRec (trocar só esta função). */
     (void)alvo; (void)prefixo; (void)segundos_por_quadro;
     return STATUS_NAO_IMPLEMENTADO;

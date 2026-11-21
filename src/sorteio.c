@@ -16,7 +16,7 @@ int sorteio_inteiro(int minimo, int maximo)
     return minimo;
 }
 
-void sorteio_embaralhar_vetor(int *vetor, size_t tamanho)
+void sorteio_embaralhar_vetor(size_t* vetor, size_t tamanho)
 {
     /* TODO: Fisher-Yates usando sorteio_inteiro(). */
     (void)vetor; (void)tamanho;

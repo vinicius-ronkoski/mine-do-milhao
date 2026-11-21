@@ -41,9 +41,9 @@ int boss_derrotado(const Boss *boss)
     return 0;
 }
 
-int boss_calculo_vida(const Boss *boss)
+float boss_calculo_vida(const Boss *boss)
 {
     /* TODO: vida_atual / vida_maxima. */
     (void)boss;
-    return 0;
+    return 0.0f;
 }

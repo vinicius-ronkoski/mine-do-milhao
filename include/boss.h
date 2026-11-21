@@ -54,6 +54,6 @@ Status boss_receber_dano(Boss *boss, int dano);
 int boss_derrotado(const Boss *boss);
 
 /** @brief Fração de vida restante de 0.0 a 1.0 (para a barra de vida na tela). */
-int boss_calculo_vida(const Boss *boss);
+float boss_calculo_vida(const Boss *boss);
 
 #endif /* BOSS_H */

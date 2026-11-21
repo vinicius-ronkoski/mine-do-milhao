@@ -40,8 +40,7 @@ int main(void)
     // Verifica se RAYLIB está sendo utilizado
     #ifdef USE_RAYLIB
         status = jogo_executar(&banco);
-        if (status != STATUS_OK && status != STATUS_ASSET_FALLBACK)
-        printf(COR_VERMELHO "Erro no jogo: %s\n" COR_RESET, utils_mensagem_status(status));
+        
     #else
         menu_principal(&banco); // caso contrário inicia o menu principal
     #endif

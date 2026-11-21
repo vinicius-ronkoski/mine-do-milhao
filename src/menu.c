@@ -11,6 +11,9 @@
 #include "arquivo.h"
 #include "menu.h"
 #include "utils.h"
+#ifdef USE_RAYLIB
+    #include "jogo.h"
+#endif
 
 /** Opção "sair" do menu. */
 #define OPCAO_SAIR 0
@@ -42,6 +45,9 @@ static void exibir_menu(void)
     printf(" 5 - Excluir pergunta\n");
     printf(" 6 - Navegar por nível de dificuldade\n");
     printf(" 7 - Exportar perguntas para CSV\n");
+    #ifdef USE_RAYLIB
+    printf("8 - Abrir Jogo\n");
+    #endif
     printf(" 0 - Sair\n\n");
 }
 
@@ -608,14 +614,14 @@ static int termina_com_csv(const char *nome)
 }
 
 /**
- * @brief Tela "Exportar CSV": grava o banco atual em PASTA_EXPORTADOS.
+ * @brief Tela "Exportar CSV": grava o banco atual em CAMINHO_EXPORTADOS.
  *
  * O arquivo gerado tem o mesmo formato do CSV inicial, então pode ser lido de volta.
  */
 static void tela_exportar(const Banco *banco)
 {
     char nome[TAM_NOME_EXPORTACAO];
-    char caminho[sizeof PASTA_EXPORTADOS + TAM_NOME_EXPORTACAO];
+    char caminho[sizeof CAMINHO_EXPORTADOS + TAM_NOME_EXPORTACAO];
     char resposta[8];
     FILE *existente;
     Status status;
@@ -629,7 +635,7 @@ static void tela_exportar(const Banco *banco)
         return;
     }
 
-    printf("Os arquivos são gravados na pasta %s\n\n", PASTA_EXPORTADOS);
+    printf("Os arquivos são gravados na pasta %s\n\n", CAMINHO_EXPORTADOS);
     if (!utils_ler_linha("Nome do arquivo (ENTER = " NOME_EXPORTACAO_PADRAO "): ", nome, sizeof nome)) {
         return; /* fim da entrada (EOF) */
     }
@@ -653,7 +659,7 @@ static void tela_exportar(const Banco *banco)
         }
         strcat(nome, ".csv");
     }
-    snprintf(caminho, sizeof caminho, "%s%s", PASTA_EXPORTADOS, nome);
+    snprintf(caminho, sizeof caminho, "%s%s", CAMINHO_EXPORTADOS, nome);
 
     /* Se o arquivo já existe (conseguiu abrir para leitura), pede confirmação antes de sobrescrever */
     existente = fopen(caminho, "r");
@@ -681,6 +687,15 @@ static void tela_exportar(const Banco *banco)
     utils_pausar();
 }
 
+#ifdef USE_RAYLIB
+static void chamada_jogo(Banco *banco) {
+    Status status = jogo_executar(&banco);
+    if (status != STATUS_OK && status != STATUS_ASSET_FALLBACK) {
+        printf(COR_VERMELHO "Erro no jogo: %s\n" COR_RESET, utils_mensagem_status(status));
+    }
+}
+#endif
+
 void menu_principal(Banco *banco)
 {
     int opcao = OPCAO_SAIR;
@@ -701,6 +716,9 @@ void menu_principal(Banco *banco)
         case 5: tela_excluir(banco); break;
         case 6: tela_navegar_nivel(banco); break;
         case 7: tela_exportar(banco); break;
+        #ifdef USE_RAYLIB
+        case 8: chamada_jogo(banco); break;
+        #endif
         default: break;
         }
     } while (opcao != OPCAO_SAIR);
