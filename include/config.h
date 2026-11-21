@@ -47,6 +47,35 @@
 /** Pasta onde a função "exportar CSV" grava seus arquivos. */
 #define PASTA_EXPORTADOS "data/exportados/"
 
+
+#define PERGUNTAS_POR_PARTIDA   15
+#define NUM_NIVEIS              (NIVEL_MAX - NIVEL_MIN + 1)
+#define RODADA_MARCO_1          5     /* pergunta 5  (índice 4) */
+#define RODADA_MARCO_2          10    /* pergunta 10 (índice 9) */
+
+/* Esmeraldas ACUMULADAS ao acertar cada rodada (15 valores).*/
+#define PREMIOS_ESMERALDAS { 1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 70, 100, 150, 300 }
+
+/* 1: errar leva o último marco (5 ou 10); 0: errar perde tudo.*/
+#define REGRA_ERRO_VOLTA_AO_MARCO 1
+
+#define LARGURA_JANELA   1280
+#define ALTURA_JANELA    720
+#define FPS_ALVO         60
+#define TITULO_JANELA    "Mine do Milhão"
+
+#define CAMINHO_SPRITES    "assets/sprites/"
+#define CAMINHO_FRAMES     "assets/sprites/frames/"
+#define CAMINHO_SONS       "assets/sounds/"
+#define CAMINHO_FONTES     "assets/fonts/"
+#define ARQUIVO_FONTE    PASTA_FONTES "minecraft.ttf"
+#define TAM_FONTE_BASE   32
+
+#define DIALOGO_MAX_FALAS          16
+#define TAM_FALA                   256
+#define TAM_NOME_PERSONAGEM        32
+#define DIALOGO_LETRAS_POR_SEGUNDO 40
+
 /**
  * @brief Códigos de retorno padronizados das funções que podem falhar.
  */
@@ -57,7 +86,9 @@ typedef enum {
     STATUS_ERRO_PARAMETRO,      /**< Argumento inválido (NULL, índice fora etc.). */
     STATUS_ERRO_FORMATO,        /**< Conteúdo do arquivo fora do formato esperado. */
     STATUS_NAO_ENCONTRADO,      /**< Pergunta procurada não existe. */
-    STATUS_NAO_IMPLEMENTADO     /**< Função ainda é um esqueleto (TODO). */
+    STATUS_NAO_IMPLEMENTADO,    /**< Função ainda é um esqueleto (TODO). */
+    STATUS_ERRO_GRAFICO,        /**< Janela/OpenGL não pôde ser criada. */
+    STATUS_ASSET_FALLBACK      /**< Não é erro: jogo rodando com substitutos de assets. */
 } Status;
 
 #endif /* CONFIG_H */

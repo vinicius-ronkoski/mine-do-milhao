@@ -9,6 +9,9 @@
 #include "banco.h"
 #include "menu.h"
 #include "utils.h"
+#ifdef USE_RAYLIB
+    #include "jogo.h"
+#endif
 
 /**
  * @brief Carrega os dados, roda o menu e salva tudo ao sair.
@@ -31,7 +34,14 @@ int main(void)
         return 1;   /* não chama dados_salvar: preserva o .bin */
     }
 
-    menu_principal(&banco);
+    
+    #ifdef USE_RAYLIB
+        status = jogo_executar(&banco);
+        if (status != STATUS_OK && status != STATUS_ASSET_FALLBACK)
+        printf(COR_VERMELHO "Erro no jogo: %s\n" COR_RESET, utils_mensagem_status(status));
+    #else
+        menu_principal(&banco);
+    #endif
 
     status = dados_salvar(&banco);
     if (status != STATUS_OK) {

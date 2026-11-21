@@ -49,7 +49,7 @@ else
 endif
 
 ifeq ($(USE_RAYLIB),1)
-	CFLAGS += -Wno-missing-braces
+	CFLAGS += -Wno-missing-braces -DUSE_RAYLIB
 endif
 
 .PHONY: all run debug valgrind clean help
