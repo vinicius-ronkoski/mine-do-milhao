@@ -18,8 +18,11 @@
 /** Opção "sair" do menu. */
 #define OPCAO_SAIR 0
 
+/** Opção que abre o jogo visual (raylib). */
+#define OPCAO_JOGAR 8
+
 /** Maior número de opção do menu. */
-#define OPCAO_MAX 7
+#define OPCAO_MAX OPCAO_JOGAR
 
 /** Quantas perguntas aparecem por tela ao listar todas (cabem em um terminal de 30 linhas). */
 #define PERGUNTAS_POR_PAGINA 2
@@ -45,26 +48,24 @@ static void exibir_menu(void)
     printf(" 5 - Excluir pergunta\n");
     printf(" 6 - Navegar por nível de dificuldade\n");
     printf(" 7 - Exportar perguntas para CSV\n");
-    #ifdef USE_RAYLIB
-    printf("8 - Abrir Jogo\n");
-    #endif
+    printf(COR_AMARELO " 8 - JOGAR (Mine do Milhão)\n" COR_RESET);
     printf(" 0 - Sair\n\n");
 }
 
 /**
  * @brief Pergunta ao usuário um número de resultado (1 a total).
  *
- * @return 1 se escolheu; 0 se cancelou (digitou 0) ou a entrada acabou.
+ * @return true se escolheu; false se cancelou (digitou 0) ou a entrada acabou.
  */
-static int escolher_resultado(const char *prompt, size_t total, size_t *escolhido)
+static bool escolher_resultado(const char *prompt, size_t total, size_t *escolhido)
 {
     int numero;
 
-    if (!utils_ler_inteiro(prompt, 0, (int)total, &numero) || numero == 0) {
-        return 0;
+    if (utils_ler_int(prompt, 0, (int)total, &numero) != STATUS_OK || numero == 0) {
+        return false;
     }
     *escolhido = (size_t)(numero - 1);
-    return 1;
+    return true;
 }
 
 /**
@@ -79,10 +80,10 @@ static void listar_resultados(const Banco *banco, const size_t *indices, size_t 
     size_t i;
 
     for (i = 0; i < total; i++) {
-        const Pergunta *p = banco_obter(banco, indices[i]);
+        const Pergunta *pergunta = banco_obter(banco, indices[i]);
 
         printf(COR_AMARELO "%3zu" COR_RESET " - [N%d] %.70s%s\n",
-               i + 1, p->nivel, p->enunciado, strlen(p->enunciado) > 70 ? "..." : "");
+               i + 1, pergunta->nivel, pergunta->enunciado, strlen(pergunta->enunciado) > 70 ? "..." : "");
     }
 }
 
@@ -95,39 +96,39 @@ static void listar_resultados(const Banco *banco, const size_t *indices, size_t 
  * @param acao      Verbo mostrado no prompt (ex.: "alterar").
  * @param indices   Vetor de saída (precisa ter banco->quantidade posições).
  * @param escolhido Recebe a posição, DENTRO DO BANCO, da pergunta escolhida.
- * @return 1 se o usuário escolheu uma pergunta; 0 se nada foi escolhido.
+ * @return true se o usuário escolheu uma pergunta; false se nada foi escolhido.
  */
-static int buscar_e_escolher(const Banco *banco, const char *acao,
+static bool buscar_e_escolher(const Banco *banco, const char *acao,
                              size_t *indices, size_t *escolhido)
 {
     char trecho[TAM_ENUNCIADO];
     char prompt[64];
     size_t total, pos;
 
-    if (!utils_ler_linha("Digite um trecho do enunciado: ", trecho, sizeof trecho)) {
-        return 0;
+    if (utils_ler_linha("Digite um trecho do enunciado: ", trecho, sizeof(trecho)) != STATUS_OK) {
+        return false;
     }
     if (trecho[0] == '\0') {
         utils_beep();
         printf(COR_VERMELHO "O trecho não pode ser vazio.\n" COR_RESET);
-        return 0;
+        return false;
     }
 
     total = banco_buscar_texto(banco, trecho, indices, banco->quantidade);
     if (total == 0) {
         printf(COR_VERMELHO "\n%s\n" COR_RESET, utils_mensagem_status(STATUS_NAO_ENCONTRADO));
-        return 0;
+        return false;
     }
 
     printf("\n%zu pergunta(s) encontrada(s):\n\n", total);
     listar_resultados(banco, indices, total);
 
-    snprintf(prompt, sizeof prompt, "\nNúmero da pergunta a %s (0 cancela): ", acao);
+    snprintf(prompt, sizeof(prompt), "\nNúmero da pergunta a %s (0 cancela): ", acao);
     if (!escolher_resultado(prompt, total, &pos)) {
-        return 0;
+        return false;
     }
     *escolhido = indices[pos];
-    return 1;
+    return true;
 }
 
 /**
@@ -137,30 +138,30 @@ static int buscar_e_escolher(const Banco *banco, const char *acao,
  * @param destino  Buffer que recebe o texto.
  * @param tamanho  Tamanho do buffer.
  * @param atual    Valor atual (NULL ao cadastrar: então o campo é obrigatório).
- * @return 1 se o campo ficou preenchido; 0 se a entrada terminou.
+ * @return true se o campo ficou preenchido; false se a entrada terminou.
  */
-static int ler_campo(const char *rotulo, char *destino, size_t tamanho, const char *atual)
+static bool ler_campo(const char *rotulo, char *destino, size_t tamanho, const char *atual)
 {
     char prompt[96];
     char buffer[TAM_ENUNCIADO];
 
     if (atual != NULL) {
-        snprintf(prompt, sizeof prompt, "%s (ENTER mantém): ", rotulo);
+        snprintf(prompt, sizeof(prompt), "%s (ENTER mantém): ", rotulo);
     } else {
-        snprintf(prompt, sizeof prompt, "%s: ", rotulo);
+        snprintf(prompt, sizeof(prompt), "%s: ", rotulo);
     }
 
     for (;;) {
-        if (!utils_ler_linha(prompt, buffer, tamanho < sizeof buffer ? tamanho : sizeof buffer)) {
-            return 0;
+        if (utils_ler_linha(prompt, buffer, tamanho < sizeof(buffer) ? tamanho : sizeof(buffer)) != STATUS_OK) {
+            return false;
         }
         if (buffer[0] == '\0' && atual != NULL) {
-            return 1; /* mantém o que já estava em destino */
+            return true; /* mantém o que já estava em destino */
         }
         /* O CSV usa aspas como delimitador, então elas não podem aparecer no texto. */
         if (buffer[0] != '\0' && strchr(buffer, '"') == NULL) {
             strcpy(destino, buffer);
-            return 1;
+            return true;
         }
         utils_beep();
         printf(COR_VERMELHO "Campo obrigatório e sem aspas duplas (\").\n" COR_RESET);
@@ -174,26 +175,26 @@ static int ler_campo(const char *rotulo, char *destino, size_t tamanho, const ch
  * Se não (cadastrar, com a Pergunta zerada), o campo é obrigatório.
  *
  * @param correta Letra atual (entrada) e letra lida (saída).
- * @return 1 se leu; 0 se a entrada terminou.
+ * @return true se leu; false se a entrada terminou.
  */
-static int ler_correta(char *correta)
+static bool ler_correta(char *correta)
 {
     char buffer[16];
-    int tem_valor_atual = (*correta >= 'A' && *correta < 'A' + NUM_ALTERNATIVAS);
+    bool tem_valor_atual = (*correta >= 'A' && *correta < 'A' + NUM_ALTERNATIVAS);
     const char *prompt = tem_valor_atual ? "Alternativa correta A-D (ENTER mantém): "
                                          : "Alternativa correta A-D: ";
 
     for (;;) {
-        if (!utils_ler_linha(prompt, buffer, sizeof buffer)) {
-            return 0;
+        if (utils_ler_linha(prompt, buffer, sizeof(buffer)) != STATUS_OK) {
+            return false;
         }
         if (buffer[0] == '\0' && tem_valor_atual) {
-            return 1;
+            return true;
         }
         if (buffer[0] != '\0' && buffer[1] == '\0' && toupper((unsigned char)buffer[0]) >= 'A'
             && toupper((unsigned char)buffer[0]) < 'A' + NUM_ALTERNATIVAS) {
             *correta = (char)toupper((unsigned char)buffer[0]);
-            return 1;
+            return true;
         }
         utils_beep();
         printf(COR_VERMELHO "Digite uma letra de A a %c.\n" COR_RESET, 'A' + NUM_ALTERNATIVAS - 1);
@@ -207,30 +208,30 @@ static int ler_correta(char *correta)
  * Se não (cadastrar, com a Pergunta zerada), o campo é obrigatório.
  *
  * @param nivel Nível atual (entrada) e nível lido (saída).
- * @return 1 se leu; 0 se a entrada terminou.
+ * @return true se leu; false se a entrada terminou.
  */
-static int ler_nivel(int *nivel)
+static bool ler_nivel(int *nivel)
 {
     char buffer[16];
     char prompt[64];
     char *fim;
-    long n;
-    int tem_valor_atual = (*nivel >= NIVEL_MIN && *nivel <= NIVEL_MAX);
+    long numero;
+    bool tem_valor_atual = (*nivel >= NIVEL_MIN && *nivel <= NIVEL_MAX);
 
-    snprintf(prompt, sizeof prompt, "Nível %d-%d%s: ", NIVEL_MIN, NIVEL_MAX,
+    snprintf(prompt, sizeof(prompt), "Nível %d-%d%s: ", NIVEL_MIN, NIVEL_MAX,
              tem_valor_atual ? " (ENTER mantém)" : "");
 
     for (;;) {
-        if (!utils_ler_linha(prompt, buffer, sizeof buffer)) {
-            return 0;
+        if (utils_ler_linha(prompt, buffer, sizeof(buffer)) != STATUS_OK) {
+            return false;
         }
         if (buffer[0] == '\0' && tem_valor_atual) {
-            return 1;
+            return true;
         }
-        n = strtol(buffer, &fim, 10);
-        if (buffer[0] != '\0' && *fim == '\0' && n >= NIVEL_MIN && n <= NIVEL_MAX) {
-            *nivel = (int)n;
-            return 1;
+        numero = strtol(buffer, &fim, 10);
+        if (buffer[0] != '\0' && *fim == '\0' && numero >= NIVEL_MIN && numero <= NIVEL_MAX) {
+            *nivel = (int)numero;
+            return true;
         }
         utils_beep();
         printf(COR_VERMELHO "Digite um número de %d a %d.\n" COR_RESET, NIVEL_MIN, NIVEL_MAX);
@@ -281,7 +282,7 @@ static void exibir_paginas(const Banco *banco, const size_t *indices, size_t tot
         }
         printf("[P] próxima  [A] anterior  [S] sair  ou digite o nº da pergunta\n");
 
-        if (!utils_ler_linha("Comando: ", comando, sizeof comando)) {
+        if (utils_ler_linha("Comando: ", comando, sizeof(comando)) != STATUS_OK) {
             return; /* fim da entrada (EOF) */
         }
 
@@ -342,13 +343,13 @@ static void tela_cadastrar(Banco *banco)
     }
 
     /* Zera tudo: os campos vazios são o sinal de "ainda não preenchido" */
-    memset(&nova, 0, sizeof nova);
+    memset(&nova, 0, sizeof(nova));
 
     ok = ler_campo("Enunciado", nova.enunciado, TAM_ENUNCIADO, NULL);
     for (i = 0; ok && i < NUM_ALTERNATIVAS; i++) {
         char rotulo[32];
 
-        snprintf(rotulo, sizeof rotulo, "Alternativa %c", 'A' + i);
+        snprintf(rotulo, sizeof(rotulo), "Alternativa %c", 'A' + i);
         ok = ler_campo(rotulo, nova.alternativas[i], TAM_ALTERNATIVA, NULL);
     }
     ok = ok && ler_correta(&nova.correta);
@@ -387,7 +388,7 @@ static void tela_listar(const Banco *banco)
     }
 
     /* Todas as posições, na ordem: reaproveita o mesmo visualizador da navegação por nível */
-    indices = malloc(banco->quantidade * sizeof *indices);
+    indices = malloc(banco->quantidade * sizeof(*indices));
     if (indices == NULL) {
         printf(COR_VERMELHO "%s\n" COR_RESET, utils_mensagem_status(STATUS_ERRO_MEMORIA));
         utils_pausar();
@@ -418,7 +419,7 @@ static void tela_pesquisar(const Banco *banco)
         return;
     }
 
-    indices = malloc(banco->quantidade * sizeof *indices);
+    indices = malloc(banco->quantidade * sizeof(*indices));
     if (indices == NULL) {
         printf(COR_VERMELHO "%s\n" COR_RESET, utils_mensagem_status(STATUS_ERRO_MEMORIA));
         utils_pausar();
@@ -455,7 +456,7 @@ static void tela_alterar(Banco *banco)
         return;
     }
 
-    indices = malloc(banco->quantidade * sizeof *indices);
+    indices = malloc(banco->quantidade * sizeof(*indices));
     if (indices == NULL) {
         printf(COR_VERMELHO "%s\n" COR_RESET, utils_mensagem_status(STATUS_ERRO_MEMORIA));
         utils_pausar();
@@ -473,7 +474,7 @@ static void tela_alterar(Banco *banco)
         for (i = 0; ok && i < NUM_ALTERNATIVAS; i++) {
             char rotulo[32];
 
-            snprintf(rotulo, sizeof rotulo, "Alternativa %c", 'A' + i);
+            snprintf(rotulo, sizeof(rotulo), "Alternativa %c", 'A' + i);
             ok = ler_campo(rotulo, copia.alternativas[i], TAM_ALTERNATIVA, copia.alternativas[i]);
         }
         ok = ok && ler_correta(&copia.correta);
@@ -514,7 +515,7 @@ static void tela_excluir(Banco *banco)
         return;
     }
 
-    indices = malloc(banco->quantidade * sizeof *indices);
+    indices = malloc(banco->quantidade * sizeof(*indices));
     if (indices == NULL) {
         printf(COR_VERMELHO "%s\n" COR_RESET, utils_mensagem_status(STATUS_ERRO_MEMORIA));
         utils_pausar();
@@ -526,7 +527,7 @@ static void tela_excluir(Banco *banco)
         pergunta_imprimir(banco_obter(banco, escolhido));
 
         if (utils_ler_linha(COR_VERMELHO "\nConfirma a exclusão? (s/N): " COR_RESET,
-                            resposta, sizeof resposta)
+                            resposta, sizeof(resposta)) == STATUS_OK
             && (resposta[0] == 's' || resposta[0] == 'S')) {
             status = banco_remover(banco, escolhido);
             if (status == STATUS_OK) {
@@ -562,7 +563,7 @@ static void tela_navegar_nivel(const Banco *banco)
         return;
     }
 
-    indices = malloc(banco->quantidade * sizeof *indices);
+    indices = malloc(banco->quantidade * sizeof(*indices));
     if (indices == NULL) {
         printf(COR_VERMELHO "%s\n" COR_RESET, utils_mensagem_status(STATUS_ERRO_MEMORIA));
         utils_pausar();
@@ -580,7 +581,7 @@ static void tela_navegar_nivel(const Banco *banco)
         }
         printf(" 0 - Voltar\n\n");
 
-        if (!utils_ler_inteiro("Escolha o nível: ", 0, NIVEL_MAX, &opcao)) {
+        if (utils_ler_int("Escolha o nível: ", 0, NIVEL_MAX, &opcao) != STATUS_OK) {
             break; /* fim da entrada (EOF) */
         }
 
@@ -591,7 +592,7 @@ static void tela_navegar_nivel(const Banco *banco)
                 printf(COR_VERMELHO "\nNenhuma pergunta neste nível.\n" COR_RESET);
                 utils_pausar();
             } else {
-                snprintf(titulo, sizeof titulo, "Nível %d - %s", opcao, pergunta_nome_nivel(opcao));
+                snprintf(titulo, sizeof(titulo), "Nível %d - %s", opcao, pergunta_nome_nivel(opcao));
                 exibir_paginas(banco, indices, total, titulo, 1);
             }
         }
@@ -604,9 +605,9 @@ static void tela_navegar_nivel(const Banco *banco)
  * @brief Confere se o nome do arquivo termina com ".csv".
  *
  * @param nome Nome do arquivo.
- * @return 1 se termina com ".csv"; 0 caso contrário.
+ * @return true se termina com ".csv"; false caso contrário.
  */
-static int termina_com_csv(const char *nome)
+static bool termina_com_csv(const char *nome)
 {
     size_t tamanho = strlen(nome);
 
@@ -621,7 +622,7 @@ static int termina_com_csv(const char *nome)
 static void tela_exportar(const Banco *banco)
 {
     char nome[TAM_NOME_EXPORTACAO];
-    char caminho[sizeof CAMINHO_EXPORTADOS + TAM_NOME_EXPORTACAO];
+    char caminho[sizeof(CAMINHO_EXPORTADOS) + TAM_NOME_EXPORTACAO];
     char resposta[8];
     FILE *existente;
     Status status;
@@ -636,7 +637,7 @@ static void tela_exportar(const Banco *banco)
     }
 
     printf("Os arquivos são gravados na pasta %s\n\n", CAMINHO_EXPORTADOS);
-    if (!utils_ler_linha("Nome do arquivo (ENTER = " NOME_EXPORTACAO_PADRAO "): ", nome, sizeof nome)) {
+    if (utils_ler_linha("Nome do arquivo (ENTER = " NOME_EXPORTACAO_PADRAO "): ", nome, sizeof(nome)) != STATUS_OK) {
         return; /* fim da entrada (EOF) */
     }
     if (nome[0] == '\0') {
@@ -651,7 +652,7 @@ static void tela_exportar(const Banco *banco)
         return;
     }
     if (!termina_com_csv(nome)) {
-        if (strlen(nome) + strlen(".csv") >= sizeof nome) {
+        if (strlen(nome) + strlen(".csv") >= sizeof(nome)) {
             utils_beep();
             printf(COR_VERMELHO "\nNome muito longo.\n" COR_RESET);
             utils_pausar();
@@ -659,14 +660,14 @@ static void tela_exportar(const Banco *banco)
         }
         strcat(nome, ".csv");
     }
-    snprintf(caminho, sizeof caminho, "%s%s", CAMINHO_EXPORTADOS, nome);
+    snprintf(caminho, sizeof(caminho), "%s%s", CAMINHO_EXPORTADOS, nome);
 
     /* Se o arquivo já existe (conseguiu abrir para leitura), pede confirmação antes de sobrescrever */
     existente = fopen(caminho, "r");
     if (existente != NULL) {
         fclose(existente);
-        if (!utils_ler_linha(COR_AMARELO "\nO arquivo já existe. Sobrescrever? (s/N): " COR_RESET,
-                             resposta, sizeof resposta)
+        if (utils_ler_linha(COR_AMARELO "\nO arquivo já existe. Sobrescrever? (s/N): " COR_RESET,
+                            resposta, sizeof(resposta)) != STATUS_OK
             || (resposta[0] != 's' && resposta[0] != 'S')) {
             printf("\nExportação cancelada.\n");
             utils_pausar();
@@ -687,14 +688,44 @@ static void tela_exportar(const Banco *banco)
     utils_pausar();
 }
 
+/**
+ * @brief Tela "Jogar": abre a janela do jogo (raylib) e volta ao menu quando ela fecha.
+ *
+ * Sem USE_RAYLIB o jogo não existe no executável; avisa como compilar.
+ * Assets que faltarem não impedem o jogo (fallback), só geram um aviso.
+ */
+static void tela_jogar(const Banco *banco)
+{
 #ifdef USE_RAYLIB
-static void chamada_jogo(Banco *banco) {
-    Status status = jogo_executar(&banco);
-    if (status != STATUS_OK && status != STATUS_ASSET_FALLBACK) {
-        printf(COR_VERMELHO "Erro no jogo: %s\n" COR_RESET, utils_mensagem_status(status));
+    Status status;
+
+    utils_limpar_tela();
+    printf(COR_AMARELO "== Jogar ==\n\n" COR_RESET);
+    printf("Abrindo a janela do jogo...\n");
+
+    status = jogo_executar(banco);
+    if (status == STATUS_ASSET_FALLBACK) {
+        printf(COR_AMARELO "\nAviso: %s\n" COR_RESET, utils_mensagem_status(status));
+    } else if (status == STATUS_NAO_ENCONTRADO) {
+        utils_beep();
+        printf(COR_VERMELHO "\nNão há perguntas suficientes para uma partida.\n" COR_RESET);
+        printf("Cada partida precisa de 2 perguntas muito fáceis, 2 fáceis, 4 médias,\n"
+               "4 difíceis e 3 muito difíceis (veja PERGUNTAS_POR_NIVEL no config.h).\n");
+    } else if (status != STATUS_OK) {
+        utils_beep();
+        printf(COR_VERMELHO "\nNão foi possível jogar: %s\n" COR_RESET,
+               utils_mensagem_status(status));
     }
-}
+#else
+    (void)banco;
+    utils_limpar_tela();
+    printf(COR_AMARELO "== Jogar ==\n\n" COR_RESET);
+    utils_beep();
+    printf(COR_VERMELHO "Este executável foi compilado sem a raylib.\n" COR_RESET);
+    printf("Compile com: make USE_RAYLIB=1\n");
 #endif
+    utils_pausar();
+}
 
 void menu_principal(Banco *banco)
 {
@@ -704,7 +735,7 @@ void menu_principal(Banco *banco)
         utils_limpar_tela();
         exibir_menu();
 
-        if (!utils_ler_inteiro("Escolha uma opção: ", OPCAO_SAIR, OPCAO_MAX, &opcao)) {
+        if (utils_ler_int("Escolha uma opção: ", OPCAO_SAIR, OPCAO_MAX, &opcao) != STATUS_OK) {
             break; /* fim da entrada (EOF) */
         }
 
@@ -716,9 +747,7 @@ void menu_principal(Banco *banco)
         case 5: tela_excluir(banco); break;
         case 6: tela_navegar_nivel(banco); break;
         case 7: tela_exportar(banco); break;
-        #ifdef USE_RAYLIB
-        case 8: chamada_jogo(banco); break;
-        #endif
+        case OPCAO_JOGAR: tela_jogar(banco); break;
         default: break;
         }
     } while (opcao != OPCAO_SAIR);

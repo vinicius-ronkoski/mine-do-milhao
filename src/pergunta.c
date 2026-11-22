@@ -23,40 +23,40 @@ const char *pergunta_nome_nivel(int nivel)
     return nomes[nivel - NIVEL_MIN];
 }
 
-Status pergunta_validar(const Pergunta *p)
+Status pergunta_validar(const Pergunta *pergunta)
 {
     int i;
 
-    if (p == NULL || p->enunciado[0] == '\0') {
+    if (pergunta == NULL || pergunta->enunciado[0] == '\0') {
         return STATUS_ERRO_PARAMETRO;
     }
     for (i = 0; i < NUM_ALTERNATIVAS; i++) {
-        if (p->alternativas[i][0] == '\0') {
+        if (pergunta->alternativas[i][0] == '\0') {
             return STATUS_ERRO_PARAMETRO;
         }
     }
-    if (p->correta < 'A' || p->correta > 'A' + NUM_ALTERNATIVAS - 1) {
+    if (pergunta->correta < 'A' || pergunta->correta > 'A' + NUM_ALTERNATIVAS - 1) {
         return STATUS_ERRO_PARAMETRO;
     }
-    if (p->nivel < NIVEL_MIN || p->nivel > NIVEL_MAX) {
+    if (pergunta->nivel < NIVEL_MIN || pergunta->nivel > NIVEL_MAX) {
         return STATUS_ERRO_PARAMETRO;
     }
     return STATUS_OK;
 }
 
-void pergunta_imprimir(const Pergunta *p)
+void pergunta_imprimir(const Pergunta *pergunta)
 {
     int i;
 
-    if (p == NULL) {
+    if (pergunta == NULL) {
         return;
     }
 
-    printf(COR_AMARELO "[Nível %d - %s]" COR_RESET "\n", p->nivel, pergunta_nome_nivel(p->nivel));
-    printf(COR_CIANO "%s" COR_RESET "\n", p->enunciado);
+    printf(COR_AMARELO "[Nível %d - %s]" COR_RESET "\n", pergunta->nivel, pergunta_nome_nivel(pergunta->nivel));
+    printf(COR_CIANO "%s" COR_RESET "\n", pergunta->enunciado);
     for (i = 0; i < NUM_ALTERNATIVAS; i++) {
-        printf("  %c) %s\n", 'A' + i, p->alternativas[i]);
+        printf("  %c) %s\n", 'A' + i, pergunta->alternativas[i]);
     }
-    printf(COR_VERDE "Correta: %c" COR_RESET "\n", p->correta);
-    printf("Dica: %s\n", p->dica);
+    printf(COR_VERDE "Correta: %c" COR_RESET "\n", pergunta->correta);
+    printf("Dica: %s\n", pergunta->dica);
 }

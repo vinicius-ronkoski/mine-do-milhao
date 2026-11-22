@@ -9,8 +9,10 @@
  * @endcode
  * enunciado e alternativas SEMPRE devem possuir aspas
  *
- * Formato do binário: um size_t com a quantidade de perguntas, seguido do
- * bloco de structs Pergunta gravado com fwrite().
+ * Formato do binário (.dat): um size_t com a quantidade de perguntas, seguido do
+ * bloco de structs Pergunta gravado com fwrite(). O .dat não vai para o Git:
+ * cada computador gera o seu na primeira execução (o tamanho de size_t e o
+ * alinhamento da struct podem mudar entre compiladores de 32 e 64 bits).
  */
 
 #ifndef ARQUIVO_H
@@ -22,8 +24,8 @@
 /**
  * @brief Carrega os dados no início do programa.
  *
- * Se CAMINHO_BIN existir, lê dele. Caso contrário (primeira execução),
- * lê CAMINHO_CSV e já cria o binário para as próximas execuções. Falha
+ * Se CAMINHO_DAT existir, lê dele. Caso contrário (primeira execução),
+ * lê CAMINHO_CSV e já cria o .dat para as próximas execuções. Falha
  * ao criar o binário gera apenas um aviso, sem impedir o carregamento.
  *
  * @param banco Banco (vazio) que receberá as perguntas.
@@ -54,7 +56,7 @@ Status csv_carregar(const char *caminho, Banco *banco);
 /**
  * @brief Exporta o banco atual para um arquivo CSV.
  *
- * @param caminho Caminho do arquivo a criar (ex.: PASTA_EXPORTADOS "perguntas.csv").
+ * @param caminho Caminho do arquivo a criar (ex.: CAMINHO_EXPORTADOS "perguntas.csv").
  * @param banco   Banco exportado.
  * @return STATUS_OK ou STATUS_ERRO_ARQUIVO.
  */
@@ -63,19 +65,19 @@ Status csv_exportar(const char *caminho, const Banco *banco);
 /**
  * @brief Lê o banco inteiro do arquivo binário.
  *
- * @param caminho Caminho do .bin.
+ * @param caminho Caminho do .dat.
  * @param banco   Banco que recebe as perguntas.
  * @return STATUS_OK, STATUS_ERRO_ARQUIVO ou STATUS_ERRO_FORMATO.
  */
-Status bin_carregar(const char *caminho, Banco *banco);
+Status dat_carregar(const char *caminho, Banco *banco);
 
 /**
  * @brief Grava o banco inteiro no arquivo binário.
  *
- * @param caminho Caminho do .bin.
+ * @param caminho Caminho do .dat.
  * @param banco   Banco a gravar.
  * @return STATUS_OK ou STATUS_ERRO_ARQUIVO.
  */
-Status bin_salvar(const char *caminho, const Banco *banco);
+Status dat_salvar(const char *caminho, const Banco *banco);
 
 #endif /* ARQUIVO_H */

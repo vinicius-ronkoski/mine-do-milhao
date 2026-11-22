@@ -17,7 +17,7 @@ typedef enum {
     BOSS_WARDEN,        /**< Nível 3 (médio). */
     BOSS_ENDER_DRAGON,  /**< Nível 4 (difícil). */
     BOSS_HEROBRINE,     /**< Nível 5 (muito difícil). */
-    BOSS_QUANTIDADE
+    BOSS_QUANTIDADE     /**< Quantidade de bosses; também é o valor de "boss inválido". */
 } BossId;
 
 /* Falha de compilação se NUM_NIVEIS (config.h) e a quantidade de bosses divergirem. */
@@ -37,7 +37,12 @@ typedef struct {
  */
 Status boss_iniciar(Boss *boss, BossId id, int vida_maxima);
 
-/** @brief Boss associado a um nível (NIVEL_MIN..NIVEL_MAX). Fora do intervalo: BOSS_CREEPER. */
+/**
+ * @brief Boss associado a um nível.
+ * @param nivel Nível de NIVEL_MIN a NIVEL_MAX.
+ * @return O BossId do nível; BOSS_QUANTIDADE (inválido) se o nível estiver fora do intervalo,
+ *         para que o erro apareça em boss_iniciar() em vez de virar um Creeper silencioso.
+ */
 BossId boss_id_do_nivel(int nivel);
 
 /** @brief Nome exibível ("Creeper", "Wither"...). Nunca NULL ("Desconhecido" se inválido). */
@@ -50,10 +55,13 @@ const char *boss_nome(BossId id);
  */
 Status boss_receber_dano(Boss *boss, int dano);
 
-/** @brief 1 se vida_atual <= 0; 0 caso contrário (inclusive NULL). */
-int boss_derrotado(const Boss *boss);
+/** @brief true se vida_atual <= 0; false caso contrário (inclusive NULL). */
+bool boss_derrotado(const Boss *boss);
 
-/** @brief Fração de vida restante de 0.0 a 1.0 (para a barra de vida na tela). */
+/**
+ * @brief Fração de vida restante, de 0.0 (derrotado) a 1.0 (vida cheia), para a barra de vida.
+ * @return vida_atual / vida_maxima; 0.0f se boss for NULL ou vida_maxima <= 0.
+ */
 float boss_calculo_vida(const Boss *boss);
 
 #endif /* BOSS_H */

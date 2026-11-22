@@ -7,8 +7,8 @@ milhao
 milhao.exe
 
 # Dados gerados em tempo de execução (o CSV inicial vai para o Git)
-data/perguntas.bin
-data/ranking.bin
+data/perguntas.dat
+data/ranking.dat
 data/exportados/*
 !data/exportados/.gitkeep
 
@@ -18,8 +18,17 @@ data/exportados/*
 *.swp
 .DS_Store
 
+# Executável do teste da partida (make teste)
+teste_partida
+teste_partida.exe
+
 # Executável do teste manual (tests/teste_arquivo.c)
 teste_arquivo.c
 teste_arquivo.exe
 banco_falso.c
-tests/
+# tests/ é ignorada
+tests/*
+
+# arquivos locais
+docs/ARQUITETURA.md
+docs/MUDANÇAS.md

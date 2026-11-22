@@ -1,87 +1,330 @@
-/** @file partida.c @brief Esqueleto das regras da partida (ver partida.h). */
-#include <string.h>
+/**
+ * @file partida.c
+ * @brief Implementação das regras da partida (ver partida.h). Sem raylib.
+ */
 #include "partida.h"
+
+/**
+ * @brief Quantas perguntas de um nível entram na partida (tabela PERGUNTAS_POR_NIVEL do config.h).
+ *
+ * @param nivel Nível de NIVEL_MIN a NIVEL_MAX.
+ * @return Quantidade; 0 se o nível for inválido.
+ */
+static int contagem_do_nivel(int nivel)
+{
+    /* Tabela local à função (sem variável global). */
+    static const int tabela[NUM_NIVEIS] = PERGUNTAS_POR_NIVEL;
+
+    if (nivel < NIVEL_MIN || nivel > NIVEL_MAX) {
+        return 0;
+    }
+    return tabela[nivel - NIVEL_MIN];
+}
 
 Status partida_iniciar(Partida *partida, const Banco *banco)
 {
-    /* TODO: memset; sorteio_montar_partida(); boss_iniciar() por nível; rodada=0; escolha=-1. */
-    (void)partida; (void)banco;
-    return STATUS_NAO_IMPLEMENTADO;
+    Partida nova = {0};
+    int por_nivel[NUM_NIVEIS];
+    int nivel;
+    Status status;
+
+    if (partida == NULL || banco == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    for (nivel = NIVEL_MIN; nivel <= NIVEL_MAX; nivel++) {
+        por_nivel[nivel - NIVEL_MIN] = partida_perguntas_no_nivel(nivel);
+    }
+    status = sorteio_montar_partida(banco, por_nivel, nova.perguntas);
+    if (status != STATUS_OK) {
+        return status;
+    }
+
+    for (nivel = NIVEL_MIN; nivel <= NIVEL_MAX; nivel++) {
+        status = boss_iniciar(&nova.bosses[nivel - NIVEL_MIN], boss_id_do_nivel(nivel),
+                              por_nivel[nivel - NIVEL_MIN]);
+        if (status != STATUS_OK) {
+            return status;
+        }
+    }
+
+    nova.rodada = 0;
+    nova.esmeraldas = 0;
+    nova.esmeraldas_garantidas = 0;
+    nova.escolha = -1;
+    nova.ultima_acertou = false;
+    nova.boss_derrotado_agora = false;
+    nova.esmeraldas_gastas = 0;
+    nova.dica_visivel = false;
+    nova.eliminacao_usada = false;
+    nova.estado = ESTADO_RESPONDENDO;
+
+    *partida = nova;  /* só aqui a partida do chamador é alterada */
+    return STATUS_OK;
 }
 
 int partida_nivel_da_rodada(int rodada)
 {
-    /* TODO: faixas 0-1,2-3,4-7,8-11,12-14 (enunciado: 1-2,3-4,5-8,9-12,13-15). */
-    (void)rodada;
-    return NIVEL_MIN;
+    int nivel, acumulado = 0;
+
+    if (rodada < 0 || rodada >= PERGUNTAS_POR_PARTIDA) {
+        return 0;
+    }
+
+    /* Soma as faixas (2, 2, 4, 4, 3) até passar da rodada pedida */
+    for (nivel = NIVEL_MIN; nivel <= NIVEL_MAX; nivel++) {
+        acumulado += contagem_do_nivel(nivel);
+        if (rodada < acumulado) {
+            return nivel;
+        }
+    }
+    return 0;  /* só acontece se PERGUNTAS_POR_NIVEL não somar PERGUNTAS_POR_PARTIDA */
 }
 
 int partida_perguntas_no_nivel(int nivel)
 {
-    /* TODO: contar rodadas com partida_nivel_da_rodada() == nivel. */
-    (void)nivel;
-    return 0;
+    return contagem_do_nivel(nivel);
 }
 
-int partida_eh_marco(int rodada)
+int partida_numero_da_rodada(const Partida *partida)
 {
-    /* TODO: rodada + 1 == RODADA_MARCO_1 || rodada + 1 == RODADA_MARCO_2. */
-    (void)rodada;
-    return 0;
+    return partida == NULL ? 0 : partida->rodada + 1;
+}
+
+bool partida_eh_marco(int rodada)
+{
+    /* As macros dos marcos contam a partir de 1; rodada é índice a partir de 0. */
+    return rodada + 1 == RODADA_MARCO_1 || rodada + 1 == RODADA_MARCO_2;
 }
 
 int partida_premio_da_rodada(int rodada)
 {
-    /* TODO: static const int tabela[PERGUNTAS_POR_PARTIDA] = PREMIOS_ESMERALDAS; (LOCAL, sem global). */
-    (void)rodada;
-    return 0;
+    /* Tabela local à função (sem variável global). */
+    static const int tabela[PERGUNTAS_POR_PARTIDA] = PREMIOS_ESMERALDAS;
+
+    if (rodada < 0 || rodada >= PERGUNTAS_POR_PARTIDA) {
+        return 0;
+    }
+    return tabela[rodada];
 }
 
 const PerguntaSorteada *partida_pergunta_atual(const Partida *partida)
 {
-    /* TODO: NULL se encerrada; senão &partida->perguntas[partida->rodada]. */
-    (void)partida;
-    return NULL;
+    if (partida == NULL || partida_encerrada(partida)
+        || partida->rodada < 0 || partida->rodada >= PERGUNTAS_POR_PARTIDA) {
+        return NULL;
+    }
+    return &partida->perguntas[partida->rodada];
 }
 
 const Boss *partida_boss_atual(const Partida *partida)
 {
-    /* TODO: &partida->bosses[partida_nivel_da_rodada(rodada) - NIVEL_MIN]. */
-    (void)partida;
-    return NULL;
+    int nivel;
+
+    if (partida == NULL) {
+        return NULL;
+    }
+    nivel = partida_nivel_da_rodada(partida->rodada);
+    if (nivel == 0) {
+        return NULL;
+    }
+    return &partida->bosses[nivel - NIVEL_MIN];
 }
 
 Status partida_responder(Partida *partida, int posicao_escolhida)
 {
-    /* TODO: ver passos em partida.h. */
-    (void)partida; (void)posicao_escolhida;
-    return STATUS_NAO_IMPLEMENTADO;
+    const PerguntaSorteada *pergunta;
+    Boss *boss;
+    Status status;
+    int nivel;
+
+    if (partida == NULL || partida->estado != ESTADO_RESPONDENDO
+        || posicao_escolhida < 0 || posicao_escolhida >= NUM_ALTERNATIVAS
+        || partida->alternativa_eliminada[posicao_escolhida]) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    /* Confere a rodada ANTES de usar o nível como índice (nível inválido = 0) */
+    pergunta = partida_pergunta_atual(partida);
+    nivel = partida_nivel_da_rodada(partida->rodada);
+    if (pergunta == NULL || nivel == 0) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    boss = &partida->bosses[nivel - NIVEL_MIN];
+
+    partida->escolha = posicao_escolhida;
+    partida->boss_derrotado_agora = false;
+    partida->ultima_acertou = (posicao_escolhida == pergunta->posicao_correta);
+
+    if (partida->ultima_acertou) {
+        partida->esmeraldas = partida_premio_da_rodada(partida->rodada);
+        status = boss_receber_dano(boss, 1);
+        if (status != STATUS_OK) {
+            return status;
+        }
+        partida->boss_derrotado_agora = boss_derrotado(boss);
+        if (partida_eh_marco(partida->rodada)) {
+            partida->esmeraldas_garantidas = partida->esmeraldas;
+        }
+    }
+
+    partida->estado = ESTADO_REVELANDO;
+    return STATUS_OK;
 }
 
 Status partida_confirmar_revelacao(Partida *partida)
 {
-    /* TODO: acerto -> rodada++ (ou FIM_VITORIA); erro -> FIM_ERRO. */
-    (void)partida;
-    return STATUS_NAO_IMPLEMENTADO;
+    if (partida == NULL || partida->estado != ESTADO_REVELANDO) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    if (!partida->ultima_acertou) {
+        partida->estado = ESTADO_FIM_ERRO;
+    } else if (partida->rodada >= PERGUNTAS_POR_PARTIDA - 1) {
+        partida->estado = ESTADO_FIM_VITORIA;  /* rodada fica em 14: o último boss ainda é consultável */
+    } else {
+        int posicao;
+
+        partida->rodada++;
+        partida->escolha = -1;
+        /* Efeitos das ajudas valem só para a rodada em que foram usadas */
+        partida->dica_visivel = false;
+        for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
+            partida->alternativa_eliminada[posicao] = false;
+        }
+        partida->estado = ESTADO_RESPONDENDO;
+    }
+    return STATUS_OK;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Ajudas                                                                    */
+/* ------------------------------------------------------------------------- */
+
+int partida_saldo(const Partida *partida)
+{
+    if (partida == NULL) {
+        return 0;
+    }
+    return partida->esmeraldas - partida->esmeraldas_gastas;
+}
+
+int partida_custo_dica(const Partida *partida)
+{
+    /* Tabela local à função (sem variável global). */
+    static const int custos[NUM_NIVEIS] = CUSTO_DICA_POR_NIVEL;
+    int nivel;
+
+    if (partida == NULL || partida_encerrada(partida)) {
+        return 0;
+    }
+    nivel = partida_nivel_da_rodada(partida->rodada);
+    if (nivel == 0) {
+        return 0;
+    }
+    return custos[nivel - NIVEL_MIN];
+}
+
+bool partida_pode_comprar_dica(const Partida *partida)
+{
+    return partida != NULL
+        && partida->estado == ESTADO_RESPONDENDO
+        && !partida->dica_visivel
+        && partida_saldo(partida) >= partida_custo_dica(partida);
+}
+
+Status partida_comprar_dica(Partida *partida)
+{
+    if (partida == NULL || partida->estado != ESTADO_RESPONDENDO || partida->dica_visivel) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    if (partida_saldo(partida) < partida_custo_dica(partida)) {
+        return STATUS_SALDO_INSUFICIENTE;
+    }
+    partida->esmeraldas_gastas += partida_custo_dica(partida);
+    partida->dica_visivel = true;
+    return STATUS_OK;
+}
+
+const char *partida_dica_atual(const Partida *partida)
+{
+    const PerguntaSorteada *pergunta = partida_pergunta_atual(partida);
+
+    if (pergunta == NULL || !partida->dica_visivel) {
+        return NULL;
+    }
+    return pergunta->origem->dica;
+}
+
+Status partida_eliminar_duas(Partida *partida)
+{
+    const PerguntaSorteada *pergunta;
+    size_t posicoes_erradas[NUM_ALTERNATIVAS];
+    size_t total_erradas = 0;
+    int posicao;
+
+    if (partida == NULL || partida->estado != ESTADO_RESPONDENDO || partida->eliminacao_usada) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    pergunta = partida_pergunta_atual(partida);
+    if (pergunta == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    /* Junta as posições erradas, embaralha e elimina as duas primeiras */
+    for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
+        if (posicao != pergunta->posicao_correta) {
+            posicoes_erradas[total_erradas++] = (size_t)posicao;
+        }
+    }
+    sorteio_embaralhar_vetor(posicoes_erradas, total_erradas);
+    partida->alternativa_eliminada[posicoes_erradas[0]] = true;
+    partida->alternativa_eliminada[posicoes_erradas[1]] = true;
+
+    partida->eliminacao_usada = true;
+    return STATUS_OK;
 }
 
 Status partida_parar(Partida *partida)
 {
-    /* TODO: exigir ESTADO_RESPONDENDO; estado = ESTADO_FIM_PARADA. */
-    (void)partida;
-    return STATUS_NAO_IMPLEMENTADO;
+    if (partida == NULL || partida->estado != ESTADO_RESPONDENDO) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    partida->estado = ESTADO_FIM_PARADA;
+    return STATUS_OK;
 }
 
-int partida_encerrada(const Partida *partida)
+bool partida_encerrada(const Partida *partida)
 {
-    /* TODO */
-    (void)partida;
-    return 0;
+    if (partida == NULL) {
+        return false;
+    }
+    return partida->estado == ESTADO_FIM_PARADA
+        || partida->estado == ESTADO_FIM_ERRO
+        || partida->estado == ESTADO_FIM_VITORIA;
 }
 
 int partida_premio_final(const Partida *partida)
 {
-    /* TODO: ver regra em partida.h. */
-    (void)partida;
-    return 0;
+    int premio;
+
+    if (partida == NULL) {
+        return 0;
+    }
+
+    switch (partida->estado) {
+    case ESTADO_FIM_PARADA:
+    case ESTADO_FIM_VITORIA:
+        premio = partida->esmeraldas;
+        break;
+    case ESTADO_FIM_ERRO:
+        premio = REGRA_ERRO_VOLTA_AO_MARCO ? partida->esmeraldas_garantidas : 0;
+        break;
+    default:
+        return 0;  /* ainda em andamento */
+    }
+
+    /* Desconta as dicas compradas; quem gastou mais do que levaria sai com 0 */
+    premio -= partida->esmeraldas_gastas;
+    return premio > 0 ? premio : 0;
 }

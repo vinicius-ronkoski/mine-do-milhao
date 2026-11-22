@@ -37,17 +37,17 @@ const char *pergunta_nome_nivel(int nivel);
  * Confere enunciado e alternativas não vazios, letra correta entre A e D e
  * nível entre NIVEL_MIN e NIVEL_MAX.
  *
- * @param p Pergunta a validar.
+ * @param pergunta Pergunta a validar.
  * @return STATUS_OK (0) se a pergunta é válida; STATUS_ERRO_PARAMETRO se
- *         algum campo estiver inválido (inclusive se p for NULL).
+ *         algum campo estiver inválido (inclusive se pergunta for NULL).
  */
-Status pergunta_validar(const Pergunta *p);
+Status pergunta_validar(const Pergunta *pergunta);
 
 /**
  * @brief Imprime a pergunta formatada e colorida no terminal.
  *
- * @param p Pergunta a exibir.
+ * @param pergunta Pergunta a exibir.
  */
-void pergunta_imprimir(const Pergunta *p);
+void pergunta_imprimir(const Pergunta *pergunta);
 
 #endif /* PERGUNTA_H */

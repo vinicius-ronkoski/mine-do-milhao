@@ -10,12 +10,12 @@
 #include "banco.h"
 #include "menu.h"
 #include "utils.h"
-#ifdef USE_RAYLIB
-    #include "jogo.h"
-#endif
 
 /**
  * @brief Carrega os dados, roda o menu e salva tudo ao sair.
+ *
+ * O menu é SEMPRE o ponto de entrada; a opção "Jogar" dele chama o jogo
+ * visual (jogo.h) quando o programa é compilado com USE_RAYLIB=1.
  *
  * @return 0 ao terminar normalmente.
  */
@@ -34,16 +34,11 @@ int main(void)
         printf(COR_VERMELHO "Erro ao carregar dados: %s\n" COR_RESET,
         utils_mensagem_status(status));
         banco_liberar(&banco);
-        return EXIT_FAILURE;   /* não chama dados_salvar: preserva o .bin */
+        return EXIT_FAILURE;   /* não chama dados_salvar: preserva o .dat */
     }
 
-    // Verifica se RAYLIB está sendo utilizado
-    #ifdef USE_RAYLIB
-        status = jogo_executar(&banco);
-        
-    #else
-        menu_principal(&banco); // caso contrário inicia o menu principal
-    #endif
+    // Menu principal (cadastro completo e, com raylib, a opção de jogar)
+    menu_principal(&banco);
 
     // Sai do programa, verificando se os dados foram salvos
     status = dados_salvar(&banco);

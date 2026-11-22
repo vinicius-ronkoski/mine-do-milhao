@@ -20,6 +20,15 @@
 /**@}*/
 
 /**
+ * @brief Descarta o que sobrou da linha digitada no teclado (stdin), até o ENTER ou o fim da entrada.
+ *
+ * Use só quando SE SABE que sobrou texto na linha (ex.: o fgets leu uma linha maior que o buffer,
+ * como faz utils_ler_linha). Chamada com a linha já consumida, ela fica esperando o usuário
+ * digitar outra linha inteira.
+ */
+void utils_limpar_buffer(void);
+
+/**
  * @brief Prepara o terminal (no Windows, ativa UTF-8 para acentos).
  */
 void utils_configurar_terminal(void);
@@ -47,9 +56,10 @@ void utils_pausar(void);
  * @param prompt   Texto exibido antes da leitura (pode ser NULL).
  * @param destino  Buffer que recebe o texto.
  * @param tamanho  Tamanho do buffer em bytes.
- * @return 1 se leu uma linha; 0 se a entrada terminou (EOF).
+ * @return STATUS_OK se leu uma linha; STATUS_ERRO_ARQUIVO se a entrada terminou (EOF);
+ *         STATUS_ERRO_PARAMETRO se destino for NULL ou tamanho 0.
  */
-int utils_ler_linha(const char *prompt, char *destino, size_t tamanho);
+Status utils_ler_linha(const char *prompt, char *destino, size_t tamanho);
 
 /**
  * @brief Lê um inteiro dentro de um intervalo, repetindo até ser válido.
@@ -60,9 +70,10 @@ int utils_ler_linha(const char *prompt, char *destino, size_t tamanho);
  * @param minimo  Menor valor aceito.
  * @param maximo  Maior valor aceito.
  * @param valor   Recebe o número lido.
- * @return 1 se leu um valor válido; 0 se a entrada terminou (EOF).
+ * @return STATUS_OK se leu um valor válido; STATUS_ERRO_ARQUIVO se a entrada terminou (EOF);
+ *         STATUS_ERRO_PARAMETRO se valor for NULL.
  */
-int utils_ler_inteiro(const char *prompt, int minimo, int maximo, int *valor);
+Status utils_ler_int(const char *prompt, int minimo, int maximo, int *valor);
 
 /**
  * @brief Traduz um Status para uma mensagem legível.

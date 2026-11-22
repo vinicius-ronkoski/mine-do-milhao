@@ -1,85 +1,99 @@
 /**
  * @file dialogo.h
- * @brief Diálogos de personagens (falas em sequência, efeito máquina de escrever).
+ * @brief Diálogos de personagens: falas em sequência com efeito de máquina de escrever.
  *
- * Uma Cena é uma lista de falas. As cenas existentes ficam em dialogo_carregar_cena().
- * COMO ADICIONAR UMA CENA: (1) novo id em CenaId; (2) novo `case` em dialogo_carregar_cena()
- * chamando dialogo_adicionar_fala(). FUTURO: ler de assets/dialogos.txt trocando só aquela função.
+ * Uma CENA é uma lista de falas (ex.: CENA_INTRO). Um DIALOGO é o que está tocando agora:
+ * pode juntar várias cenas em sequência com dialogo_anexar_cena() — por exemplo
+ * "boss derrotado" seguida da entrada do próximo boss.
+ *
+ * COMO PERSONALIZAR AS FALAS: edite o `case` da cena em dialogo_anexar_cena() (dialogo.c).
+ * COMO ADICIONAR UMA CENA: (1) novo id em CenaId, antes de CENA_QUANTIDADE;
+ *                          (2) novo `case` em dialogo_anexar_cena().
+ *
+ * O módulo não lê teclado/mouse: quem chama informa se o jogador pediu para avançar.
  * Só compila com USE_RAYLIB=1.
  */
 #ifndef DIALOGO_H
 #define DIALOGO_H
 
-#include <stdbool.h>
 #include "raylib.h"
 #include "config.h"
 #include "assets.h"
+#include "boss.h"
 
 /** Uma fala. */
 typedef struct {
     char personagem[TAM_NOME_PERSONAGEM];  /**< Nome mostrado acima do texto. */
     char texto[TAM_FALA];                  /**< Conteúdo (UTF-8, com acentos). */
-    ImagemId retrato;                      /**< Retrato (IMG_*). Fallback automático se faltar. */
+    ImagemId retrato;                      /**< Retrato (IMG_*) ou IMG_NENHUMA. */
 } Fala;
 
-/** Cenas disponíveis. */
+/** Cenas disponíveis. A ordem dos bosses segue o enum BossId. */
 typedef enum {
     CENA_INTRO = 0,         /**< Abertura da partida. */
-    CENA_BOSS_CREEPER,      /**< Entrada de cada boss: CENA_BOSS_x = CENA_BOSS_CREEPER + BossId. */
+    CENA_BOSS_CREEPER,      /**< Entrada de cada boss: CENA_BOSS_CREEPER + BossId. */
     CENA_BOSS_WITHER,
     CENA_BOSS_WARDEN,
     CENA_BOSS_ENDER_DRAGON,
     CENA_BOSS_HEROBRINE,
-    CENA_BOSS_DERROTADO,    /**< Reação genérica após derrotar um boss. */
-    CENA_VITORIA,
-    CENA_DERROTA,
-    CENA_PARADA,
-    CENA_QUANTIDADE
+    CENA_BOSS_DERROTADO,    /**< Reação depois de derrotar um boss. */
+    CENA_VITORIA,           /**< Acertou as 15. */
+    CENA_DERROTA,           /**< Errou. */
+    CENA_PARADA,            /**< Parou e levou as esmeraldas. */
+    CENA_QUANTIDADE         /**< Quantidade de cenas (também é o valor "cena inválida"). */
 } CenaId;
 
 /** Sequência de falas em reprodução. */
 typedef struct {
-    Fala falas[DIALOGO_MAX_FALAS];
-    int quantidade;        /**< Falas preenchidas. */
-    int indice;            /**< Fala atual. */
-    float tempo;           /**< Segundos desde o início da fala atual (máquina de escrever). */
-    bool terminou;         /**< true após avançar além da última fala. */
+    Fala falas[DIALOGO_MAX_FALAS];  /**< Falas, na ordem. */
+    int quantidade;                 /**< Falas preenchidas. */
+    int indice;                     /**< Fala atual (0 a quantidade-1). */
+    float tempo_na_fala;            /**< Segundos desde o início da fala atual (máquina de escrever). */
+    bool terminou;                  /**< true depois de avançar além da última fala (ou se vazio). */
 } Dialogo;
 
-/** @brief Zera o diálogo. */
+/** @brief Esvazia o diálogo (terminou = true, pois não há falas). */
 void dialogo_limpar(Dialogo *dialogo);
 
 /**
  * @brief Acrescenta uma fala ao fim.
- * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (NULL, textos longos demais ou DIALOGO_MAX_FALAS excedido).
+ * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (NULL, texto longo demais ou DIALOGO_MAX_FALAS excedido).
  */
 Status dialogo_adicionar_fala(Dialogo *dialogo, const char *personagem, const char *texto, ImagemId retrato);
 
 /**
- * @brief Monta as falas de uma cena (dialogo_limpar + dialogo_adicionar_fala...).
- * @param dialogo Destino.
- * @param cena    Cena desejada.
- * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (cena inexistente).
+ * @brief Acrescenta as falas de uma cena ao fim do diálogo atual (sem apagar o que já havia).
+ * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (cena inválida ou falas demais).
  */
+Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena);
+
+/** @brief Limpa o diálogo e carrega uma cena (= dialogo_limpar + dialogo_anexar_cena). */
 Status dialogo_carregar_cena(Dialogo *dialogo, CenaId cena);
 
-/** @brief Cena de entrada de um boss (CENA_BOSS_CREEPER + id). */
+/** @brief Cena de entrada de um boss (CENA_BOSS_CREEPER + id); CENA_QUANTIDADE se o id for inválido. */
 CenaId dialogo_cena_do_boss(BossId id);
 
 /**
- * @brief Atualiza: soma dt; clique/ESPAÇO/ENTER primeiro completa a fala, depois avança.
- * @param dt Tempo do frame (GetFrameTime()).
- * @return true quando o diálogo acabou (terminou == true).
+ * @brief Avança o relógio da fala e trata o pedido de avançar.
+ *
+ * Avançar com a fala ainda sendo "digitada" completa a fala; com a fala completa, passa para a próxima.
+ *
+ * @param dt               Tempo do quadro (GetFrameTime()).
+ * @param jogador_avancou  true se o jogador clicou / apertou ESPAÇO ou ENTER neste quadro.
+ * @return true quando o diálogo acabou.
  */
-bool dialogo_atualizar(Dialogo *dialogo, float dt);
+bool dialogo_atualizar(Dialogo *dialogo, float dt, bool jogador_avancou);
+
+/** @brief Fala sendo mostrada, ou NULL se o diálogo terminou. */
+const Fala *dialogo_fala_atual(const Dialogo *dialogo);
+
+/** @brief Quantas letras da fala atual já aparecem (efeito máquina de escrever). */
+int dialogo_letras_visiveis(const Dialogo *dialogo);
 
 /**
- * @brief Desenha caixa (IMG_CAIXA_DIALOGO), retrato, nome e texto parcial (letras = tempo * DIALOGO_LETRAS_POR_SEGUNDO),
- *        com quebra de linha (tela_desenhar_texto_com_quebra).
+ * @brief Desenha a caixa de diálogo na parte de baixo da tela: caixa, retrato, nome e texto parcial,
+ *        mais o aviso "ESPAÇO para continuar" quando a fala está completa.
  */
 void dialogo_desenhar(const Dialogo *dialogo, const Assets *assets);
-
-/** @brief 1 se terminou ou nunca teve falas. */
-int dialogo_terminou(const Dialogo *dialogo);
 
 #endif /* DIALOGO_H */

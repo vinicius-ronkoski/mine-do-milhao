@@ -17,14 +17,19 @@ Requer `gcc` e `make`. Execute sempre a partir da **raiz do projeto** (os caminh
 
 | Comando           | O que faz                                              |
 |-------------------|--------------------------------------------------------|
-| `make`            | Compila (objetos em `build/`, executável `milhao`)     |
+| `make`            | Compila (objetos em `build/texto-<compilador>/`, executável `milhao`) |
 | `make run`        | Compila (se preciso) e executa                         |
-| `make clean`      | Remove objetos e executável                            |
+| `make clean`      | Remove objetos e executáveis (dos dois modos)          |
 | `make valgrind`   | Executa sob o Valgrind (checa vazamentos de memória)   |
 | `make debug`      | Abre o executável no `gdb`                             |
-| `make clear_data` | Limpa os arquivos binarios em `data/`                  |
+| `make clear_data` | Apaga os `.dat` de `data/` (o jogo volta a ler o CSV)  |
+| `make teste`      | Testa a lógica da partida (sorteio, boss, regras) sem abrir janela |
 
-Na 2ª entrega (raylib): `make USE_RAYLIB=1`, com `raylib.h` em `include/` e a biblioteca em `lib/` (Linux) ou `libwin/` (Windows).
+Na 2ª entrega (raylib): `make USE_RAYLIB=1` (objetos em `build/raylib-<compilador>/`). O `raylib.h` e as bibliotecas ficam em `third_party/raylib/` (Linux em `lib/linux/`, Windows em `lib/windows/`). O jogo é aberto pela opção **8 - JOGAR** do menu.
+
+**Windows:** o jogo (`USE_RAYLIB=1`) precisa de um **gcc de 64 bits** (MinGW-w64, ex.: w64devkit); o MinGW clássico de 32 bits só compila o modo texto. Confira com `gcc -dumpmachine` (deve mostrar `x86_64-w64-mingw32`). Passo a passo em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md#windows-o-jogo-precisa-de-um-gcc-de-64-bits). No Linux, se o link falhar com `cannot find -lGL`: `make USE_RAYLIB=1 GL_LIB=-l:libGL.so.1`. Detalhes em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md#9-compilar-no-windows-e-no-linux).
+
+**Documentação:** [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) explica cada arquivo e como eles se ligam; [`docs/MUDANCAS.md`](docs/MUDANCAS.md) registra cada mudança. Os nomes dos arquivos de imagem e som estão em [`assets/README.md`](assets/README.md).
 
 ## Estrutura
 
@@ -37,12 +42,14 @@ jogo-milhao-minecraft/
 ├── build/                # .o gerados (fora do Git)
 ├── data/
 │   ├── perguntas.csv     # dados iniciais (vai para o Git)
-│   ├── perguntas.bin     # gerado na 1ª execução (fora do Git)
-│   ├── ranking.bin       # criativo (fora do Git)
+│   ├── perguntas.dat     # gerado na 1ª execução (fora do Git)
+│   ├── ranking.dat       # criativo (fora do Git)
 │   └── exportados/       # saída de "exportar CSV"
-├── docs/                 # slides e outros documentos
+├── docs/                 # ARQUITETURA.md, MUDANCAS.md, slides
 ├── include/              # só .h
 ├── src/                  # só .c
+├── tests/                # teste_partida.c (make teste)
+├── third_party/raylib/   # raylib 5.5 (licença zlib), não escrita pela equipe
 ├── Makefile
 └── README.md
 ```
@@ -59,6 +66,19 @@ jogo-milhao-minecraft/
 | `utils.h/.c`          | Leitura segura de entrada, cores ANSI, beep, mensagens de erro    |
 | `main.c`              | Carrega os dados, roda o menu e salva ao sair                     |
 
+### Módulos (2ª entrega)
+
+| Arquivo               | Responsabilidade                                                  | raylib? |
+|-----------------------|-------------------------------------------------------------------|---------|
+| `sorteio.h/.c`        | Sorteia as perguntas por nível e embaralha as alternativas        | não |
+| `boss.h/.c`           | Um boss por nível, que perde vida a cada acerto                   | não |
+| `partida.h/.c`        | Regras do Jogo do Milhão: rodadas, prêmios, marcos, parar/errar, ajudas | não |
+| `assets.h/.c`         | Imagens, sons, música, fonte e texto, com fallback                | sim |
+| `botao.h/.c`          | Botões clicáveis com atalho de teclado                            | sim |
+| `dialogo.h/.c`        | Falas dos personagens com efeito de máquina de escrever           | sim |
+| `tela.h/.c`           | Atualização e desenho de cada tela                                | sim |
+| `jogo.h/.c`           | Janela, laço principal e troca de telas                           | sim |
+
 ## Formato do `perguntas.csv`
 
 ```text
@@ -72,16 +92,17 @@ nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,
 
 ## Plano do jogo
 
-**1ª entrega (parte básica):** cadastro completo (inserir, listar, pesquisar, alterar, excluir), navegação por nível, CSV inicial → binário, exportação CSV. Sem parte visual.
+**1ª entrega (parte básica):** cadastro completo (inserir, listar, pesquisar, alterar, excluir), navegação por nível, CSV inicial → binário (.dat), exportação CSV. Sem parte visual.
 
 **2ª entrega (parte criativa, raylib):**
 
 1. **Partida** no estilo SBT: 15 perguntas, perguntas e alternativas sorteadas por nível, marcos de segurança nas perguntas 5 e 10.
 2. **Bosses** (um por nível de dificuldade) que perdem vida a cada acerto: Creeper, Wither, Warden, Ender Dragon e Herobrine.
-3. **Esmeraldas e loja:** esmeraldas ganhas a cada acerto; a loja abre a cada marco de segurança, com buffs de tempo extra e de reduzir alternativas. A dica da pergunta também pode ser recuperada com esmeraldas.
-4. **Minigame das dicas:** 3 baús, cada um com um tipo de bloco; o jogador recebe 10 blocos aleatórios e aperta 1, 2 ou 3 para guardá-los. Errar diminui o tempo restante; se falhar, perde a dica.
+3. **Esmeraldas como moeda:** as esmeraldas acumuladas são o prêmio e também o saldo para comprar a **dica** da pergunta. O preço sobe com o nível (1, 2, 5, 10 e 20 esmeraldas); pode-se comprar uma vez por pergunta, e o que foi gasto é descontado do prêmio final.
+4. **Eliminar duas:** ajuda grátis, uma vez por partida, que desabilita duas alternativas erradas.
 5. **Polimento:** tela inicial no estilo do menu do Minecraft, animações, músicas e arte feita à mão.
 
 
 ## Observações
 - Os comentários feitos no arquivo.c tem uma representação educativa também, servindo como base de explicação para a compreensão do código de funções e técnicas não utilizadas regularmente na disciplina de Fundamentos de Programação.
+- O minigame das dicas (3 baús) e a loja nos marcos ficaram fora por escopo: a dica passou a ser comprada com esmeraldas, e sem cronômetro o buff de tempo extra não teria efeito.

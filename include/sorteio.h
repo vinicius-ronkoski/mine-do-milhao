@@ -38,23 +38,26 @@ void sorteio_semear(unsigned int semente);
 int sorteio_inteiro(int minimo, int maximo);
 
 /**
- * @brief Embaralha um vetor de inteiros (Fisher-Yates).
- * @param vetor   Vetor a embaralhar.
+ * @brief Embaralha um vetor de índices (Fisher-Yates).
+ *
+ * Usa size_t porque é o tipo dos índices do Banco (banco_filtrar_nivel).
+ *
+ * @param vetor   Vetor a embaralhar (ignorado se NULL).
  * @param tamanho Quantidade de elementos.
  */
-void sorteio_embaralhar_vetor(int *vetor, size_t tamanho);
+void sorteio_embaralhar_vetor(size_t *vetor, size_t tamanho);
 
 /**
  * @brief Embaralha as alternativas de uma pergunta e preenche a PerguntaSorteada.
  *
  * Passos: ordem = {0,1,2,3}; embaralhar; achar a posição cuja alternativa original
- * é (p->correta - 'A') e guardar em posicao_correta.
+ * é (pergunta->correta - 'A') e guardar em posicao_correta.
  *
- * @param p     Pergunta do banco.
+ * @param pergunta Pergunta do banco.
  * @param saida Recebe origem, ordem e posicao_correta.
  * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (NULL ou pergunta_validar() falhou).
  */
-Status sorteio_alternativas(const Pergunta *p, PerguntaSorteada *saida);
+Status sorteio_alternativas(const Pergunta *pergunta, PerguntaSorteada *saida);
 
 /**
  * @brief Sorteia `quantidade` perguntas DISTINTAS de um nível.
@@ -65,30 +68,35 @@ Status sorteio_alternativas(const Pergunta *p, PerguntaSorteada *saida);
  * @param banco       Banco consultado.
  * @param nivel       Nível (NIVEL_MIN a NIVEL_MAX).
  * @param quantidade  Quantas perguntas sortear.
- * @param indices_out Vetor de saída com `quantidade` posições (índices do Banco).
+ * @param indices_saida Vetor de saída com `quantidade` posições (índices do Banco).
  * @return STATUS_OK; STATUS_ERRO_PARAMETRO; STATUS_ERRO_MEMORIA;
  *         STATUS_NAO_ENCONTRADO se o nível tem menos perguntas que `quantidade`.
  */
-Status sorteio_perguntas_do_nivel(const Banco *banco, int nivel, size_t quantidade, size_t *indices_out);
+Status sorteio_perguntas_do_nivel(const Banco *banco, int nivel, size_t quantidade, size_t *indices_saida);
 
 /**
  * @brief Monta as 15 perguntas de uma partida (ordem crescente de dificuldade).
  *
- * Para cada nível, usa partida_perguntas_no_nivel() (partida.h) e
- * sorteio_perguntas_do_nivel(); depois aplica sorteio_alternativas() em cada uma.
+ * Para cada nível, sorteia por_nivel[nivel - NIVEL_MIN] perguntas com
+ * sorteio_perguntas_do_nivel() e aplica sorteio_alternativas() em cada uma.
+ * As contagens chegam por parâmetro (quem decide a distribuição é partida.h),
+ * assim este módulo não depende de partida.h.
  *
- * @param banco Banco já carregado (dados_carregar).
- * @param saida Vetor com PERGUNTAS_POR_PARTIDA posições.
- * @return STATUS_OK ou o primeiro erro encontrado (a partida NÃO deve começar se falhar).
+ * @param banco     Banco já carregado (dados_carregar).
+ * @param por_nivel Quantas perguntas de cada nível (NUM_NIVEIS valores; a soma deve ser PERGUNTAS_POR_PARTIDA).
+ * @param saida     Vetor com PERGUNTAS_POR_PARTIDA posições; só é escrito se TUDO deu certo.
+ * @return STATUS_OK; STATUS_ERRO_PARAMETRO (NULL ou soma diferente de PERGUNTAS_POR_PARTIDA);
+ *         STATUS_NAO_ENCONTRADO (nível com perguntas insuficientes); STATUS_ERRO_MEMORIA.
  */
-Status sorteio_montar_partida(const Banco *banco, PerguntaSorteada saida[PERGUNTAS_POR_PARTIDA]);
+Status sorteio_montar_partida(const Banco *banco, const int por_nivel[NUM_NIVEIS],
+                              PerguntaSorteada saida[PERGUNTAS_POR_PARTIDA]);
 
 /**
  * @brief Texto da alternativa exibida em uma posição.
- * @param ps      Pergunta sorteada.
+ * @param sorteada Pergunta sorteada.
  * @param posicao Posição de 0 a NUM_ALTERNATIVAS-1.
  * @return Texto (origem->alternativas[ordem[posicao]]) ou "" se inválido. Nunca NULL.
  */
-const char *sorteio_texto_alternativa(const PerguntaSorteada *ps, int posicao);
+const char *sorteio_texto_alternativa(const PerguntaSorteada *sorteada, int posicao);
 
 #endif /* SORTEIO_H */

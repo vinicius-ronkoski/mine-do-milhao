@@ -5,15 +5,25 @@
  * Toda a regra de negócio fica aqui; a parte visual (tela.h/jogo.h) só LÊ o estado
  * e chama estas funções. Assim dá para testar a regra sem abrir janela.
  * Convenção: rodada é INDICE de 0 a PERGUNTAS_POR_PARTIDA-1 (a "pergunta 5" do enunciado é o índice 4).
+ * Para mostrar "Pergunta N/15" use partida_numero_da_rodada(), que já devolve 1 a 15.
+ * Valores inválidos NUNCA viram valores "válidos" em silêncio: veja o retorno de cada função.
  *
  * Fluxo: RESPONDENDO --partida_responder--> REVELANDO --partida_confirmar_revelacao-->
  *        RESPONDENDO (próxima) | FIM_ERRO | FIM_VITORIA.
  *        partida_parar() vale em RESPONDENDO ("a qualquer momento") e leva a FIM_PARADA.
+ *
+ * Ajudas (parte criativa), só em RESPONDENDO:
+ *   - partida_comprar_dica(): paga CUSTO_DICA_POR_NIVEL esmeraldas e mostra a dica da pergunta
+ *     (campo `dica` do CSV) até a rodada acabar. Pode comprar em várias perguntas, uma vez em cada.
+ *     O que foi gasto (esmeraldas_gastas) é descontado do prêmio final;
+ *   - partida_eliminar_duas(): grátis, UMA vez por partida; desabilita duas alternativas erradas.
+ *
+ * Saldo = esmeraldas (prêmio acumulado) - esmeraldas_gastas. É o que o jogador pode gastar.
+ * Na primeira pergunta o saldo é 0, então a dica só pode ser comprada a partir da segunda.
  */
 #ifndef PARTIDA_H
 #define PARTIDA_H
 
-#include <stdbool.h>
 #include "config.h"
 #include "banco.h"
 #include "boss.h"
@@ -37,14 +47,21 @@ typedef struct {
     int esmeraldas_garantidas;   /**< Último marco atingido (prêmio de errar). */
     int escolha;                 /**< Posição (0-3) escolhida na rodada, -1 se nenhuma. */
     bool ultima_acertou;         /**< Resultado da última resposta. */
-    EstadoPartida estado;
+    bool boss_derrotado_agora;   /**< true se a ÚLTIMA resposta derrotou o boss do nível. Vale da resposta até a próxima
+                                      (inclusive depois de partida_confirmar_revelacao(), quando o boss "atual" já é outro). */
+    int esmeraldas_gastas;       /**< Total pago em dicas (descontado do prêmio final). */
+    bool dica_visivel;           /**< Dica comprada na rodada atual (volta a false na próxima rodada). */
+    bool eliminacao_usada;       /**< A ajuda "eliminar duas" já foi gasta nesta partida. */
+    bool alternativa_eliminada[NUM_ALTERNATIVAS]; /**< Posições desabilitadas na rodada atual. */
+    EstadoPartida estado;        /**< Estado atual (ver fluxo no topo do arquivo). */
 } Partida;
 
 /**
  * @brief Prepara uma partida nova.
  *
- * Passos: zerar a struct; sorteio_montar_partida(); para cada nível iniciar o Boss com
- * vida_maxima = partida_perguntas_no_nivel(); rodada = 0; estado = ESTADO_RESPONDENDO.
+ * Passos: montar tudo numa partida local (por_nivel[] vem de partida_perguntas_no_nivel();
+ * sorteio_montar_partida(); um Boss por nível com vida_maxima = perguntas do nível; rodada = 0;
+ * estado = ESTADO_RESPONDENDO) e só então copiar para `partida`. Se falhar, `partida` fica INALTERADA.
  *
  * @param partida Partida a preencher.
  * @param banco   Banco carregado (dados_carregar).
@@ -53,14 +70,21 @@ typedef struct {
  */
 Status partida_iniciar(Partida *partida, const Banco *banco);
 
-/** @brief Nível (NIVEL_MIN..NIVEL_MAX) de uma rodada: 0-1→1, 2-3→2, 4-7→3, 8-11→4, 12-14→5. Inválida: NIVEL_MIN. */
+/**
+ * @brief Nível de uma rodada (índice 0-14), pela distribuição PERGUNTAS_POR_NIVEL (2,2,4,4,3):
+ *        0-1→1, 2-3→2, 4-7→3, 8-11→4, 12-14→5.
+ * @return Nível de NIVEL_MIN a NIVEL_MAX; 0 (inválido) se a rodada estiver fora de 0..14.
+ */
 int partida_nivel_da_rodada(int rodada);
 
-/** @brief Quantas rodadas pertencem a um nível (2,2,4,4,3). É a vida inicial do boss. 0 se inválido. */
+/** @brief Quantas rodadas pertencem a um nível (2,2,4,4,3). É a vida inicial do boss. 0 se o nível for inválido. */
 int partida_perguntas_no_nivel(int nivel);
 
-/** @brief 1 se a rodada é marco de segurança (índices 4 e 9, ou seja, perguntas 5 e 10). */
-int partida_eh_marco(int rodada);
+/** @brief Número da pergunta para exibir (1 a 15) = rodada + 1; 0 se partida for NULL. */
+int partida_numero_da_rodada(const Partida *partida);
+
+/** @brief true se a rodada é marco de segurança (índices 4 e 9, ou seja, perguntas 5 e 10). */
+bool partida_eh_marco(int rodada);
 
 /**
  * @brief Esmeraldas acumuladas ao ACERTAR uma rodada (tabela PREMIOS_ESMERALDAS do config.h).
@@ -71,7 +95,13 @@ int partida_premio_da_rodada(int rodada);
 /** @brief Pergunta atual (já embaralhada) ou NULL se a partida terminou/é inválida. */
 const PerguntaSorteada *partida_pergunta_atual(const Partida *partida);
 
-/** @brief Boss do nível da rodada atual (para desenhar a barra de vida) ou NULL. */
+/**
+ * @brief Boss do nível da rodada atual (para desenhar a barra de vida) ou NULL se partida for NULL.
+ *
+ * Em ESTADO_REVELANDO ainda é o boss da pergunta respondida (já com o dano aplicado), então a tela
+ * pode mostrar o boss caindo. Depois de partida_confirmar_revelacao() passa a ser o do próximo nível;
+ * para saber se o boss anterior caiu use partida->boss_derrotado_agora.
+ */
 const Boss *partida_boss_atual(const Partida *partida);
 
 /**
@@ -79,13 +109,41 @@ const Boss *partida_boss_atual(const Partida *partida);
  *
  * Passos: exigir ESTADO_RESPONDENDO; guardar escolha; comparar com posicao_correta;
  * se acertou: esmeraldas = partida_premio_da_rodada(), boss_receber_dano(boss do nível, 1),
- * atualizar esmeraldas_garantidas se for marco; se errou: nada muda aqui.
- * Termina em ESTADO_REVELANDO.
+ * boss_derrotado_agora se a vida chegou a 0, esmeraldas_garantidas se for marco;
+ * se errou: nada muda além de escolha/ultima_acertou. Termina em ESTADO_REVELANDO.
  *
  * @param posicao_escolhida Posição 0 a 3 (a tela traduz clique/tecla para isso).
- * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (posição inválida / estado errado).
+ * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (posição inválida, eliminada ou estado errado).
  */
 Status partida_responder(Partida *partida, int posicao_escolhida);
+
+/** @brief Esmeraldas que o jogador pode gastar agora: esmeraldas - esmeraldas_gastas (0 se NULL). */
+int partida_saldo(const Partida *partida);
+
+/** @brief Preço da dica na rodada atual (CUSTO_DICA_POR_NIVEL); 0 se a partida for NULL ou acabou. */
+int partida_custo_dica(const Partida *partida);
+
+/**
+ * @brief true se a dica pode ser comprada agora: ESTADO_RESPONDENDO, ainda não comprada nesta
+ *        rodada e saldo suficiente. Use para habilitar/desabilitar o botão.
+ */
+bool partida_pode_comprar_dica(const Partida *partida);
+
+/**
+ * @brief Ajuda "dica": paga partida_custo_dica() e deixa a dica da pergunta atual visível.
+ * @return STATUS_OK; STATUS_SALDO_INSUFICIENTE (nada é cobrado); STATUS_ERRO_PARAMETRO
+ *         (NULL, fora de ESTADO_RESPONDENDO ou já comprada nesta rodada).
+ */
+Status partida_comprar_dica(Partida *partida);
+
+/** @brief Texto da dica da pergunta atual se ela estiver visível; NULL caso contrário. */
+const char *partida_dica_atual(const Partida *partida);
+
+/**
+ * @brief Ajuda "eliminar duas": sorteia duas alternativas ERRADAS e as marca como eliminadas.
+ * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (já usada, NULL ou fora de ESTADO_RESPONDENDO).
+ */
+Status partida_eliminar_duas(Partida *partida);
 
 /**
  * @brief Sai de REVELANDO: acerto avança a rodada (ou vitória na 15ª); erro vai a FIM_ERRO.
@@ -99,12 +157,13 @@ Status partida_confirmar_revelacao(Partida *partida);
  */
 Status partida_parar(Partida *partida);
 
-/** @brief 1 se o estado é FIM_PARADA, FIM_ERRO ou FIM_VITORIA. */
-int partida_encerrada(const Partida *partida);
+/** @brief true se o estado é FIM_PARADA, FIM_ERRO ou FIM_VITORIA (false se NULL). */
+bool partida_encerrada(const Partida *partida);
 
 /**
- * @brief Esmeraldas que o jogador leva embora.
+ * @brief Esmeraldas que o jogador leva embora, já descontado o que gastou em dicas (nunca negativo).
  * PARADA/VITORIA: esmeraldas. ERRO: esmeraldas_garantidas (ou 0 se REGRA_ERRO_VOLTA_AO_MARCO == 0).
+ * Partida em andamento (ou NULL): 0, porque ainda não há prêmio final.
  */
 int partida_premio_final(const Partida *partida);
 

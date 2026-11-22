@@ -58,9 +58,9 @@ static unsigned char segundo_byte_em_minusculo(unsigned char segundo_byte) {
  * @param primeiro_texto início do caractere do primeiro texto (não pode ser '\0')
  * @param segundo_texto início do caractere do segundo texto (não pode ser '\0')
  * @param bytes_do_caractere recebe quantos bytes foram comparados (1 ou 2)
- * @return 1 se os caracteres são iguais, 0 caso contrário
+ * @return true se os caracteres são iguais, false caso contrário
  */
-static int caracteres_iguais(const char *primeiro_texto, const char *segundo_texto, size_t *bytes_do_caractere) {
+static bool caracteres_iguais(const char *primeiro_texto, const char *segundo_texto, size_t *bytes_do_caractere) {
     unsigned char primeiro_byte_do_primeiro = (unsigned char)primeiro_texto[0];
     unsigned char primeiro_byte_do_segundo = (unsigned char)segundo_texto[0];
 
@@ -85,12 +85,12 @@ static int caracteres_iguais(const char *primeiro_texto, const char *segundo_tex
  *
  * @param texto texto onde vamos procurar
  * @param trecho texto procurado
- * @return 1 se o trecho aparece no texto, 0 caso contrário
+ * @return true se o trecho aparece no texto, false caso contrário
  */
-static int texto_contem_trecho(const char *texto, const char *trecho) {
+static bool texto_contem_trecho(const char *texto, const char *trecho) {
     //aceitando o trecho vazio (ele aparece em qualquer texto)
     if (trecho[0] == '\0') {
-        return 1;
+        return true;
     }
 
     //testando o trecho a partir de cada posição do texto
@@ -111,11 +111,11 @@ static int texto_contem_trecho(const char *texto, const char *trecho) {
 
         //achando o trecho inteiro
         if (trecho[deslocamento] == '\0') {
-            return 1;
+            return true;
         }
     }
 
-    return 0;
+    return false;
 }
 
 void banco_iniciar(Banco *banco) {
@@ -136,8 +136,8 @@ void banco_liberar(Banco *banco) {
         return;
     }
 
-    //liberando o vetor (free(NULL) não faz nada) e zerando o banco
-    free(banco->itens);
+    //liberando o vetor e zerando o banco
+    free(banco->itens); // Libera as perguntas
     banco->itens = NULL;
     banco->quantidade = 0;
     banco->capacidade = 0;

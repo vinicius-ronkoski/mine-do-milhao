@@ -1,0 +1,16 @@
+# Fim de linha consistente entre Windows e Linux:
+# o Git guarda tudo com LF e entrega CRLF no Windows / LF no Linux.
+* text=auto
+
+# Arquivos binários (nunca converter fim de linha)
+*.a    binary
+*.dat  binary
+*.png  binary
+*.jpg  binary
+*.bmp  binary
+*.wav  binary
+*.ogg  binary
+*.mp3  binary
+*.ttf  binary
+*.otf  binary
+*.exe  binary

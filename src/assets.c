@@ -1,136 +1,868 @@
-/** @file assets.c @brief Esqueleto do módulo de assets (ver assets.h). Compila só com USE_RAYLIB. */
+/**
+ * @file assets.c
+ * @brief Carga de assets com fallback, desenho de imagens, som, música e texto (ver assets.h).
+ *
+ * Organização do arquivo:
+ *   1. Constantes e tabelas de nomes de arquivo (locais às funções: sem variável global)
+ *   2. Funções auxiliares internas (static)
+ *   3. Carga e liberação
+ *   4. Desenho de imagens
+ *   5. Som e música
+ *   6. Texto
+ *
+ * Compila só com USE_RAYLIB=1.
+ */
 #ifdef USE_RAYLIB
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 #include "assets.h"
-#include "utils.h"
+
+/* ========================================================================= */
+/* 1. Constantes                                                             */
+/* ========================================================================= */
+
+/** Maior caminho de arquivo montado aqui (pasta + nome). */
+#define TAM_CAMINHO_ASSET 160
+
+/** Primeiro caractere carregado na fonte (espaço). */
+#define CODEPOINT_INICIAL 32
+
+/** Caracteres carregados na fonte: 32 a 255 (Latin-1, inclui á, ç, õ...). */
+#define NUM_CODEPOINTS 224
+
+/** Lado (em pixels) da textura xadrez gerada quando uma imagem falta. */
+#define LADO_FALLBACK 16
+
+/** Quantos quadrados o xadrez de fallback tem por lado. */
+#define QUADRADOS_FALLBACK 4
+
+/** Espessura da borda dos painéis desenhados como fallback. */
+#define BORDA_PAINEL 3.0f
+
+/** Distância entre linhas de texto, em múltiplos do tamanho da fonte. */
+#define ESPACO_ENTRE_LINHAS 1.25f
+
+/** Maior linha de texto montada na quebra automática. */
+#define TAM_LINHA_TEXTO 512
+
+/** Quantidade de elementos de um vetor declarado (não funciona com ponteiro). */
+#define QUANTIDADE_DE(vetor) (sizeof(vetor) / sizeof((vetor)[0]))
+
+/**
+ * @brief Nome do arquivo de cada imagem (em CAMINHO_SPRITES, SEM extensão), na ordem do enum ImagemId.
+ * PARA TROCAR UMA IMAGEM: troque só o nome na lista (ou salve a imagem com este nome).
+ * Extensões aceitas: ver achar_imagem().
+ */
+static const char *nome_arquivo_imagem(ImagemId id)
+{
+    static const char *const nomes[IMG_QUANTIDADE] = {
+        "fundo_pergunta",        /* IMG_FUNDO_PERGUNTA   */
+        "fundo_dialogo",         /* IMG_FUNDO_DIALOGO    */
+        "fundo_resultado",       /* IMG_FUNDO_RESULTADO  */
+        "painel_enunciado",      /* IMG_PAINEL_ENUNCIADO */
+        "botao",                 /* IMG_BOTAO            */
+        "caixa_dialogo",         /* IMG_CAIXA_DIALOGO    */
+        "esmeralda",             /* IMG_ESMERALDA        */
+        "retrato_aldeao"         /* IMG_RETRATO_ALDEAO   */
+    };
+
+    if ((int)id < 0 || id >= IMG_QUANTIDADE) {
+        return "";
+    }
+    return nomes[id];
+}
+
+/** @brief Nome do arquivo de cada som (em CAMINHO_SONS, SEM extensão), na ordem do enum SomId. */
+static const char *nome_arquivo_som(SomId id)
+{
+    static const char *const nomes[SOM_QUANTIDADE] = {
+        "clique",                /* SOM_CLIQUE         */
+        "acerto",                /* SOM_ACERTO         */
+        "erro",                  /* SOM_ERRO           */
+        "dano_boss",             /* SOM_DANO_BOSS      */
+        "boss_derrotado",        /* SOM_BOSS_DERROTADO */
+        "vitoria"                /* SOM_VITORIA        */
+    };
+
+    if ((int)id < 0 || id >= SOM_QUANTIDADE) {
+        return "";
+    }
+    return nomes[id];
+}
+
+/**
+ * @brief Nome-base dos arquivos de cada boss: frames (CAMINHO_FRAMES/<prefixo>_00...) e
+ *        fundo da fase (CAMINHO_FUNDOS/<prefixo>), sempre + extensão de imagem.
+ */
+static const char *prefixo_do_boss(BossId id)
+{
+    static const char *const prefixos[BOSS_QUANTIDADE] = {
+        "creeper", "wither", "warden", "ender_dragon", "herobrine"
+    };
+
+    if ((int)id < 0 || id >= BOSS_QUANTIDADE) {
+        return "";
+    }
+    return prefixos[id];
+}
+
+/**
+ * @brief Cor-tema de cada fase, usada no degradê quando não há imagem de fundo.
+ * PARA MUDAR O CLIMA DE UMA FASE SEM ARTE: troque a cor aqui.
+ */
+static Color cor_tema_boss(BossId id)
+{
+    static const Color cores[BOSS_QUANTIDADE] = {
+        {  40,  90,  40, 255 },   /* Creeper: verde da grama   */
+        {  45,  40,  55, 255 },   /* Wither: cinza escuro     */
+        {  10,  45,  55, 255 },   /* Warden: deep dark azulado */
+        {  50,  20,  70, 255 },   /* Ender Dragon: roxo do End */
+        {  70,  15,  15, 255 }    /* Herobrine: vermelho-escuro */
+    };
+
+    if ((int)id < 0 || id >= BOSS_QUANTIDADE) {
+        return PALETA_FUNDO;
+    }
+    return cores[id];
+}
+
+/* ========================================================================= */
+/* 2. Funções auxiliares internas                                            */
+/* ========================================================================= */
+
+/**
+ * @brief Registra no terminal que um asset caiu no fallback e conta.
+ * @param caminho Arquivo procurado (ou encontrado, se era inválido).
+ * @param motivo  "não encontrado" ou "inválido".
+ */
+static void avisar_fallback(Assets *assets, const char *caminho, const char *motivo)
+{
+    fprintf(stderr, "Aviso: asset %s: %s (usando substituto)\n", motivo, caminho);
+    assets->total_fallbacks++;
+}
+
+/**
+ * @brief Procura `base` + cada extensão da lista e devolve o primeiro arquivo que existe.
+ *
+ * @param base        Caminho sem extensão (ex.: "assets/sounds/clique").
+ * @param extensoes   Extensões aceitas, na ordem de preferência (ex.: ".wav").
+ * @param quantidade  Quantas extensões há na lista.
+ * @param caminho     Recebe o caminho encontrado; se nada existir, recebe só a `base`
+ *                    (para o aviso dizer qual arquivo faltou; as extensões estão no assets/README.md).
+ * @param capacidade  Tamanho do buffer `caminho`.
+ * @return true se achou um arquivo.
+ */
+static bool achar_arquivo(const char *base, const char *const extensoes[], size_t quantidade,
+                          char *caminho, size_t capacidade)
+{
+    size_t indice;
+
+    for (indice = 0; indice < quantidade; indice++) {
+        snprintf(caminho, capacidade, "%s%s", base, extensoes[indice]);
+        if (FileExists(caminho)) {
+            return true;
+        }
+    }
+
+    /* Nada encontrado: devolve só a base, para o aviso dizer qual arquivo faltou */
+    snprintf(caminho, capacidade, "%s", base);
+    return false;
+}
+
+/** @brief achar_arquivo() com as extensões de imagem que a raylib lê. */
+static bool achar_imagem(const char *base, char *caminho, size_t capacidade)
+{
+    static const char *const extensoes[] = { ".png", ".jpg", ".jpeg", ".bmp" };
+
+    return achar_arquivo(base, extensoes, QUANTIDADE_DE(extensoes), caminho, capacidade);
+}
+
+/** @brief achar_arquivo() com as extensões de áudio que a raylib lê (sons e música). */
+static bool achar_audio(const char *base, char *caminho, size_t capacidade)
+{
+    static const char *const extensoes[] = { ".wav", ".ogg", ".mp3" };
+
+    return achar_arquivo(base, extensoes, QUANTIDADE_DE(extensoes), caminho, capacidade);
+}
+
+/** @brief achar_arquivo() com as extensões de fonte. */
+static bool achar_fonte(const char *base, char *caminho, size_t capacidade)
+{
+    static const char *const extensoes[] = { ".ttf", ".otf" };
+
+    return achar_arquivo(base, extensoes, QUANTIDADE_DE(extensoes), caminho, capacidade);
+}
+
+/** @brief Gera a textura substituta: xadrez magenta/preto, a "textura faltando" do Minecraft. */
+static Texture2D gerar_textura_fallback(void)
+{
+    Color magenta = { 248, 0, 248, 255 };
+    Image xadrez = GenImageChecked(LADO_FALLBACK, LADO_FALLBACK,
+                                   LADO_FALLBACK / QUADRADOS_FALLBACK,
+                                   LADO_FALLBACK / QUADRADOS_FALLBACK, magenta, BLACK);
+    Texture2D textura = LoadTextureFromImage(xadrez);
+
+    UnloadImage(xadrez);
+    return textura;
+}
+
+/**
+ * @brief Carrega uma textura de um arquivo que já se sabe que existe.
+ * @return true se a raylib reconheceu a imagem; false caso contrário.
+ */
+static bool carregar_textura_de_arquivo(const char *caminho, Texture2D *destino)
+{
+    Image imagem = LoadImage(caminho);
+
+    if (!IsImageValid(imagem)) {
+        return false;  /* arquivo existe, mas não é uma imagem que a raylib entende */
+    }
+
+    *destino = LoadTextureFromImage(imagem);
+    UnloadImage(imagem);
+    return IsTextureValid(*destino);
+}
+
+/** @brief Carrega uma imagem estática; se falhar, usa o xadrez. */
+static void carregar_imagem(Assets *assets, ImagemId id)
+{
+    char base[TAM_CAMINHO_ASSET], caminho[TAM_CAMINHO_ASSET];
+    Imagem *imagem = &assets->imagens[id];
+    bool achou;
+
+    snprintf(base, sizeof(base), "%s%s", CAMINHO_SPRITES, nome_arquivo_imagem(id));
+    achou = achar_imagem(base, caminho, sizeof(caminho));
+    imagem->fallback = !achou || !carregar_textura_de_arquivo(caminho, &imagem->textura);
+    if (imagem->fallback) {
+        imagem->textura = gerar_textura_fallback();
+        avisar_fallback(assets, caminho, achou ? "inválido" : "não encontrado");
+    }
+}
+
+/**
+ * @brief Carrega o fundo de uma fase (opcional). Se não existir, fica sem textura e
+ *        assets_desenhar_fundo usa o fundo padrão da tela. Só um arquivo corrompido gera aviso.
+ * @return true se o fundo foi carregado.
+ */
+static bool carregar_fundo_boss(Assets *assets, BossId id)
+{
+    char base[TAM_CAMINHO_ASSET], caminho[TAM_CAMINHO_ASSET];
+    Imagem *fundo = &assets->fundos_boss[id];
+    bool achou;
+
+    snprintf(base, sizeof(base), "%s%s", CAMINHO_FUNDOS, prefixo_do_boss(id));
+    achou = achar_imagem(base, caminho, sizeof(caminho));
+    fundo->fallback = !achou || !carregar_textura_de_arquivo(caminho, &fundo->textura);
+    if (fundo->fallback) {
+        fundo->textura.id = 0;  /* sem textura: nada a descarregar */
+        if (achou) {
+            avisar_fallback(assets, caminho, "inválido");
+        }
+    }
+    return !fundo->fallback;
+}
+
+/** @brief Carrega os frames de um boss até o primeiro que faltar; nenhum -> 1 quadro sem textura. */
+static void carregar_animacao_boss(Assets *assets, BossId id)
+{
+    char base[TAM_CAMINHO_ASSET], caminho[TAM_CAMINHO_ASSET], primeiro[TAM_CAMINHO_ASSET];
+    Animacao *animacao = &assets->bosses[id];
+
+    animacao->quantidade = 0;
+    primeiro[0] = '\0';
+    for (int indice_quadro = 0; indice_quadro < MAX_QUADROS_ANIMACAO; indice_quadro++) {
+        snprintf(base, sizeof(base), "%s%s_%02d", CAMINHO_FRAMES, prefixo_do_boss(id), indice_quadro);
+        if (!achar_imagem(base, caminho, sizeof(caminho))
+            || !carregar_textura_de_arquivo(caminho, &animacao->quadros[indice_quadro])) {
+            if (indice_quadro == 0) {
+                snprintf(primeiro, sizeof(primeiro), "%s", caminho);  /* para o aviso */
+            }
+            break;  /* a sequência termina no primeiro quadro que falta */
+        }
+        animacao->quantidade++;
+    }
+
+    animacao->fallback = (animacao->quantidade == 0);
+    if (animacao->fallback) {
+        animacao->quadros[0] = gerar_textura_fallback();
+        animacao->quantidade = 1;
+        avisar_fallback(assets, primeiro, "não encontrado");
+    }
+}
+
+/** @brief Carrega um efeito sonoro; se faltar, fica em silêncio. */
+static void carregar_som(Assets *assets, SomId id)
+{
+    char base[TAM_CAMINHO_ASSET], caminho[TAM_CAMINHO_ASSET];
+    Efeito *efeito = &assets->sons[id];
+    bool achou;
+
+    efeito->valido = false;
+    if (!assets->audio_ativo) {
+        printf("Erro ao carregar som: Audio Inativo\n");
+        return;  /* sem placa de som: o aviso único já foi dado em assets_carregar */
+    }
+
+    snprintf(base, sizeof(base), "%s%s", CAMINHO_SONS, nome_arquivo_som(id));
+    achou = achar_audio(base, caminho, sizeof(caminho));
+    if (achou) {
+        efeito->som = LoadSound(caminho);
+        efeito->valido = IsSoundValid(efeito->som);
+        if (efeito->valido) {
+            SetSoundVolume(efeito->som, VOLUME_EFEITOS);
+        }
+    }
+    if (!efeito->valido) {
+        avisar_fallback(assets, caminho, achou ? "inválido" : "não encontrado");
+    }
+}
+
+/** @brief Carrega a música de fundo; se faltar, fica sem música. */
+static void carregar_musica(Assets *assets)
+{
+    char caminho[TAM_CAMINHO_ASSET];
+    bool achou;
+
+    assets->musica_valida = false;
+    if (!assets->audio_ativo) {
+        printf("Erro ao carregar música: Audio Inativo\n");
+        return;
+    }
+
+    achou = achar_audio(ARQUIVO_MUSICA, caminho, sizeof(caminho));
+    if (achou) {
+        assets->musica = LoadMusicStream(caminho);
+        assets->musica_valida = IsMusicValid(assets->musica);
+    }
+    if (assets->musica_valida) {
+        assets->musica.looping = true;  /* recomeça sozinha ao terminar */
+        SetMusicVolume(assets->musica, VOLUME_MUSICA);
+    } else {
+        avisar_fallback(assets, caminho, achou ? "inválido" : "não encontrado");
+    }
+}
+
+/** @brief Carrega ARQUIVO_FONTE (.ttf/.otf) com os caracteres 32..255; se faltar, usa a fonte padrão. */
+static void carregar_fonte(Assets *assets)
+{
+    char caminho[TAM_CAMINHO_ASSET];
+    int codepoints[NUM_CODEPOINTS];
+    int indice;
+    Font fonte_lida;
+    bool achou;
+
+    assets->fonte = GetFontDefault();
+    assets->fonte_propria = false;
+
+    achou = achar_fonte(ARQUIVO_FONTE, caminho, sizeof(caminho));
+    if (achou) {
+        for (indice = 0; indice < NUM_CODEPOINTS; indice++) {
+            codepoints[indice] = CODEPOINT_INICIAL + indice;
+        }
+        fonte_lida = LoadFontEx(caminho, TAM_FONTE_BASE, codepoints, NUM_CODEPOINTS);
+        /* Se a leitura falha, a raylib devolve a fonte padrão: não pode ser descarregada depois */
+        if (IsFontValid(fonte_lida) && fonte_lida.texture.id != GetFontDefault().texture.id) {
+            assets->fonte = fonte_lida;
+            assets->fonte_propria = true;
+        }
+    }
+
+    if (!assets->fonte_propria) {
+        avisar_fallback(assets, caminho, achou ? "inválido" : "não encontrado");
+    }
+}
+
+/** @brief Espaço entre letras proporcional ao tamanho (igual ao que a raylib usa na fonte padrão). */
+static float espacamento_letras(float tamanho)
+{
+    return tamanho / 10.0f;
+}
+
+/* ========================================================================= */
+/* 3. Carga e liberação                                                      */
+/* ========================================================================= */
 
 Status assets_carregar(Assets *assets)
 {
-    /* TODO: memset; checar IsWindowReady(); chamar as funções assets_carregar_* abaixo;
-     *       somar total_fallbacks; retornar STATUS_ASSET_FALLBACK se total_fallbacks > 0. */
-    (void)assets;
-    return STATUS_NAO_IMPLEMENTADO;
+    int indice, fundos_encontrados;
+
+    if (assets == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    memset(assets, 0, sizeof(*assets));
+    if (!IsWindowReady()) {
+        return STATUS_ERRO_GRAFICO;  /* texturas precisam da janela (contexto OpenGL) */
+    }
+
+    /* Áudio: sem dispositivo o jogo continua mudo */
+    InitAudioDevice();
+    assets->audio_ativo = IsAudioDeviceReady();
+    if (!assets->audio_ativo) {
+        fprintf(stderr, "Aviso: nenhum dispositivo de áudio encontrado (jogo sem som)\n");
+    }
+
+    carregar_fonte(assets);
+    for (indice = 0; indice < IMG_QUANTIDADE; indice++) {
+        carregar_imagem(assets, (ImagemId)indice);
+    }
+    for (indice = 0; indice < BOSS_QUANTIDADE; indice++) {
+        carregar_animacao_boss(assets, (BossId)indice);
+    }
+
+    /* Fundos de fase são opcionais: um aviso só, com quantos foram encontrados */
+    fundos_encontrados = 0;
+    for (indice = 0; indice < BOSS_QUANTIDADE; indice++) {
+        fundos_encontrados += carregar_fundo_boss(assets, (BossId)indice) ? 1 : 0;
+    }
+    if (fundos_encontrados < BOSS_QUANTIDADE) {
+        fprintf(stderr, "Aviso: %d de %d fundos de fase em " CAMINHO_FUNDOS
+                " (opcional: os outros usam o fundo padrão da tela)\n",
+                fundos_encontrados, BOSS_QUANTIDADE);
+    }
+
+    for (indice = 0; indice < SOM_QUANTIDADE; indice++) {
+        carregar_som(assets, (SomId)indice);
+    }
+    carregar_musica(assets);
+
+    return assets->total_fallbacks > 0 ? STATUS_ASSET_FALLBACK : STATUS_OK;
 }
 
 void assets_descarregar(Assets *assets)
 {
-    /* TODO: Unload* de tudo que estiver válido; free(quadros); CloseAudioDevice() se audio_ativo. */
-    (void)assets;
+    int indice, quadro;
+
+    // Confere os parâmetros
+    if (assets == NULL) {
+        return;
+    }
+
+    // Descarrega as imagens
+    for (indice = 0; indice < IMG_QUANTIDADE; indice++) {
+        if (assets->imagens[indice].textura.id > 0) {
+            UnloadTexture(assets->imagens[indice].textura);
+        }
+    }
+
+    // Descarrega as texturas dos bosses
+    for (indice = 0; indice < BOSS_QUANTIDADE; indice++) {
+        if (assets->fundos_boss[indice].textura.id > 0) {
+            UnloadTexture(assets->fundos_boss[indice].textura);
+        }
+    }
+
+    // Descarrega os frames dos bosses
+    for (indice = 0; indice < BOSS_QUANTIDADE; indice++) {
+        for (quadro = 0; quadro < assets->bosses[indice].quantidade; quadro++) {
+            UnloadTexture(assets->bosses[indice].quadros[quadro]);
+        }
+    }
+
+    // Descarrega os sons
+    for (indice = 0; indice < SOM_QUANTIDADE; indice++) {
+        if (assets->sons[indice].valido) {
+            UnloadSound(assets->sons[indice].som);
+        }
+    }
+
+    // Descarrega saída de música
+    if (assets->musica_valida) {
+        UnloadMusicStream(assets->musica);
+    }
+
+    // Descarrega a fonte
+    if (assets->fonte_propria) {
+        UnloadFont(assets->fonte);  /* a fonte padrão é da raylib: não se descarrega */
+    }
+    // Fecha a saída de audio
+    if (assets->audio_ativo) {
+        CloseAudioDevice();
+    }
+
+    memset(assets, 0, sizeof(*assets));
 }
 
-const char *assets_nome_arquivo_imagem(ImagemId id)
+/* ========================================================================= */
+/* 4. Desenho de imagens                                                     */
+/* ========================================================================= */
+
+bool assets_imagem_fallback(const Assets *assets, ImagemId id)
 {
-    /* TODO: static const char *const nomes[IMG_QUANTIDADE] LOCAL; ex.: CAMINHO_SPRITES "fundo_pergunta.png".
-     *       PARA TROCAR UM ASSET: altere só o nome aqui. */
-    (void)id;
-    return "";
+    if (assets == NULL || (int)id < 0 || id >= IMG_QUANTIDADE) {
+        return true;
+    }
+    return assets->imagens[id].fallback;
 }
 
-const char *assets_nome_arquivo_som(SomId id)
+/** @brief Desenha uma textura inteira esticada no retângulo de destino. */
+static void desenhar_textura_esticada(Texture2D textura, Rectangle destino, Color tint)
 {
-    /* TODO: idem, com CAMINHO_SONS (.wav para efeitos; .ogg/.mp3 para música). */
-    (void)id;
-    return "";
+    Rectangle origem = { 0.0f, 0.0f, (float)textura.width, (float)textura.height };
+    Vector2 sem_rotacao = { 0.0f, 0.0f };
+
+    DrawTexturePro(textura, origem, destino, sem_rotacao, 0.0f, tint);
 }
 
-Status assets_carregar_imagem(Imagem *alvo, ImagemId id)
+void assets_desenhar_fundo(const Assets *assets, ImagemId fundo_padrao, BossId boss)
 {
-    /* TODO: FileExists -> LoadImage -> IsImageValid -> LoadTextureFromImage -> UnloadImage;
-     *       falhou: alvo->textura = assets_gerar_fallback(w, h); alvo->fallback = true. */
-    (void)alvo; (void)id;
-    return STATUS_NAO_IMPLEMENTADO;
-}
+    Rectangle janela = { 0.0f, 0.0f, (float)LARGURA_JANELA, (float)ALTURA_JANELA };
+    bool boss_valido = (int)boss >= 0 && boss < BOSS_QUANTIDADE;
 
-Texture2D assets_gerar_fallback(int largura, int altura)
-{
-    /* TODO: GenImageChecked(largura, altura, 32, 32, MAGENTA, BLACK) -> textura -> UnloadImage. */
-    Texture2D vazia = { 0 };
-    (void)largura; (void)altura;
-    return vazia;
-}
+    if (assets == NULL) {
+        return;
+    }
 
-Status assets_carregar_som(Efeito *alvo, SomId id)
-{
-    /* TODO: FileExists -> LoadSound -> IsSoundValid; falhou: valido = false. */
-    (void)alvo; (void)id;
-    return STATUS_NAO_IMPLEMENTADO;
-}
+    /* 1. Fundo próprio da fase */
+    if (boss_valido && !assets->fundos_boss[boss].fallback) {
+        desenhar_textura_esticada(assets->fundos_boss[boss].textura, janela, WHITE);
+        return;
+    }
 
-Status assets_carregar_musica(Assets *assets)
-{
-    /* TODO: LoadMusicStream(CAMINHO_SONS "musica.ogg"); IsMusicValid. */
-    (void)assets;
-    return STATUS_NAO_IMPLEMENTADO;
-}
+    /* 2. Fundo padrão da tela */
+    if (!assets_imagem_fallback(assets, fundo_padrao)) {
+        desenhar_textura_esticada(assets->imagens[fundo_padrao].textura, janela, WHITE);
+        return;
+    }
 
-Status assets_carregar_fonte(Assets *assets)
-{
-    /* TODO: int pontos[224]; preencher com 32..255; LoadFontEx(ARQUIVO_FONTE, TAM_FONTE_BASE, pontos, 224);
-     *       IsFontValid? senão GetFontDefault() e fonte_propria = false. */
-    (void)assets;
-    return STATUS_NAO_IMPLEMENTADO;
-}
-
-Status assets_carregar_animacao(Animacao *alvo, const char *prefixo, float segundos_por_quadro)
-{
-    /* TODO: laço com TextFormat("%s%s_%02d.png", CAMINHO_FRAMES, prefixo, i) + realloc do vetor de quadros.
-     *       ALTERNATIVA futura: spritesheet única + DrawTextureRec (trocar só esta função). */
-    (void)alvo; (void)prefixo; (void)segundos_por_quadro;
-    return STATUS_NAO_IMPLEMENTADO;
-}
-
-Texture2D assets_imagem(const Assets *assets, ImagemId id)
-{
-    /* TODO: retornar assets->imagens[id].textura com checagem de intervalo. */
-    Texture2D vazia = { 0 };
-    (void)assets; (void)id;
-    return vazia;
+    /* 3. Degradê na cor da fase (o xadrez em tela cheia seria ilegível) */
+    DrawRectangleGradientV(0, 0, LARGURA_JANELA, ALTURA_JANELA,
+                           boss_valido ? cor_tema_boss(boss) : PALETA_FUNDO, BLACK);
 }
 
 void assets_desenhar_imagem(const Assets *assets, ImagemId id, Rectangle destino, Color tint)
 {
-    /* TODO: DrawTexturePro(textura, {0,0,w,h}, destino, {0,0}, 0, tint). */
-    (void)assets; (void)id; (void)destino; (void)tint;
+    if (assets == NULL || (int)id < 0 || id >= IMG_QUANTIDADE) {
+        return;
+    }
+    desenhar_textura_esticada(assets->imagens[id].textura, destino, tint);
 }
+
+void assets_desenhar_painel(const Assets *assets, ImagemId id, Rectangle destino,
+                            Color cor_se_faltar, Color tint)
+{
+    if (!assets_imagem_fallback(assets, id)) {
+        desenhar_textura_esticada(assets->imagens[id].textura, destino, tint);
+        return;
+    }
+
+    /* Sem imagem: retângulo com borda escura e um brilho no topo (relevo de botão do Minecraft) */
+    DrawRectangleRec(destino, cor_se_faltar);
+    DrawRectangle((int)destino.x, (int)destino.y, (int)destino.width, (int)BORDA_PAINEL,
+                  Fade(WHITE, 0.25f));
+    DrawRectangleLinesEx(destino, BORDA_PAINEL, PALETA_BORDA);
+}
+
+void assets_desenhar_boss(const Assets *assets, BossId id, float tempo, Rectangle destino, Color tint)
+{
+    const Animacao *animacao;
+    int quadro_atual;
+
+    // Confere parametros
+    if (assets == NULL || (int)id < 0 || id >= BOSS_QUANTIDADE) {
+        return;
+    }
+    animacao = &assets->bosses[id];
+    if (animacao->quantidade <= 0) {
+        return;
+    }
+
+    quadro_atual = (int)(tempo / SEGUNDOS_POR_QUADRO) % animacao->quantidade;
+    if (quadro_atual < 0) {
+        quadro_atual = 0;
+    }
+    desenhar_textura_esticada(animacao->quadros[quadro_atual], destino, tint);
+}
+
+/* ========================================================================= */
+/* 5. Som e música                                                           */
+/* ========================================================================= */
 
 void assets_tocar_som(const Assets *assets, SomId id)
 {
-    /* TODO: if (audio_ativo && sons[id].valido) PlaySound(...). */
-    (void)assets; (void)id;
+    if (assets == NULL || !assets->audio_ativo || (int)id < 0 || id >= SOM_QUANTIDADE
+        || !assets->sons[id].valido) {
+        return;
+    }
+    PlaySound(assets->sons[id].som);
 }
 
-void assets_tocar_musica(Assets *assets)
+void assets_tocar_musica(const Assets *assets)
 {
-    /* TODO: PlayMusicStream + SetMusicVolume. */
-    (void)assets;
+    if (assets == NULL || !assets->audio_ativo || !assets->musica_valida) {
+        return;
+    }
+    PlayMusicStream(assets->musica);
 }
 
-void assets_atualizar_musica(Assets *assets)
+void assets_atualizar_musica(const Assets *assets)
 {
-    /* TODO: UpdateMusicStream(assets->musica) se válida. */
-    (void)assets;
+    if (assets == NULL || !assets->audio_ativo || !assets->musica_valida) {
+        return;
+    }
+    UpdateMusicStream(assets->musica);
 }
 
-Texture2D assets_quadro_animacao(const Assets *assets, AnimacaoId id, float tempo)
+/* ========================================================================= */
+/* 6. Texto                                                                  */
+/* ========================================================================= */
+
+int assets_contar_letras(const char *texto)
 {
-    /* TODO: índice = (int)(tempo / segundos_por_quadro) % quantidade. */
-    Texture2D vazia = { 0 };
-    (void)assets; (void)id; (void)tempo;
-    return vazia;
+    int letras = 0, bytes_da_letra = 0;
+
+    // Confere parâmetros
+    if (texto == NULL) {
+        return 0;
+    }
+
+    // Pega os caracteres um a um
+    while (*texto != '\0') {
+        /*
+        * GetCodepointNext  pega o Unicode e registra em Bytes (UTF-8)
+        * Toda essa seção é utilizada para registrar caracteres com acentos ou não convencionais
+        * strlen por exemplo só lê em bytes o tamanho total (quando por exemplo, 'é' é 2 bytes)
+        * então para 'é':
+        * strlen -> 2 bytes (2 char)
+        * este trecho -> 1 caracter 
+        */
+        GetCodepointNext(texto, &bytes_da_letra);
+        texto += bytes_da_letra;
+        letras++;
+    }
+    return letras;
 }
 
-ImagemId assets_imagem_do_boss(BossId id)
+/**
+ * @brief Copia as primeiras `letras` letras UTF-8 de `origem` para `destino`.
+ * Nunca corta no meio de um caractere acentuado (que ocupa 2 bytes em UTF-8).
+ */
+static void copiar_letras(char *destino, size_t capacidade, const char *origem, int letras)
 {
-    /* TODO: IMG_BOSS_CREEPER + id (enum na mesma ordem). */
-    (void)id;
-    return IMG_BOSS_CREEPER;
+    size_t bytes = 0;
+    int bytes_da_letra = 0;
+
+    while (origem[bytes] != '\0' && letras > 0) {
+        GetCodepointNext(origem + bytes, &bytes_da_letra);
+        if (bytes + (size_t)bytes_da_letra >= capacidade) {
+            break;
+        }
+        bytes += (size_t)bytes_da_letra;
+        letras--;
+    }
+    memcpy(destino, origem, bytes);
+    destino[bytes] = '\0';
 }
 
-AnimacaoId assets_animacao_do_boss(BossId id)
+float assets_largura_texto(const Assets *assets, const char *texto, float tamanho)
 {
-    /* TODO: ANIM_BOSS_CREEPER + id. */
-    (void)id;
-    return ANIM_BOSS_CREEPER;
+    if (assets == NULL || texto == NULL) {
+        return 0.0f;
+    }
+    return MeasureTextEx(assets->fonte, texto, tamanho, espacamento_letras(tamanho)).x;
 }
+
+void assets_desenhar_texto(const Assets *assets, const char *texto, Vector2 posicao, float tamanho, Color cor)
+{
+    if (assets == NULL || texto == NULL) {
+        return;
+    }
+    DrawTextEx(assets->fonte, texto, posicao, tamanho, espacamento_letras(tamanho), cor);
+}
+
+void assets_desenhar_texto_centralizado(const Assets *assets, const char *texto, Rectangle area,
+                                        float tamanho, Color cor)
+{
+    Vector2 posicao;
+
+    if (assets == NULL || texto == NULL) {
+        return;
+    }
+    posicao.x = area.x + (area.width - assets_largura_texto(assets, texto, tamanho)) / 2.0f;
+    posicao.y = area.y + (area.height - tamanho) / 2.0f;
+    assets_desenhar_texto(assets, texto, posicao, tamanho, cor);
+}
+
+/** @brief Avança `texto` até o primeiro caractere que não é espaço. */
+static const char *pular_espacos(const char *texto)
+{
+    while (*texto == ' ') {
+        texto++;
+    }
+    return texto;
+}
+
+/** @brief Conta as letras UTF-8 de `inicio` até `fim` (sem incluir `fim`). */
+static int contar_letras_ate(const char *inicio, const char *fim)
+{
+    int letras = 0, bytes_da_letra = 0;
+
+    while (inicio < fim) {
+        GetCodepointNext(inicio, &bytes_da_letra);
+        inicio += bytes_da_letra;
+        letras++;
+    }
+    return letras;
+}
+
+/**
+ * @brief Palavra maior que a linha inteira: copia para `linha` o maior começo dela que cabe.
+ *
+ * Cresce letra por letra a partir da primeira e para na primeira que não cabe. Assim o custo
+ * depende só do que cabe na linha, e não do tamanho da palavra (nem do resto do texto).
+ * A primeira letra entra sempre, mesmo sem caber: garante que o texto avança.
+ *
+ * @return Onde a palavra continua na linha de baixo.
+ */
+static const char *cortar_palavra(const Assets *assets, const char *inicio_palavra, const char *fim_palavra,
+                                  float largura_maxima, float tamanho, char *linha, size_t capacidade)
+{
+    int letras_da_palavra = contar_letras_ate(inicio_palavra, fim_palavra);
+    int letras = (letras_da_palavra > 0) ? 1 : 0;
+
+    copiar_letras(linha, capacidade, inicio_palavra, letras);
+    while (letras < letras_da_palavra) {
+        copiar_letras(linha, capacidade, inicio_palavra, letras + 1);
+        if (assets_largura_texto(assets, linha, tamanho) > largura_maxima) {
+            copiar_letras(linha, capacidade, inicio_palavra, letras);  /* volta ao último que cabia */
+            break;
+        }
+        letras++;
+    }
+    return inicio_palavra + strlen(linha);
+}
+
+/**
+ * @brief Monta em `linha` o maior trecho de `inicio` que cabe em `largura_maxima`.
+ *
+ * Acrescenta uma palavra por vez (com os espaços antes dela) direto em `linha` e mede;
+ * se passar da largura, desfaz e a palavra vai para a linha de baixo. Uma palavra maior
+ * que a linha inteira é cortada por letras (cortar_palavra). Um '\n' no texto força a quebra.
+ *
+ * @return Onde começa a próxima linha (espaços e o '\n' da quebra já pulados).
+ */
+static const char *montar_linha(const Assets *assets, const char *inicio, float largura_maxima,
+                                float tamanho, char *linha, size_t capacidade)
+{
+    const char *cursor = inicio;
+    size_t usado = 0;  /* bytes já ocupados em `linha` */
+
+    linha[0] = '\0';
+    while (*cursor != '\0' && *cursor != '\n') {
+        const char *inicio_palavra = pular_espacos(cursor);
+        const char *inicio_trecho = (usado == 0) ? inicio_palavra : cursor;  /* linha não começa com espaço */
+        const char *fim_palavra = inicio_palavra;
+        size_t bytes_trecho;
+
+        while (*fim_palavra != '\0' && *fim_palavra != ' ' && *fim_palavra != '\n') {
+            fim_palavra++;
+        }
+        bytes_trecho = (size_t)(fim_palavra - inicio_trecho);
+
+        /* Acrescenta o trecho direto em `linha` (+1 pelo '\0'); se passar da largura, desfaz */
+        if (usado + bytes_trecho + 1 <= capacidade) {
+            memcpy(linha + usado, inicio_trecho, bytes_trecho);
+            linha[usado + bytes_trecho] = '\0';
+            if (assets_largura_texto(assets, linha, tamanho) <= largura_maxima) {
+                usado += bytes_trecho;
+                cursor = fim_palavra;
+                continue;
+            }
+            linha[usado] = '\0';
+        }
+
+        if (usado == 0) {
+            return cortar_palavra(assets, inicio_palavra, fim_palavra, largura_maxima, tamanho,
+                                  linha, capacidade);
+        }
+        break;  /* a palavra vai para a linha de baixo */
+    }
+
+    cursor = pular_espacos(cursor);
+    if (*cursor == '\n') {
+        cursor++;
+    }
+    return cursor;
+}
+
+/**
+ * @brief Percorre o texto linha a linha; desenha se `desenhar` for true.
+ * @return Quantidade de linhas que o texto inteiro ocupa.
+ */
+static int percorrer_texto_quebrado(const Assets *assets, const char *texto, Rectangle area,
+                                    float tamanho, Color cor, int limite_letras, bool desenhar)
+{
+    char linha[TAM_LINHA_TEXTO];
+    char linha_parcial[TAM_LINHA_TEXTO];
+    const char *cursor = texto;
+    float altura_linha = tamanho * ESPACO_ENTRE_LINHAS;
+    int total_linhas = 0;
+    int letras_restantes = limite_letras;
+
+    while (*cursor != '\0') {
+        Vector2 posicao = { area.x, area.y + (float)total_linhas * altura_linha };
+        const char *proxima = montar_linha(assets, cursor, area.width, tamanho, linha, sizeof(linha));
+
+        if (proxima == cursor) {
+            break;  /* proteção: nada coube (área estreita demais) */
+        }
+        cursor = proxima;
+
+        if (desenhar && posicao.y + tamanho <= area.y + area.height + 1.0f && letras_restantes != 0) {
+            if (letras_restantes < 0) {
+                assets_desenhar_texto(assets, linha, posicao, tamanho, cor);
+            } else {
+                int letras_da_linha = assets_contar_letras(linha);
+                int letras_desenhadas = letras_da_linha < letras_restantes ? letras_da_linha : letras_restantes;
+
+                copiar_letras(linha_parcial, sizeof(linha_parcial), linha, letras_desenhadas);
+                assets_desenhar_texto(assets, linha_parcial, posicao, tamanho, cor);
+                letras_restantes -= letras_desenhadas;
+            }
+        }
+        total_linhas++;
+    }
+    return total_linhas;
+}
+
+int assets_desenhar_texto_quebrado(const Assets *assets, const char *texto, Rectangle area,
+                                   float tamanho, Color cor, int limite_letras)
+{
+    if (assets == NULL || texto == NULL) {
+        return 0;
+    }
+    return percorrer_texto_quebrado(assets, texto, area, tamanho, cor, limite_letras, true);
+}
+
+void assets_desenhar_texto_ajustado(const Assets *assets, const char *texto, Rectangle area,
+                                    float tamanho_maximo, float tamanho_minimo, Color cor)
+{
+    float tamanho, altura_texto;
+    int linhas = 0;
+    Rectangle area_centralizada = area;
+
+    if (assets == NULL || texto == NULL) {
+        return;
+    }
+
+    /* Procura o maior tamanho em que todas as linhas cabem na altura da área */
+    for (tamanho = tamanho_maximo; tamanho > tamanho_minimo; tamanho -= 2.0f) {
+        linhas = percorrer_texto_quebrado(assets, texto, area, tamanho, cor, -1, false);
+        if ((float)linhas * tamanho * ESPACO_ENTRE_LINHAS <= area.height) {
+            break;
+        }
+    }
+    if (tamanho < tamanho_minimo) {
+        tamanho = tamanho_minimo;
+    }
+
+    /* Centraliza o bloco de linhas na vertical (a última linha não precisa do espaço extra) */
+    linhas = percorrer_texto_quebrado(assets, texto, area, tamanho, cor, -1, false);
+    altura_texto = (float)(linhas - 1) * tamanho * ESPACO_ENTRE_LINHAS + tamanho;
+    if (altura_texto < area.height) {
+        area_centralizada.y += (area.height - altura_texto) / 2.0f;
+        area_centralizada.height = altura_texto + 1.0f;
+    }
+    percorrer_texto_quebrado(assets, texto, area_centralizada, tamanho, cor, -1, true);
+}
+
 #endif /* USE_RAYLIB */
