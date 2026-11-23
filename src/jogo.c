@@ -193,8 +193,7 @@ Status jogo_iniciar(Jogo *jogo, const Banco *banco)
     if (status != STATUS_OK) {
         return status;
     }
-
-    assets_tocar_musica(&jogo->assets);
+    
     status = jogo_nova_partida(jogo);
     if (status != STATUS_OK) {
         return status;
@@ -219,6 +218,10 @@ Status jogo_nova_partida(Jogo *jogo)
         return STATUS_ERRO_PARAMETRO;
     }
 
+    /* Partida nova começa sem o banner de erro da anterior */
+    jogo->ultimo_erro = STATUS_OK;
+    jogo->tempo_do_erro = 0.0f;
+
     status = partida_iniciar(&jogo->partida, jogo->banco);
     if (status != STATUS_OK) {
         return status;
@@ -229,7 +232,9 @@ Status jogo_nova_partida(Jogo *jogo)
     }
 
     /* Introdução + entrada do primeiro boss, depois a primeira pergunta */
+    /* Introdução -> história antes do 1º boss -> entrada do 1º boss -> pergunta */
     jogo_tocar_cena(jogo, CENA_INTRO, TELA_PERGUNTA);
+    jogo_anexar_cena(jogo, CENA_HISTORIA_1);
     jogo_anexar_cena(jogo, dialogo_cena_do_boss(partida_boss_atual(&jogo->partida)->id));
     return STATUS_OK;
 }
@@ -247,6 +252,14 @@ void jogo_atualizar(Jogo *jogo, float dt)
     assets_atualizar_musica(&jogo->assets);
     jogo->tempo_na_tela += dt;
     jogo->tempo_total += dt;
+
+    /* O banner de erro some sozinho depois de DURACAO_BANNER_ERRO segundos */
+    if (jogo->ultimo_erro != STATUS_OK) {
+        jogo->tempo_do_erro -= dt;
+        if (jogo->tempo_do_erro <= 0.0f) {
+            jogo->ultimo_erro = STATUS_OK;
+        }
+    }
 
     switch (jogo->tela) {
     case TELA_DIALOGO:   tela_dialogo_atualizar(jogo, dt);   break;
@@ -414,6 +427,7 @@ void jogo_registrar_erro(Jogo *jogo, Status status, const char *contexto)
             utils_mensagem_status(status));
     if (jogo != NULL) {
         jogo->ultimo_erro = status;
+        jogo->tempo_do_erro = DURACAO_BANNER_ERRO;  /* erro repetido reinicia a contagem */
     }
 }
 

@@ -6,6 +6,170 @@ A explicação de como o código funciona e como os arquivos se ligam está em
 
 ---
 
+## 23/11/2026 (madrugada) — várias músicas e troca de música nas cenas (`MUSICA`)
+
+### Pedido
+Trocar de música no meio de uma cena, com volta manual, e uma música para cada seção de perguntas.
+
+### Como funciona
+- `MUSICA(MUSICA_X)` no `case` da cena: a música troca quando a **próxima** fala aparecer.
+- A música continua depois da cena; para voltar, outro `MUSICA(...)` (escolha da equipe: volta manual).
+- Cada cena de entrada de boss começa com a música da seção dele; a introdução começa com a principal
+  (por isso reiniciar a partida volta à principal).
+- Música de seção faltando: a troca é ignorada e a atual continua. Só a principal avisa se faltar;
+  das outras sai uma linha com quantas foram encontradas.
+
+### Mudanças
+| Arquivo | Mudança | Motivo |
+|---|---|---|
+| `include/assets.h`, `src/assets.c` | Enum `MusicaId` (`MUSICA_PRINCIPAL`, `MUSICA_CREEPER` ... `MUSICA_HEROBRINE`) e tabela `nome_arquivo_musica()`; `Assets` guarda `musicas[]`, `musica_valida[]` e `musica_atual`; `assets_trocar_musica()` substitui `assets_tocar_musica()`; `assets_atualizar_musica()` alimenta só a atual | Uma música por vez, trocável. Mesmo padrão enum + tabela dos sons e imagens. |
+| `include/config.h` | Saiu `ARQUIVO_MUSICA` | Agora o nome está na tabela de músicas. |
+| `include/dialogo.h`, `src/dialogo.c` | `Fala.musica`; macro `MUSICA`; `dialogo_som_pendente()` virou `dialogo_fala_nova()` (devolve a fala nova uma vez; a tela toca o som **e** troca a música) | Um controle só para os dois efeitos da fala, em vez de duas funções quase iguais. |
+| `src/dialogo.c` | `MUSICA(MUSICA_PRINCIPAL)` na introdução e `MUSICA(MUSICA_<BOSS>)` na entrada de cada boss | Música de cada seção. |
+| `src/jogo.c` | Abertura do jogo: `assets_trocar_musica(..., MUSICA_PRINCIPAL)` | Substitui `assets_tocar_musica`. |
+| `src/tela.c` | `tela_dialogo_atualizar` usa `dialogo_fala_nova` para tocar o som e trocar a música | |
+| `docs/GUIA_RAPIDO.md`, `docs/ARQUITETURA.md`, `assets/README.md` | Seção de músicas, nomes dos arquivos | Documentação. |
+
+### Como foi testado
+- Com um dispositivo de áudio "nulo" (toca sem som) e músicas de teste para Creeper e Warden: a troca
+  para uma música existente para a anterior e começa a nova; para uma faltando (Wither) a atual continua;
+  `MUSICA_MANTER` e a mesma música não fazem nada; voltar à principal funciona.
+- Marcas nas falas: só a 1ª fala da introdução e de cada entrada de boss troca a música; reação e
+  derrota não trocam; a fala nova é entregue uma vez só. ASan: 0 falhas.
+- Partidas completas jogadas automaticamente com áudio nulo e ASan/UBSan: Creeper nas perguntas 1-4
+  (sem arquivo do Wither, a dele continua), Warden da 5ª em diante, e ao reiniciar volta à principal.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+- Não testado: ouvir de verdade (o ambiente de teste não tem saída de som).
+
+### Observação
+A tela de resultado continua com a música da última seção (volta manual). Se quiserem outra ali,
+um `MUSICA(...)` na `CENA_VITORIA`, `CENA_DERROTA` e `CENA_PARADA` resolve.
+
+---
+
+## 23/11/2026 (madrugada) — guia rápido (`docs/GUIA_RAPIDO.md`)
+
+### Pedido
+Um guia curto com as funções de cena e como adicionar cenário, ícone, som etc.
+
+### Mudanças
+| Arquivo | Mudança |
+|---|---|
+| `docs/GUIA_RAPIDO.md` (novo) | Funções de cena (`jogo_tocar_cena`, `jogo_anexar_cena`, `FALA`, `FALA_SOM`, `CENARIO`...), como criar uma cena, onde cada cena é chamada, como registrar imagem e som (enum + tabela), arquivos de boss e fundos, `layout.h` e comandos para conferir |
+| `README.md` | Link para o guia |
+
+Só documentação; nenhum código mudou.
+
+---
+
+## 23/11/2026 (madrugada) — histórias chamadas direto (sem tabela)
+
+### Pedido
+Tirar a tabela de histórias e deixar as chamadas manuais, visíveis no ponto do fluxo.
+
+### Mudanças
+| Arquivo | Mudança |
+|---|---|
+| `include/dialogo.h`, `src/dialogo.c` | Saíram `dialogo_historia_antes_do_boss()` e `dialogo_historia_da_vitoria()`; comentários apontam onde cada história é chamada |
+| `src/jogo.c` | `jogo_nova_partida`: `jogo_anexar_cena(jogo, CENA_HISTORIA_1)` direto; `jogo_anexar_cena` voltou a não aceitar `CENA_QUANTIDADE` (era só para a tabela) |
+| `src/tela.c` | Revelação: `switch` pelo próximo boss (`CENA_HISTORIA_2` a `_5`) e `CENA_HISTORIA_FIM` direto na vitória |
+| `include/jogo.h`, `docs/ARQUITETURA.md` | Documentação |
+
+O comportamento no jogo é o mesmo: as mesmas histórias tocam nos mesmos momentos.
+
+### Como foi testado
+- Partida completa jogada automaticamente (as 6 histórias tocam na ordem) com ASan/UBSan: sem erros.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+
+---
+
+## 23/11/2026 (madrugada) — cenário dentro da cena (`CENARIO`) e tabela de história
+
+### Pedido
+Cenas completas de história: falas, sons e mudança de cenário no meio da cena, tocando sozinhas
+nos momentos certos.
+
+### Como usar
+No `case` da cena (`dialogo.c`):
+```c
+case CENA_HISTORIA_2:
+    CENARIO(IMG_CENARIO_VILA);                   /* fundo das falas seguintes */
+    FALA(NOME_APRESENTADOR, "...", IMG_RETRATO_ALDEAO);
+    CENARIO(IMG_CENARIO_NETHER);                 /* muda aqui */
+    FALA_SOM(NOME_APRESENTADOR, "...", IMG_RETRATO_ALDEAO, SOM_PORTAL);
+    break;
+```
+Sem `CENARIO`, a cena usa o fundo da fase (como antes) e mostra o boss. Com cenário próprio o boss
+não aparece. `CENARIO(IMG_NENHUMA)` volta ao fundo da fase. Cada cena começa sem cenário, mesmo
+encadeada depois de outra que tinha.
+
+Imagem de cenário nova: id no enum `ImagemId` (`assets.h`), nome em `nome_arquivo_imagem()`
+(`assets.c`) e o arquivo (16:9) em `assets/sprites/`.
+
+### Quando cada história toca
+| Momento | Cena | Onde se muda |
+|---|---|---|
+| Início, antes do Creeper | `CENA_HISTORIA_1` | `dialogo_historia_antes_do_boss()` |
+| Antes do Wither, do Warden, do Ender Dragon, do Herobrine | `CENA_HISTORIA_2` a `_5` | idem |
+| Antes da fala de vitória | `CENA_HISTORIA_FIM` | `dialogo_historia_da_vitoria()` |
+
+Para tirar uma história, troque a cena por `CENA_QUANTIDADE` na tabela (`jogo_anexar_cena` ignora).
+
+### Mudanças
+| Arquivo | Mudança |
+|---|---|
+| `include/dialogo.h` | `Fala.fundo`; `dialogo_historia_antes_do_boss()`, `dialogo_historia_da_vitoria()`; comentário do topo explica CENARIO e a tabela |
+| `src/dialogo.c` | Macro `CENARIO` e variável local `cenario` (começa em `IMG_NENHUMA` em cada cena); `FALA_SOM` grava o cenário atual na fala; `case` com **texto de marcação** para `CENA_HISTORIA_1` a `_5` e `_FIM` (as cenas que a equipe criou no enum não tinham `case` e dariam erro); as duas tabelas de história |
+| `include/jogo.h`, `src/jogo.c` | `jogo_anexar_cena(jogo, CENA_QUANTIDADE)` = nenhuma cena (devolve OK); nova partida: introdução → história 1 → entrada do Creeper |
+| `src/tela.c` | Revelação: boss caiu → derrotado + história do próximo boss + entrada; vitória → derrotado + história final + vitória. Diálogo: fala com cenário desenha só o cenário (sem boss) |
+| `include/config.h` | `DIALOGO_MAX_FALAS` 16 → 32 |
+
+`DIALOGO_MAX_FALAS` subiu porque as cenas encadeadas somam falas: antes do Ender Dragon já são
+1 (boss derrotado) + história + 7 (entrada dele). Com 16, uma história de mais de 8 falas ali
+estouraria o limite.
+
+### Como foi testado
+- Teste com uma cena de exemplo (só na cópia de teste): as 4 falas guardaram o cenário certo
+  (fase, A, B, de volta à fase) e o som; cena encadeada e reação começam sem cenário; tabelas
+  devolvem as cenas certas; todas as cenas carregam sem cair no `default`; encadeamentos reais
+  cabem no limite. Com ASan: 0 falhas.
+- Prints da cena de exemplo: o fundo troca na fala certa e o boss some só nas falas com cenário.
+- Partidas completas jogadas automaticamente com ASan/UBSan (passando pelas 6 histórias): sem erros.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+
+---
+
+## 23/11/2026 (madrugada) — som em cada fala (`FALA_SOM`)
+
+### Pedido
+Poder tocar um som em qualquer fala dos diálogos, para montar as cenas de história.
+
+### Como usar
+No `case` da cena (`dialogo.c`), troque `FALA(...)` por `FALA_SOM(personagem, texto, retrato, SOM_X)`.
+O som toca uma vez, quando a fala aparece. Som novo: id no enum `SomId` (`assets.h`), nome do arquivo
+em `nome_arquivo_som()` (`assets.c`) e o arquivo em `assets/sounds/`. Arquivo faltando = silêncio.
+
+### Mudanças
+| Arquivo | Mudança | Motivo |
+|---|---|---|
+| `include/assets.h` | `SOM_NENHUM` (= `SOM_QUANTIDADE`) | "Sem som"; `assets_tocar_som` já ignora esse valor. |
+| `include/dialogo.h`, `src/dialogo.c` | `Fala.som`; `Dialogo.indice_som_tocado`; `dialogo_adicionar_fala(..., SomId som)`; `dialogo_som_pendente()`; macro `FALA_SOM` (e `FALA` = `FALA_SOM` com `SOM_NENHUM`) | O diálogo só guarda o som e diz qual tocar; continua sem depender do áudio. |
+| `src/dialogo.c` | `dialogo_limpar` põe `indice_som_tocado = -1` depois do `memset` | Com 0, o som da 1ª fala seria considerado já tocado. |
+| `src/tela.c` | `tela_dialogo_atualizar` toca `dialogo_som_pendente()` a cada quadro (e `return` logo depois de trocar de tela) | O som sai no quadro em que a fala aparece, junto com o clique. |
+
+As cenas existentes não mudaram (usam `FALA`, sem som). As `CENA_HISTORIA_*` que a equipe criou
+em `dialogo.h` ainda não têm `case`: tocá-las agora daria erro de cena inexistente.
+
+### Como foi testado
+- Teste da sequência (fora do projeto, com ASan): som da 1ª fala sai uma vez e não repete; o 1º toque
+  (que só completa o texto) não toca nada; fala sem som não toca; a fala seguinte toca o seu; diálogo
+  acabado não toca; cena encadeada depois do fim toca; recarregar uma cena zera o controle. 0 falhas.
+- Partidas completas jogadas automaticamente com ASan/UBSan: sem erros.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+- Não testado: ouvir os sons (o ambiente de teste não tem placa de som).
+
+---
+
 ## 22/11/2026 (noite) — coluna da pergunta mais estreita, boss maior e preço com ícone
 
 ### Pedido

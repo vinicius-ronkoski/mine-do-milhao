@@ -721,8 +721,8 @@ static void tela_jogar(const Banco *banco)
     utils_limpar_tela();
     printf(COR_AMARELO "== Jogar ==\n\n" COR_RESET);
     utils_beep();
-    printf(COR_VERMELHO "Este executável foi compilado sem a raylib.\n" COR_RESET);
-    printf("Compile com: make USE_RAYLIB=1\n");
+    printf(COR_VERMELHO "Este executável foi compilado/rodade sem a raylib.\n" COR_RESET);
+    printf("Compile com: make USE_RAYLIB=1\nRode com: make USE_RAYLIB=1");
 #endif
     utils_pausar();
 }

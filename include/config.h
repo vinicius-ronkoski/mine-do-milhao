@@ -114,11 +114,11 @@
 #define CAMINHO_SONS     "assets/sounds/"
 #define CAMINHO_FONTES   "assets/fonts/"
 #define ARQUIVO_FONTE    CAMINHO_FONTES "minecraft"  /* .ttf ou .otf */
-#define ARQUIVO_MUSICA   CAMINHO_SONS "musica"      /* .ogg, .mp3 ou .wav */
 #define TAM_FONTE_BASE   32
 /**@}*/
 
-#define DIALOGO_MAX_FALAS          16
+/** Falas num diálogo, somando as cenas encadeadas (ex.: boss derrotado + história + próximo boss). */
+#define DIALOGO_MAX_FALAS          32
 #define TAM_FALA                   256
 #define TAM_NOME_PERSONAGEM        32
 #define DIALOGO_LETRAS_POR_SEGUNDO 40

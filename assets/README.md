@@ -13,8 +13,8 @@ ou se existe mas é **inválido**.
 | Fonte | `.ttf`, `.otf` |
 
 Para trocar um nome, edite a tabela correspondente em `src/assets.c`
-(`nome_arquivo_imagem`, `nome_arquivo_som`, `prefixo_do_boss`) ou, para fonte e música,
-`ARQUIVO_FONTE` e `ARQUIVO_MUSICA` em `include/config.h`. Os nomes nunca levam extensão.
+(`nome_arquivo_imagem`, `nome_arquivo_som`, `nome_arquivo_musica`, `prefixo_do_boss`) ou, para a fonte,
+`ARQUIVO_FONTE` em `include/config.h`. Os nomes nunca levam extensão.
 
 ## Imagens — `assets/sprites/`
 
@@ -79,7 +79,16 @@ Se nenhum quadro existir, aparece um xadrez magenta (a "textura faltando" do Min
 | `boss_derrotado` | Boss derrotado |
 | `vitoria` | Prêmio máximo |
 | `entrada_creeper`, `entrada_wither`, `entrada_warden`, `entrada_ender_dragon`, `entrada_herobrine` | Entrada do boss: 1ª pergunta da fase dele (toca uma vez) |
-| `musica` | Música de fundo (em loop) |
+
+## Músicas — `assets/sounds/`
+
+| Nome | Quando começa |
+|---|---|
+| `musica` | Música principal: 1ª fala da introdução |
+| `musica_creeper`, `musica_wither`, `musica_warden`, `musica_ender_dragon`, `musica_herobrine` | Seção de cada boss: 1ª fala da cena de entrada dele |
+
+Toca uma por vez, em loop, até a próxima troca (`MUSICA(...)` numa cena; ver `docs/GUIA_RAPIDO.md`).
+Música de seção faltando: a troca é ignorada e a música que estava tocando continua.
 
 Se faltar: silêncio. O volume de cada grupo fica em `include/config.h` (`VOLUME_MUSICA`, `VOLUME_EFEITOS`);
 o clique toca sozinho em todo botão lido com `jogo_botao_acionado()` e a cada avanço do diálogo.

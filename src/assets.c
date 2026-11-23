@@ -63,7 +63,11 @@ static const char *nome_arquivo_imagem(ImagemId id)
         "botao",                 /* IMG_BOTAO            */
         "caixa_dialogo",         /* IMG_CAIXA_DIALOGO    */
         "esmeralda",             /* IMG_ESMERALDA        */
-        "retrato_aldeao"         /* IMG_RETRATO_ALDEAO   */
+        "retrato_aldeao",        /* IMG_RETRATO_ALDEAO   */
+        "auditorio",             /* IMG_FUNDO_AUDITORIO  */
+        "palco",                 /* IMG_FUNDO_PALCO  */
+        "retrato_desconhecido",  /* IMG_RETRATO_DESCONHECIDO*/
+        "fundo_preto"            /* IMG_FUNDO_PRETO*/
     };
 
     if ((int)id < 0 || id >= IMG_QUANTIDADE) {
@@ -73,20 +77,38 @@ static const char *nome_arquivo_imagem(ImagemId id)
 }
 
 /** @brief Nome do arquivo de cada som (em CAMINHO_SONS, SEM extensão), na ordem do enum SomId. */
+static const char *nome_arquivo_musica(MusicaId id)
+{
+    static const char *const nomes[MUSICA_QUANTIDADE] = {
+        "musica",                /* MUSICA_PRINCIPAL     */
+        "musica_creeper",        /* MUSICA_CREEPER       */
+        "musica_wither",         /* MUSICA_WITHER        */
+        "musica_warden",         /* MUSICA_WARDEN        */
+        "musica_ender_dragon",   /* MUSICA_ENDER_DRAGON  */
+        "musica_herobrine"       /* MUSICA_HEROBRINE     */
+    };
+
+    if ((int)id < 0 || id >= MUSICA_QUANTIDADE) {
+        return "";
+    }
+    return nomes[id];
+}
+
 static const char *nome_arquivo_som(SomId id)
 {
     static const char *const nomes[SOM_QUANTIDADE] = {
-        "clique",                /* SOM_CLIQUE         */
-        "acerto",                /* SOM_ACERTO         */
-        "erro",                  /* SOM_ERRO           */
-        "dano",                  /* SOM_DANO_BOSS      */
-        "boss_derrotado",        /* SOM_BOSS_DERROTADO */
-        "vitoria",               /* SOM_VITORIA        */
-        "entrada_creeper",       /* SOM_ENTRADA_CREEPER */
-        "entrada_wither",        /* SOM_ENTRADA_WITHER  */
-        "entrada_warden",        /* SOM_ENTRADA_WARDEN  */
-        "entrada_ender_dragon",  /* SOM_ENTRADA_ENDER_DRAGON */
-        "entrada_herobrine"      /* SOM_ENTRADA_HEROBRINE */
+        "clique",                /* SOM_CLIQUE                */
+        "acerto",                /* SOM_ACERTO                */
+        "erro",                  /* SOM_ERRO                  */
+        "dano",                  /* SOM_DANO_BOSS             */
+        "boss_derrotado",        /* SOM_BOSS_DERROTADO        */
+        "vitoria",               /* SOM_VITORIA               */
+        "entrada_creeper",       /* SOM_ENTRADA_CREEPER       */
+        "entrada_wither",        /* SOM_ENTRADA_WITHER        */
+        "entrada_warden",        /* SOM_ENTRADA_WARDEN        */
+        "entrada_ender_dragon",  /* SOM_ENTRADA_ENDER_DRAGON  */
+        "entrada_herobrine",     /* SOM_ENTRADA_HEROBRINE     */
+        "plateia",               /* SOM_PLATEIA               */
     };
 
     if ((int)id < 0 || id >= SOM_QUANTIDADE) {
@@ -322,29 +344,33 @@ static void carregar_som(Assets *assets, SomId id)
     }
 }
 
-/** @brief Carrega a música de fundo; se faltar, fica sem música. */
-static void carregar_musica(Assets *assets)
+/**
+ * @brief Carrega uma música; se faltar, ela fica marcada como inválida (trocar para ela não faz nada).
+ * @return true se carregou.
+ */
+static bool carregar_musica(Assets *assets, MusicaId id)
 {
-    char caminho[TAM_CAMINHO_ASSET];
+    char base[TAM_CAMINHO_ASSET], caminho[TAM_CAMINHO_ASSET];
     bool achou;
 
-    assets->musica_valida = false;
+    assets->musica_valida[id] = false;
     if (!assets->audio_ativo) {
-        printf("Erro ao carregar música: Audio Inativo\n");
-        return;
+        return false;
     }
 
-    achou = achar_audio(ARQUIVO_MUSICA, caminho, sizeof(caminho));
+    snprintf(base, sizeof(base), "%s%s", CAMINHO_SONS, nome_arquivo_musica(id));
+    achou = achar_audio(base, caminho, sizeof(caminho));
     if (achou) {
-        assets->musica = LoadMusicStream(caminho);
-        assets->musica_valida = IsMusicValid(assets->musica);
+        assets->musicas[id] = LoadMusicStream(caminho);
+        assets->musica_valida[id] = IsMusicValid(assets->musicas[id]);
     }
-    if (assets->musica_valida) {
-        assets->musica.looping = true;  /* recomeça sozinha ao terminar */
-        SetMusicVolume(assets->musica, VOLUME_MUSICA);
-    } else {
+    if (assets->musica_valida[id]) {
+        assets->musicas[id].looping = true;  /* recomeça sozinha ao terminar */
+        SetMusicVolume(assets->musicas[id], VOLUME_MUSICA);
+    } else if (id == MUSICA_PRINCIPAL) {
         avisar_fallback(assets, caminho, achou ? "inválido" : "não encontrado");
     }
+    return assets->musica_valida[id];
 }
 
 /** @brief Carrega ARQUIVO_FONTE (.ttf/.otf) com os caracteres 32..255; se faltar, usa a fonte padrão. */
@@ -389,7 +415,7 @@ static float espacamento_letras(float tamanho)
 
 Status assets_carregar(Assets *assets)
 {
-    int indice, fundos_encontrados;
+    int indice, fundos_encontrados, musicas_encontradas;
 
     if (assets == NULL) {
         return STATUS_ERRO_PARAMETRO;
@@ -428,7 +454,25 @@ Status assets_carregar(Assets *assets)
     for (indice = 0; indice < SOM_QUANTIDADE; indice++) {
         carregar_som(assets, (SomId)indice);
     }
-    carregar_musica(assets);
+    /* Músicas: a principal avisa se faltar; as das seções são opcionais (um aviso só) */
+    assets->musica_atual = MUSICA_MANTER;
+    if (!assets->audio_ativo) {
+        printf("Erro ao carregar música: Audio Inativo\n");
+    } else {
+        musicas_encontradas = 0;
+        for (indice = 0; indice < MUSICA_QUANTIDADE; indice++) {
+            bool carregou = carregar_musica(assets, (MusicaId)indice);
+
+            if (carregou && indice != MUSICA_PRINCIPAL) {
+                musicas_encontradas++;
+            }
+        }
+        if (musicas_encontradas < MUSICA_QUANTIDADE - 1) {
+            fprintf(stderr, "Aviso: %d de %d músicas de seção em " CAMINHO_SONS
+                    " (opcional: sem ela a música atual continua)\n",
+                    musicas_encontradas, MUSICA_QUANTIDADE - 1);
+        }
+    }
 
     return assets->total_fallbacks > 0 ? STATUS_ASSET_FALLBACK : STATUS_OK;
 }
@@ -470,9 +514,11 @@ void assets_descarregar(Assets *assets)
         }
     }
 
-    // Descarrega saída de música
-    if (assets->musica_valida) {
-        UnloadMusicStream(assets->musica);
+    // Descarrega as músicas
+    for (indice = 0; indice < MUSICA_QUANTIDADE; indice++) {
+        if (assets->musica_valida[indice]) {
+            UnloadMusicStream(assets->musicas[indice]);
+        }
     }
 
     // Descarrega a fonte
@@ -615,20 +661,38 @@ void assets_tocar_som(const Assets *assets, SomId id)
     PlaySound(assets->sons[id].som);
 }
 
-void assets_tocar_musica(const Assets *assets)
+void assets_trocar_musica(Assets *assets, MusicaId id)
 {
-    if (assets == NULL || !assets->audio_ativo || !assets->musica_valida) {
+    if (assets == NULL || !assets->audio_ativo) {
         return;
     }
-    PlayMusicStream(assets->musica);
+    /* Silêncio: para a música atual e fica sem nenhuma até a próxima troca */
+    if (id == MUSICA_SILENCIO) {
+        if (assets->musica_atual < MUSICA_QUANTIDADE) {
+            StopMusicStream(assets->musicas[assets->musica_atual]);
+        }
+        assets->musica_atual = MUSICA_MANTER;   /* "nenhuma tocando" */
+        return;
+    }
+    /* MUSICA_MANTER (ou qualquer valor fora da lista), a mesma que já toca, ou arquivo faltando:
+     * não faz nada e a atual continua. Sem isto, musicas[id] seria lido fora do vetor. */
+    if ((int)id < 0 || id >= MUSICA_QUANTIDADE || id == assets->musica_atual
+        || !assets->musica_valida[id]) {
+        return;
+    }
+    if (assets->musica_atual < MUSICA_QUANTIDADE) {
+        StopMusicStream(assets->musicas[assets->musica_atual]);
+    }
+    PlayMusicStream(assets->musicas[id]);
+    assets->musica_atual = id;
 }
 
 void assets_atualizar_musica(const Assets *assets)
 {
-    if (assets == NULL || !assets->audio_ativo || !assets->musica_valida) {
+    if (assets == NULL || !assets->audio_ativo || assets->musica_atual >= MUSICA_QUANTIDADE) {
         return;
     }
-    UpdateMusicStream(assets->musica);
+    UpdateMusicStream(assets->musicas[assets->musica_atual]);
 }
 
 /* ========================================================================= */

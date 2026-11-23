@@ -23,6 +23,9 @@
 #include "dialogo.h"
 #include "botao.h"
 
+/** Segundos que o banner de erro fica na tela antes de sumir sozinho. */
+#define DURACAO_BANNER_ERRO 5.0f
+
 /** Segundos em que uma tela recém-aberta ignora cliques (evita o clique da tela anterior "vazar"). */
 #define ATRASO_ENTRADA_TELA 0.20f
 
@@ -55,6 +58,7 @@ typedef struct {
     bool efeito_da_tela_tocado;           /**< Para tocar um som só uma vez por tela (zera ao trocar). */
     int cursor_atual;                     /**< Cursor do mouse em uso (MOUSE_CURSOR_*). */
     Status ultimo_erro;                   /**< Último erro não fatal, mostrado num banner. */
+    float tempo_do_erro;                  /**< Segundos que o banner ainda fica visível (zera ultimo_erro ao chegar a 0). */
 } Jogo;
 
 /**

@@ -156,6 +156,7 @@ void tela_desenhar_escada_premios(const Jogo *jogo, Rectangle area)
 
 void tela_dialogo_atualizar(Jogo *jogo, float dt)
 {
+    const Fala *fala_nova;
     bool avancou;
 
     if (jogo == NULL) {
@@ -167,15 +168,33 @@ void tela_dialogo_atualizar(Jogo *jogo, float dt)
     }
     if (dialogo_atualizar(&jogo->dialogo, dt, avancou)) {
         jogo_trocar_tela(jogo, jogo->tela_apos_dialogo);
+        return;
+    }
+
+    /* Fala que acabou de aparecer (uma vez por fala): toca o som e troca a música dela.
+     * SOM_NENHUM e MUSICA_MANTER não fazem nada. */
+    fala_nova = dialogo_fala_nova(&jogo->dialogo);
+    if (fala_nova != NULL) {
+        assets_tocar_som(&jogo->assets, fala_nova->som);
+        assets_trocar_musica(&jogo->assets, fala_nova->musica);
     }
 }
 
 void tela_dialogo_desenhar(const Jogo *jogo)
 {
     const Boss *boss;
+    const Fala *fala;
     Rectangle area_boss;
 
     if (jogo == NULL) {
+        return;
+    }
+
+    /* Fala com cenário próprio (CENARIO numa cena de história): só o cenário, sem o boss */
+    fala = dialogo_fala_atual(&jogo->dialogo);
+    if (fala != NULL && fala->fundo != IMG_NENHUMA) {
+        assets_desenhar_fundo(&jogo->assets, fala->fundo, BOSS_QUANTIDADE);
+        dialogo_desenhar(&jogo->dialogo, &jogo->assets);
         return;
     }
 
@@ -335,14 +354,22 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
         break;
     case ESTADO_FIM_VITORIA:     /* acertou a 15ª: o último boss caiu */
         jogo_tocar_cena(jogo, CENA_BOSS_DERROTADO, TELA_RESULTADO);
+        jogo_anexar_cena(jogo, CENA_HISTORIA_FIM);
         jogo_anexar_cena(jogo, CENA_VITORIA);
         break;
     default:                     /* a partida continua */
         jogo_preparar_botoes_pergunta(jogo);
         proximo_boss = partida_boss_atual(&jogo->partida);
         if (jogo->partida.boss_derrotado_agora && proximo_boss != NULL) {
-            /* Boss caiu: comemoração e entrada do boss do próximo nível */
+            /* Boss caiu: comemoração, história e entrada do boss do próximo nível */
             jogo_tocar_cena(jogo, CENA_BOSS_DERROTADO, TELA_PERGUNTA);
+            switch (proximo_boss->id) {
+            case BOSS_WITHER:       jogo_anexar_cena(jogo, CENA_HISTORIA_2); break;  /* indo para o Nether */
+            case BOSS_WARDEN:       jogo_anexar_cena(jogo, CENA_HISTORIA_3); break;
+            case BOSS_ENDER_DRAGON: jogo_anexar_cena(jogo, CENA_HISTORIA_4); break;  /* indo para o Fim */
+            case BOSS_HEROBRINE:    jogo_anexar_cena(jogo, CENA_HISTORIA_5); break;  /* voltando do Fim */
+            default:                break;                                           /* sem história */
+            }
             jogo_anexar_cena(jogo, dialogo_cena_do_boss(proximo_boss->id));
         } else {
             jogo_trocar_tela(jogo, TELA_PERGUNTA);

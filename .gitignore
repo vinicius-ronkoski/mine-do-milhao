@@ -32,3 +32,5 @@ tests/*
 # arquivos locais
 docs/ARQUITETURA.md
 docs/MUDANÇAS.md
+
+data/perguntas.dat.tmp

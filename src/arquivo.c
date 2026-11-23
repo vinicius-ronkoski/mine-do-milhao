@@ -8,6 +8,13 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef _WIN32
+#include <windows.h>   /* MoveFileExA: no Windows o rename() não substitui um arquivo que já existe */
+#endif
+
+/** Tamanho do buffer do nome do arquivo temporário (caminho do .dat + ".tmp"). */
+#define TAM_CAMINHO_TEMPORARIO 256
+
 /** Converte o VALOR de uma macro em texto (usado para montar o formato do sscanf). */
 #define STR_(x) #x
 #define STR(x) STR_(x)
@@ -308,9 +315,27 @@ Status dat_carregar(const char *caminho, Banco *banco)
     return STATUS_OK;
 }
 
+/**
+ * @brief Troca `destino` por `origem` de uma vez (o destino antigo só some se a troca der certo).
+ *
+ * No Linux o rename() já substitui o arquivo existente de forma atômica. No Windows o rename()
+ * falha se o destino existe, então usa MoveFileExA com MOVEFILE_REPLACE_EXISTING.
+ *
+ * @return true se a troca foi feita.
+ */
+static bool substituir_arquivo(const char *origem, const char *destino)
+{
+#ifdef _WIN32
+    return MoveFileExA(origem, destino, MOVEFILE_REPLACE_EXISTING) != 0;
+#else
+    return rename(origem, destino) == 0;
+#endif
+}
+
 Status dat_salvar(const char *caminho, const Banco *banco)
 {
     FILE *arquivo;
+    char temporario[TAM_CAMINHO_TEMPORARIO];
     Status status = STATUS_OK;
 
     // Confere parametros
@@ -318,10 +343,17 @@ Status dat_salvar(const char *caminho, const Banco *banco)
         return STATUS_ERRO_PARAMETRO;
     }
 
-    // Abre o arquivo
-    arquivo = fopen(caminho, "wb");
+    // Grava num arquivo temporário ao lado do original (caminho + ".tmp"). O .dat antigo só é
+    // trocado no final: se o programa cair no meio da gravação, as perguntas antigas continuam
+    // intactas (abrir direto o caminho com "wb" apagaria o conteúdo antes de gravar).
+    if (snprintf(temporario, sizeof(temporario), "%s.tmp", caminho) >= (int)sizeof(temporario)) {
+        return STATUS_ERRO_PARAMETRO;   // caminho longo demais para o buffer
+    }
+
+    // Abre o arquivo temporário
+    arquivo = fopen(temporario, "wb");
     if (arquivo == NULL) {
-        perror(caminho);
+        perror(temporario);
         return STATUS_ERRO_ARQUIVO;
     }
 
@@ -336,9 +368,19 @@ Status dat_salvar(const char *caminho, const Banco *banco)
         status = STATUS_ERRO_ARQUIVO;
     }
 
-    // Fecha o arquivo 
+    // Fecha o arquivo (o fclose descarrega o buffer: um erro aqui também é falha de gravação)
     if (fclose(arquivo) != 0) {
         status = STATUS_ERRO_ARQUIVO;
+    }
+
+    // Deu tudo certo: o temporário vira o .dat definitivo. Se falhou, apaga o temporário
+    // e deixa o .dat antigo como estava.
+    if (status == STATUS_OK && !substituir_arquivo(temporario, caminho)) {
+        perror(caminho);
+        status = STATUS_ERRO_ARQUIVO;
+    }
+    if (status != STATUS_OK) {
+        remove(temporario);
     }
 
     return status;

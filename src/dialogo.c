@@ -23,38 +23,88 @@
 Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
 {
     Status status = STATUS_OK;
+    ImagemId cenario = IMG_NENHUMA;          /* toda cena começa com o fundo da fase */
+    MusicaId musica_proxima = MUSICA_MANTER; /* MUSICA(...) marca a troca na próxima fala */
 
     if (dialogo == NULL) {
         return STATUS_ERRO_PARAMETRO;
     }
 
-/* Atalho só deste switch: acrescenta uma fala e guarda o primeiro erro */
-#define FALA(personagem, texto, retrato)                                          \
-    do {                                                                          \
-        if (status == STATUS_OK) {                                                \
-            status = dialogo_adicionar_fala(dialogo, personagem, texto, retrato); \
-        }                                                                         \
+/* Atalhos só deste switch: acrescentam uma fala e guardam o primeiro erro.
+ *   FALA(personagem, texto, retrato)          fala sem som
+ *   FALA_SOM(personagem, texto, retrato, som) fala que toca `som` (SOM_*) quando aparece
+ *   CENARIO(imagem)                           as falas seguintes usam este fundo (IMG_*);
+ *                                             CENARIO(IMG_NENHUMA) volta ao fundo da fase
+ *   MUSICA(musica)                            a música troca quando a PRÓXIMA fala aparecer
+ *                                             (MUSICA_*); continua tocando depois da cena */
+#define FALA_SOM(personagem, texto, retrato, som)                                          \
+    do {                                                                                   \
+        if (status == STATUS_OK) {                                                         \
+            status = dialogo_adicionar_fala(dialogo, personagem, texto, retrato, som);     \
+            if (status == STATUS_OK) {                                                     \
+                dialogo->falas[dialogo->quantidade - 1].fundo = cenario;                   \
+                dialogo->falas[dialogo->quantidade - 1].musica = musica_proxima;           \
+                musica_proxima = MUSICA_MANTER;  /* a troca vale só para esta fala */      \
+            }                                                                              \
+        }                                                                                  \
     } while (0)
+#define FALA(personagem, texto, retrato) FALA_SOM(personagem, texto, retrato, SOM_NENHUM)
+#define CENARIO(imagem) (cenario = (imagem))
+#define MUSICA(musica) (musica_proxima = (musica))
 
     switch (cena) {
     case CENA_INTRO:
-        FALA(NOME_APRESENTADOR, "Hmmm! Bem-vindo ao Mine do Milhão!", IMG_RETRATO_ALDEAO);
-        FALA(NOME_APRESENTADOR, "São 15 perguntas. Cada acerto vale esmeraldas, quer ficar rico?",
+        MUSICA(MUSICA_SILENCIO);
+        // Entrada no palco
+        CENARIO(IMG_FUNDO_PALCO);
+        FALA_SOM(NOME_APRESENTADOR, "Muito obrigado, muito obrigado! Hmm!", IMG_RETRATO_ALDEAO, SOM_PLATEIA);
+        FALA(
+            NOME_APRESENTADOR, 
+            "Boa noite senhoras e senhores! Boa noite moças e rapazes! Boa noite meninas e meninos!", 
+            IMG_RETRATO_ALDEAO
+        );
+        FALA(NOME_APRESENTADOR, "Auditório, boa noite!", IMG_RETRATO_ALDEAO);
+
+        // Auditorio
+        CENARIO(IMG_FUNDO_AUDITORIO);
+        FALA("Plateia", "BOA NOITE!", IMG_NENHUMA);
+
+        // Apresentador
+        CENARIO(IMG_FUNDO_PALCO);
+        FALA(NOME_APRESENTADOR, "Bem vindos ao Mine do Milhão! Vamos conhecer as regras...", IMG_RETRATO_ALDEAO);
+        FALA(NOME_APRESENTADOR, "São 15 perguntas. Cada acerto vale esmeraldas, quem quer ficar rico?",
              IMG_RETRATO_ALDEAO);
-        FALA(NOME_APRESENTADOR, "Nas perguntas 5 e 10 suas esmeraldas ficam garantidas. "
-             "Você pode parar a qualquer momento e levar o que juntou.", IMG_RETRATO_ALDEAO);
+
+        // Auditório
+        CENARIO(IMG_FUNDO_AUDITORIO);
+        FALA("Plateia", "EU!", IMG_NENHUMA);
+
+        // Foreshadowing
+        CENARIO(IMG_FUNDO_PRETO);
+        FALA("???", "E quem ganha algo com isso?", IMG_RETRATO_DESCONHECIDO);
+
+        // Apresentador
+        CENARIO(IMG_FUNDO_PALCO);
+        FALA(NOME_APRESENTADOR, "Não sei se comento... mas ok.", IMG_RETRATO_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Bem, nas perguntas 5 e 10 suas esmeraldas ficam garantidas. "
+             "Você pode parar a qualquer momento e levar o que juntou!", IMG_RETRATO_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Então vamos para o Mine do-", IMG_RETRATO_ALDEAO);
+        
+        FALA("Comissão Técnica", "EI, VOCÊ NÃO PODE ENTRAR AQUI!", IMG_NENHUMA);
         break;
     case CENA_BOSS_CREEPER:
-        FALA(NOME_APRESENTADOR, "Espera... que som é esse?", IMG_RETRATO_ALDEAO);
         break;
     case CENA_BOSS_WITHER:
+        MUSICA(MUSICA_WITHER);
         FALA(NOME_APRESENTADOR, "O que é o que é? Tem três cabeças e vai te explodir?!", IMG_RETRATO_ALDEAO);
         break;
     case CENA_BOSS_WARDEN:
+        MUSICA(MUSICA_WARDEN);
         FALA(NOME_APRESENTADOR, "Você fez barulho demais! Lá vem ele!.",
              IMG_RETRATO_ALDEAO);
         break;
     case CENA_BOSS_ENDER_DRAGON:
+        MUSICA(MUSICA_ENDER_DRAGON);
         FALA(NOME_APRESENTADOR, "Até agora foi tudo fácil demais...", IMG_RETRATO_ALDEAO);
         FALA(NOME_APRESENTADOR, "Você consegue derrotar o seu próprio fim?", IMG_RETRATO_ALDEAO);
         FALA(NOME_APRESENTADOR, "ou melhor... o dragão do fim.", IMG_RETRATO_ALDEAO);
@@ -64,6 +114,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "Deveriam me pagar mais por fazer essas piadas horríveis", IMG_RETRATO_ALDEAO);
         break;
     case CENA_BOSS_HEROBRINE:
+        MUSICA(MUSICA_HEROBRINE);
         FALA(NOME_APRESENTADOR, "...",IMG_RETRATO_ALDEAO);
         FALA(NOME_APRESENTADOR, "...",IMG_RETRATO_ALDEAO);
         FALA(NOME_APRESENTADOR, "...boa sorte.",IMG_RETRATO_ALDEAO);
@@ -83,12 +134,42 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
     case CENA_PARADA:
         FALA(NOME_APRESENTADOR, "Decisão sábia! Leve suas esmeraldas e fuja daqui!", IMG_RETRATO_ALDEAO);
         break;
+
+    /* --- História (quem chama cada uma: jogo_nova_partida em jogo.c e a revelação em tela.c) ---
+     * Exemplo com cenário e som:
+     *     CENARIO(IMG_CENARIO_VILA);
+     *     FALA(NOME_APRESENTADOR, "...", IMG_RETRATO_ALDEAO);
+     *     CENARIO(IMG_CENARIO_NETHER);                   (o fundo muda a partir daqui)
+     *     FALA_SOM(NOME_APRESENTADOR, "...", IMG_RETRATO_ALDEAO, SOM_PORTAL);             */
+    case CENA_HISTORIA_1:
+        MUSICA(MUSICA_PRINCIPAL);
+        CENARIO(IMG_FUNDO_PALCO);
+        FALA(NOME_APRESENTADOR, "Quem é você? POR QUE VOCÊ TA SUBINDO NO-", IMG_RETRATO_ALDEAO);
+        break;
+    case CENA_HISTORIA_2:
+        FALA(NOME_APRESENTADOR, "[História 2: escrever as falas em dialogo.c]", IMG_RETRATO_ALDEAO);
+        break;
+    case CENA_HISTORIA_3:
+        FALA(NOME_APRESENTADOR, "[História 3: escrever as falas em dialogo.c]", IMG_RETRATO_ALDEAO);
+        break;
+    case CENA_HISTORIA_4:
+        FALA(NOME_APRESENTADOR, "[História 4: escrever as falas em dialogo.c]", IMG_RETRATO_ALDEAO);
+        break;
+    case CENA_HISTORIA_5:
+        FALA(NOME_APRESENTADOR, "[História 5: escrever as falas em dialogo.c]", IMG_RETRATO_ALDEAO);
+        break;
+    case CENA_HISTORIA_FIM:
+        FALA(NOME_APRESENTADOR, "[História final: escrever as falas em dialogo.c]", IMG_RETRATO_ALDEAO);
+        break;
     default:
         status = STATUS_ERRO_PARAMETRO;  /* cena inexistente */
         break;
     }
 
 #undef FALA
+#undef FALA_SOM
+#undef CENARIO
+#undef MUSICA
 
     if (status == STATUS_OK && dialogo->quantidade > 0 && dialogo->indice < dialogo->quantidade) {
         dialogo->terminou = false;  /* havia terminado e ganhou falas novas: volta a tocar */
@@ -108,7 +189,7 @@ static Status anexar_fala_formatada(Dialogo *dialogo, const char *formato, const
     if (escritos < 0) {
         return STATUS_ERRO_PARAMETRO;
     }
-    return dialogo_adicionar_fala(dialogo, NOME_APRESENTADOR, fala, IMG_RETRATO_ALDEAO);
+    return dialogo_adicionar_fala(dialogo, NOME_APRESENTADOR, fala, IMG_RETRATO_ALDEAO, SOM_NENHUM);
 }
 
 Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *resposta_certa,
@@ -154,7 +235,7 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
         char fala[TAM_FALA];
 
         snprintf(fala, sizeof(fala), "Agora você tem %d esmeraldas!", esmeraldas);
-        status = dialogo_adicionar_fala(dialogo, NOME_APRESENTADOR, fala, IMG_RETRATO_ALDEAO);
+        status = dialogo_adicionar_fala(dialogo, NOME_APRESENTADOR, fala, IMG_RETRATO_ALDEAO, SOM_NENHUM);
     } else {
         const char *segunda = acertou ? acerto_boss[indice] : erro_boss[indice];
 
@@ -175,10 +256,12 @@ void dialogo_limpar(Dialogo *dialogo)
         return;
     }
     memset(dialogo, 0, sizeof(*dialogo));
-    dialogo->terminou = true;  /* vazio = nada para mostrar */
+    dialogo->terminou = true;          /* vazio = nada para mostrar */
+    dialogo->indice_fala_anunciada = -1;  /* depois do memset: 0 diria "a 1ª fala já foi entregue" */
 }
 
-Status dialogo_adicionar_fala(Dialogo *dialogo, const char *personagem, const char *texto, ImagemId retrato)
+Status dialogo_adicionar_fala(Dialogo *dialogo, const char *personagem, const char *texto,
+                              ImagemId retrato, SomId som)
 {
     Fala *nova_fala;
 
@@ -192,9 +275,23 @@ Status dialogo_adicionar_fala(Dialogo *dialogo, const char *personagem, const ch
     strcpy(nova_fala->personagem, personagem);
     strcpy(nova_fala->texto, texto);
     nova_fala->retrato = retrato;
+    nova_fala->som = som;
+    nova_fala->fundo = IMG_NENHUMA;     /* FALA/FALA_SOM trocam pelo CENARIO atual */
+    nova_fala->musica = MUSICA_MANTER;  /* FALA/FALA_SOM trocam se houver MUSICA(...) antes */
     dialogo->quantidade++;
     dialogo->terminou = false;
     return STATUS_OK;
+}
+
+const Fala *dialogo_fala_nova(Dialogo *dialogo)
+{
+    /* Nada novo: diálogo vazio/acabado ou esta fala já foi entregue */
+    if (dialogo == NULL || dialogo->terminou || dialogo->indice >= dialogo->quantidade
+        || dialogo->indice == dialogo->indice_fala_anunciada) {
+        return NULL;
+    }
+    dialogo->indice_fala_anunciada = dialogo->indice;
+    return &dialogo->falas[dialogo->indice];
 }
 
 Status dialogo_carregar_cena(Dialogo *dialogo, CenaId cena)

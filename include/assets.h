@@ -65,11 +65,16 @@ typedef enum {
     IMG_CAIXA_DIALOGO,        /**< Caixa de fala (fallback: painel cinza). */
     IMG_ESMERALDA,            /**< Ícone da esmeralda (HUD e escada de prêmios). */
     IMG_RETRATO_ALDEAO,       /**< Retrato do apresentador nos diálogos. */
+    IMG_FUNDO_AUDITORIO,      /**< Imagem do auditório (Minecraft)*/
+    IMG_FUNDO_PALCO,          /**< Imagem do palco (Minecraft) */
+    IMG_RETRATO_DESCONHECIDO, /**< Imagem desconhecido (Herobrine) */
+    IMG_FUNDO_PRETO,          /**< Fundo preto (Herobrine) */
     IMG_QUANTIDADE            /**< Quantidade de imagens (não é uma imagem). */
 } ImagemId;
 
 /** Use em Fala.retrato quando a fala não tem retrato. */
 #define IMG_NENHUMA IMG_QUANTIDADE
+
 
 /** Efeitos sonoros curtos (arquivos em assets/sounds/). */
 typedef enum {
@@ -84,8 +89,30 @@ typedef enum {
     SOM_ENTRADA_WARDEN,
     SOM_ENTRADA_ENDER_DRAGON,
     SOM_ENTRADA_HEROBRINE,
+    SOM_PLATEIA,          /**< Som de entrada da plateia*/
     SOM_QUANTIDADE        /**< Quantidade de sons (não é um som). */
 } SomId;
+
+/** Use em Fala.som quando a fala não tem som (assets_tocar_som ignora). */
+#define SOM_NENHUM SOM_QUANTIDADE
+
+/**
+ * Músicas de fundo (arquivos em assets/sounds/, nomes na tabela de assets.c). Toca uma por vez,
+ * em loop, até alguém trocar (assets_trocar_musica ou MUSICA(...) numa cena). Não volta sozinha.
+ */
+typedef enum {
+    MUSICA_PRINCIPAL = 0,     /**< "musica": abertura e telas fora das seções. */
+    MUSICA_CREEPER,           /**< Seção de cada boss: MUSICA_CREEPER + BossId (mesma ordem do enum BossId). */
+    MUSICA_WITHER,
+    MUSICA_WARDEN,
+    MUSICA_ENDER_DRAGON,
+    MUSICA_HEROBRINE,
+    MUSICA_QUANTIDADE,        /**< Quantidade de músicas (não é uma música). */
+    MUSICA_SILENCIO           /**< Comando, não arquivo: para a música atual (MUSICA(MUSICA_SILENCIO)). */
+} MusicaId;
+
+/** Use em Fala.musica quando a fala não troca a música. */
+#define MUSICA_MANTER MUSICA_QUANTIDADE
 
 /** Mais quadros por animação de boss (boss_00.png ... boss_07.png). */
 #define MAX_QUADROS_ANIMACAO 8
@@ -122,8 +149,9 @@ typedef struct {
     Efeito sons[SOM_QUANTIDADE];             /**< Efeitos sonoros (SomId). */
     Animacao bosses[BOSS_QUANTIDADE];        /**< Frames de cada boss (índice = BossId). */
     Imagem fundos_boss[BOSS_QUANTIDADE];     /**< Fundo de cada fase (opcional; fallback = true se não existe). */
-    Music musica;                            /**< Música de fundo (stream). */
-    bool musica_valida;                      /**< false = sem música. */
+    Music musicas[MUSICA_QUANTIDADE];        /**< Músicas de fundo (streams; MusicaId). */
+    bool musica_valida[MUSICA_QUANTIDADE];   /**< false = arquivo faltou (trocar para ela não faz nada). */
+    MusicaId musica_atual;                   /**< A que está tocando (MUSICA_MANTER = nenhuma). */
     Font fonte;                              /**< Fonte do jogo. */
     bool fonte_propria;                      /**< false = usando a fonte padrão da raylib. */
     bool audio_ativo;                        /**< false = sem dispositivo de áudio (tudo em silêncio). */
@@ -202,10 +230,14 @@ void assets_desenhar_boss(const Assets *assets, BossId id, float tempo, Rectangl
 /** @brief Toca um efeito; não faz nada se o som faltou ou não há áudio. */
 void assets_tocar_som(const Assets *assets, SomId id);
 
-/** @brief Inicia a música de fundo em loop (se existir). */
-void assets_tocar_musica(const Assets *assets);
+/**
+ * @brief Para a música atual e começa `id` em loop. Não faz nada se `id` já está tocando,
+ *        se for MUSICA_MANTER/inválido, ou se o arquivo dela faltou (a música atual continua).
+ *        MUSICA_SILENCIO para a música e fica sem nenhuma até a próxima troca.
+ */
+void assets_trocar_musica(Assets *assets, MusicaId id);
 
-/** @brief Chamar UMA vez por quadro: alimenta o stream da música (sem isso ela para). */
+/** @brief Chamar UMA vez por quadro: alimenta o stream da música atual (sem isso ela para). */
 void assets_atualizar_musica(const Assets *assets);
 
 /* ------------------------------------------------------------------------- */
