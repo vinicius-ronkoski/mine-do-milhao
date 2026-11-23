@@ -85,6 +85,9 @@
 /** Preço da dica em esmeraldas, por nível (1 a 5). O valor gasto sai do prêmio final. */
 #define CUSTO_DICA_POR_NIVEL    { 1, 2, 5, 10, 20 }
 
+/** Preço de "eliminar duas" por nível: o dobro da dica (ajuda mais forte). Também sai do prêmio final. */
+#define CUSTO_ELIMINAR_POR_NIVEL { 2, 4, 10, 20, 40 }
+
 /** 1: errar leva o último marco (5 ou 10); 0: errar perde tudo. */
 #define REGRA_ERRO_VOLTA_AO_MARCO 1
 /**@}*/

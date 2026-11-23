@@ -5,21 +5,13 @@
  * Organização: 1) falas de cada cena (PERSONALIZE AQUI), 2) controle do diálogo, 3) desenho.
  */
 #ifdef USE_RAYLIB
+#include <stdio.h>
 #include <string.h>
 #include "dialogo.h"
+#include "layout.h"
 
 /** Nome do apresentador nas falas. */
 #define NOME_APRESENTADOR "Silvio Aldeão"
-
-/** @name Layout da caixa de diálogo (parte de baixo da janela) */
-/**@{*/
-#define ALTURA_CAIXA_DIALOGO  200.0f
-#define MARGEM_CAIXA_DIALOGO   24.0f
-#define LADO_RETRATO          150.0f
-#define FONTE_NOME_DIALOGO     26.0f
-#define FONTE_TEXTO_DIALOGO    24.0f
-#define FONTE_AVISO_DIALOGO    18.0f
-/**@}*/
 
 /** Número grande de letras: usado para "completar" a fala de uma vez. */
 #define LETRAS_FALA_COMPLETA 100000
@@ -85,7 +77,8 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
              IMG_RETRATO_ALDEAO);
         break;
     case CENA_DERROTA:
-        FALA(NOME_APRESENTADOR, "Que pena... a resposta estava errada.", IMG_RETRATO_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Fim de jogo para você... mas foi uma bela tentativa!", IMG_RETRATO_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Obrigado por jogar o Mine do Milhão. Volte quando quiser!", IMG_RETRATO_ALDEAO);
         break;
     case CENA_PARADA:
         FALA(NOME_APRESENTADOR, "Decisão sábia! Leve suas esmeraldas e fuja daqui!", IMG_RETRATO_ALDEAO);
@@ -99,6 +92,75 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
 
     if (status == STATUS_OK && dialogo->quantidade > 0 && dialogo->indice < dialogo->quantidade) {
         dialogo->terminou = false;  /* havia terminado e ganhou falas novas: volta a tocar */
+    }
+    return status;
+}
+
+/**
+ * @brief Monta uma fala do apresentador trocando o único %s de `formato` por `texto` e a acrescenta.
+ *        Se não couber em TAM_FALA, o texto é cortado (snprintf nunca passa do buffer).
+ */
+static Status anexar_fala_formatada(Dialogo *dialogo, const char *formato, const char *texto)
+{
+    char fala[TAM_FALA];
+    int escritos = snprintf(fala, sizeof(fala), formato, texto);
+
+    if (escritos < 0) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    return dialogo_adicionar_fala(dialogo, NOME_APRESENTADOR, fala, IMG_RETRATO_ALDEAO);
+}
+
+Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *resposta_certa,
+                             const char *nome_boss, int esmeraldas, int variante)
+{
+    /* Cada formato tem exatamente um %s: a 1ª fala recebe a resposta certa, a 2ª o nome do boss.
+     * "" = sem 2ª fala. A variação 1 do acerto troca a fala do boss pela das esmeraldas. */
+    static const char *const acerto_resposta[REACOES_POR_RESULTADO] = {
+        "Isso! \"%s\" está certíssimo!",
+        "Na mosca! Era \"%s\" mesmo.",
+        "Hmmm! \"%s\"... resposta certa!"
+    };
+    static const char *const acerto_boss[REACOES_POR_RESULTADO] = {
+        "O %s sentiu esse golpe!",
+        "O %s está ficando nervoso...",
+        "Toma essa, %s!"
+    };
+    static const char *const erro_resposta[REACOES_POR_RESULTADO] = {
+        "Ihh... a resposta certa era \"%s\".",
+        "Não foi dessa vez. Era \"%s\".",
+        "Hmmm... errado! O certo era \"%s\"."
+    };
+    static const char *const erro_boss[REACOES_POR_RESULTADO] = {
+        "O %s nem sentiu nada.",
+        "",
+        "O %s está rindo da sua cara!"
+    };
+    Status status;
+    int indice;
+
+    if (dialogo == NULL || resposta_certa == NULL || nome_boss == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    indice = (variante < 0 ? -variante : variante) % REACOES_POR_RESULTADO;
+
+    status = anexar_fala_formatada(dialogo, acertou ? acerto_resposta[indice] : erro_resposta[indice],
+                                   resposta_certa);
+    if (status != STATUS_OK) {
+        return status;
+    }
+
+    if (acertou && indice == 1) {
+        char fala[TAM_FALA];
+
+        snprintf(fala, sizeof(fala), "Agora você tem %d esmeraldas!", esmeraldas);
+        status = dialogo_adicionar_fala(dialogo, NOME_APRESENTADOR, fala, IMG_RETRATO_ALDEAO);
+    } else {
+        const char *segunda = acertou ? acerto_boss[indice] : erro_boss[indice];
+
+        if (segunda[0] != '\0') {
+            status = anexar_fala_formatada(dialogo, segunda, nome_boss);
+        }
     }
     return status;
 }
@@ -228,15 +290,15 @@ void dialogo_desenhar(const Dialogo *dialogo, const Assets *assets)
     /* Retrato à esquerda (se a fala tiver um) */
     tem_retrato = (fala->retrato != IMG_NENHUMA);
     area_retrato.x = caixa.x + MARGEM_CAIXA_DIALOGO;
-    area_retrato.y = caixa.y + (caixa.height - LADO_RETRATO) / 2.0f;
-    area_retrato.width = LADO_RETRATO;
-    area_retrato.height = LADO_RETRATO;
+    area_retrato.y = caixa.y + (caixa.height - LADO_RETRATO_DIALOGO) / 2.0f;
+    area_retrato.width = LADO_RETRATO_DIALOGO;
+    area_retrato.height = LADO_RETRATO_DIALOGO;
     if (tem_retrato) {
         assets_desenhar_imagem(assets, fala->retrato, area_retrato, WHITE);
     }
 
     /* Nome e texto à direita do retrato */
-    area_nome.x = tem_retrato ? area_retrato.x + LADO_RETRATO + MARGEM_CAIXA_DIALOGO
+    area_nome.x = tem_retrato ? area_retrato.x + LADO_RETRATO_DIALOGO + MARGEM_CAIXA_DIALOGO
                               : caixa.x + MARGEM_CAIXA_DIALOGO;
     area_nome.y = caixa.y + MARGEM_CAIXA_DIALOGO * 0.75f;
     area_nome.width = caixa.x + caixa.width - MARGEM_CAIXA_DIALOGO - area_nome.x;

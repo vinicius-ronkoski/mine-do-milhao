@@ -209,10 +209,9 @@ int partida_saldo(const Partida *partida)
     return partida->esmeraldas - partida->esmeraldas_gastas;
 }
 
-int partida_custo_dica(const Partida *partida)
+/** @brief Preço de uma ajuda na rodada atual, lido da tabela `custos` (um valor por nível). */
+static int custo_por_nivel(const Partida *partida, const int custos[NUM_NIVEIS])
 {
-    /* Tabela local à função (sem variável global). */
-    static const int custos[NUM_NIVEIS] = CUSTO_DICA_POR_NIVEL;
     int nivel;
 
     if (partida == NULL || partida_encerrada(partida)) {
@@ -223,6 +222,29 @@ int partida_custo_dica(const Partida *partida)
         return 0;
     }
     return custos[nivel - NIVEL_MIN];
+}
+
+int partida_custo_dica(const Partida *partida)
+{
+    /* Tabela local à função (sem variável global). */
+    static const int custos[NUM_NIVEIS] = CUSTO_DICA_POR_NIVEL;
+
+    return custo_por_nivel(partida, custos);
+}
+
+int partida_custo_eliminar(const Partida *partida)
+{
+    static const int custos[NUM_NIVEIS] = CUSTO_ELIMINAR_POR_NIVEL;
+
+    return custo_por_nivel(partida, custos);
+}
+
+bool partida_pode_eliminar(const Partida *partida)
+{
+    return partida != NULL
+        && partida->estado == ESTADO_RESPONDENDO
+        && !partida->eliminacao_usada
+        && partida_saldo(partida) >= partida_custo_eliminar(partida);
 }
 
 bool partida_pode_comprar_dica(const Partida *partida)
@@ -266,6 +288,9 @@ Status partida_eliminar_duas(Partida *partida)
     if (partida == NULL || partida->estado != ESTADO_RESPONDENDO || partida->eliminacao_usada) {
         return STATUS_ERRO_PARAMETRO;
     }
+    if (partida_saldo(partida) < partida_custo_eliminar(partida)) {
+        return STATUS_SALDO_INSUFICIENTE;
+    }
     pergunta = partida_pergunta_atual(partida);
     if (pergunta == NULL) {
         return STATUS_ERRO_PARAMETRO;
@@ -281,6 +306,7 @@ Status partida_eliminar_duas(Partida *partida)
     partida->alternativa_eliminada[posicoes_erradas[0]] = true;
     partida->alternativa_eliminada[posicoes_erradas[1]] = true;
 
+    partida->esmeraldas_gastas += partida_custo_eliminar(partida);
     partida->eliminacao_usada = true;
     return STATUS_OK;
 }

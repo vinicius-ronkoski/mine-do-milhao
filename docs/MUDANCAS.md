@@ -6,6 +6,160 @@ A explicação de como o código funciona e como os arquivos se ligam está em
 
 ---
 
+## 22/11/2026 (noite) — coluna da pergunta mais estreita, boss maior e preço com ícone
+
+### Pedido
+Blocos do enunciado e das alternativas mais estreitos, boss maior, e o preço das ajudas como
+número + ícone da esmeralda (em vez de "1 esm.").
+
+### Mudanças
+| Arquivo | Mudança | Motivo |
+|---|---|---|
+| `include/layout.h` | Coluna da pergunta 760 → 640 px; boss 384x384 (6 x 64) na pergunta, na revelação e no diálogo; HUD e boss recentralizados na coluna da direita (x 710 a 1260); revelação reposicionada (nome em y 20, mensagens em 525 e 575); `LADO_ICONE_ESMERALDA` = 32; `AREA_DICA` saiu | Boss maior com escala inteira para 64x64; ícone múltiplo de 16 (a esmeralda é 16x16 ampliada). |
+| `src/tela.c` | A dica comprada aparece numa faixa amarela embaixo do enunciado (a pergunta encolhe para caber) | Com o boss em 384 px não sobra espaço para o quadro da dica à direita; perto da pergunta ela também fica mais fácil de ler. |
+| `include/botao.h`, `src/botao.c` | Campo `icone` no `Botao` (IMG_NENHUMA = sem ícone); com ícone, texto e ícone ficam numa linha, centralizados, diminuindo a fonte se precisar; desabilitado, o ícone fica cinza | Preço = número + esmeralda. |
+| `src/jogo.c` | Rótulos "Dica (H)  N" e "Eliminar (E)  N" com `icone = IMG_ESMERALDA` | "Eliminar 2 (E)" encolhia demais na coluna mais estreita. |
+| `src/tela.c` | HUD com o ícone em 32 px; revelação mostra o saldo como número + ícone (`desenhar_numero_com_esmeralda`) | Mesmo padrão em todo lugar. |
+| `include/tela.h`, `assets/README.md`, `docs/ARQUITETURA.md` | Atualizados | Coerência. |
+
+### Como foi testado
+- Prints das telas (diálogo, pergunta com e sem dica, revelação, resultado) conferidos com os
+  frames 64x64 do Creeper e o `esmeralda.png` da equipe.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+
+---
+
+## 22/11/2026 (noite) — bosses em pixel art 64x64
+
+### Pedido
+Poder desenhar os bosses em pixel art de 64x64.
+
+### Mudanças
+| Arquivo | Mudança | Motivo |
+|---|---|---|
+| `include/layout.h` | Quadrados do boss com lado múltiplo de 64: diálogo 260 → 256, pergunta 280 → 256 (`AREA_BOSS` recentralizada em x 917), revelação 300 → 320 | Um frame de 64x64 aparece em escala inteira (4x e 5x): todos os pixels da arte viram blocos do mesmo tamanho. Com escala quebrada (280 ÷ 64 = 4,375) alguns pixels ficariam maiores que outros. |
+| `src/assets.c` | `assets_desenhar_boss` usa `desenhar_textura_encaixada()`: o maior tamanho possível sem deformar, centralizado | Antes a imagem era esticada até virar quadrada; o `creeper_00.png` atual (497x922) ficaria achatado. |
+| `assets/README.md` | Tamanho recomendado dos frames (64x64, PNG transparente) | Documentação. |
+
+### Como foi testado
+- Frame de teste 64x64 (xadrez de 1 pixel) desenhado no diálogo, na pergunta e na revelação: cada pixel
+  virou exatamente um bloco 4x4, 4x4 e 5x5, todos iguais e no lugar certo.
+- Com o `creeper_00.png` da equipe: aparece inteiro e sem deformar nas três telas.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+
+---
+
+## 22/11/2026 (noite) — layout num arquivo só (`include/layout.h`)
+
+### Pedido
+Separar o layout num arquivo próprio, para mexer no visual sem procurar em vários arquivos.
+
+### Mudanças
+| Arquivo | Mudança |
+|---|---|
+| `include/layout.h` (novo) | Todas as posições e tamanhos: coluna da pergunta, coluna da direita (HUD, boss, dica), revelação, resultado, botão Continuar, caixa de diálogo e faixa de erro; mapa da tela de pergunta no comentário do topo |
+| `src/jogo.c` | Saíram as macros de posição dos botões (seção 1 removida, seções renumeradas); inclui `layout.h` |
+| `src/tela.c` | Saíram `AREA_*`, `LADO_*`, `ALTURA_BANNER_ERRO`, `TAMANHO_*`; os números soltos das telas de revelação e resultado viraram `TOPO_*`; o tamanho 22 dos botões virou `TAMANHO_BOTAO_AJUDA` |
+| `src/dialogo.c` | Saíram as macros da caixa de fala; `LADO_RETRATO` virou `LADO_RETRATO_DIALOGO` (para não confundir com o retrato do resultado) |
+| `include/tela.h`, `docs/ARQUITETURA.md` | Apontam para `layout.h` |
+
+Ficaram onde estavam, porque não são layout de tela: `DURACAO_DANO` (animação, `tela.c`),
+margens internas do botão (`botao.c`) e constantes de carregamento de assets (`assets.c`).
+
+### Como foi testado
+- Cada tela (diálogo, pergunta, pergunta com dica, revelação no meio da animação e no fim,
+  resultado, faixa de erro) foi desenhada num estado fixo antes e depois da mudança:
+  **os 7 prints são idênticos pixel a pixel**, ou seja, nada mudou na tela.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+
+---
+
+## 22/11/2026 (noite) — "eliminar duas" passa a custar esmeraldas
+
+### Pedido
+Faltava verificar se o jogador tem esmeraldas suficientes para eliminar alternativas.
+Até aqui o eliminar era grátis (uma vez por partida), por isso não havia verificação.
+
+### Regra
+- Preço por nível: 2, 4, 10, 20, 40 (`CUSTO_ELIMINAR_POR_NIVEL`, o dobro da dica).
+- Continua uma vez por partida. Sem saldo: `STATUS_SALDO_INSUFICIENTE`, nada é cobrado nem eliminado.
+- O gasto entra em `esmeraldas_gastas` e sai do prêmio final, como a dica.
+- Sem comprar dicas, o saldo só alcança o preço a partir da 6ª pergunta (10 esmeraldas).
+
+### Mudanças
+| Arquivo | Mudança |
+|---|---|
+| `include/config.h` | `CUSTO_ELIMINAR_POR_NIVEL` |
+| `include/partida.h`, `src/partida.c` | `partida_custo_eliminar`, `partida_pode_eliminar`; `partida_eliminar_duas` confere o saldo e cobra; tabela por nível em `custo_por_nivel()` (usada pela dica e pelo eliminar) |
+| `src/jogo.c` | Botão "Eliminar 2: N esm. (E)", desabilitado sem saldo ou depois de usado |
+| `src/tela.c` | Resultado: "gastas em ajudas" (antes "em dicas") |
+| `tests/teste_partida.c` | Recusa sem saldo (nada eliminado nem cobrado), preço por rodada, cobrança, compras aleatórias de eliminar no teste de partidas: 5968+ verificações, 0 falhas |
+| `include/tela.h`, `README.md`, `docs/ARQUITETURA.md` | Regra documentada |
+
+---
+
+## 22/11/2026 (tarde) — reação do apresentador, revelação com dano e tela de resultado
+
+### Pedido
+Depois de responder: sem a pergunta na tela, o apresentador comenta (falas diferentes para acerto
+e erro); ao fim da fala, som "dano" e o boss perde uma vida se acertou (nada se errou). Errou:
+fala de agradecimento, tela de derrota e botão Reiniciar. Marcos de segurança como o PDF pede.
+
+### Decisões (perguntadas à equipe)
+- **Errar encerra a partida na hora** (regra do SBT). Como o boss tem uma vida por pergunta da seção,
+  "não matar o boss até a última pergunta da seção" só acontece errando, e errar já é derrota.
+- **Marco = prêmio garantido** (o que o PDF pede; já existia). Não há save de progresso;
+  a tela de derrota mostra quanto o marco garantiu.
+
+### Mudanças
+| Arquivo | Mudança | Motivo |
+|---|---|---|
+| `include/dialogo.h`, `src/dialogo.c` | `dialogo_anexar_reacao()`: 3 variações para acerto e 3 para erro, com estruturas diferentes (citam a resposta certa, o boss ou as esmeraldas; uma de erro tem só uma fala) | Falas montadas na hora com `snprintf`; as tabelas ficam junto das outras falas para a equipe editar. |
+| `src/dialogo.c` | `CENA_DERROTA` agora agradece ("Obrigado por jogar...") | A reação já diz que errou e qual era a certa. |
+| `include/jogo.h`, `src/jogo.c` | `jogo_tocar_reacao()`: limpa o diálogo, anexa a reação (variação sorteada) e vai para TELA_REVELACAO quando acabar | Mesmo padrão de `jogo_tocar_cena`. |
+| `src/jogo.c` | Botão Continuar centralizado (`LARGURA_CONTINUAR`) | Revelação e resultado não têm a coluna da esquerda. |
+| `src/assets.c`, `assets/README.md` | `SOM_DANO_BOSS` passa a ler `assets/sounds/dano` | Nome pedido pela equipe (`dano.ogg`). |
+| `src/tela.c` | Pergunta: ao responder toca acerto/erro e chama `jogo_tocar_reacao` | A revelação vem depois da fala. |
+| `src/tela.c` | Diálogo: durante a reação (ESTADO_REVELANDO) o boss aparece mesmo já derrotado | Senão ele sumiria antes da animação de queda. |
+| `src/tela.c` | `tela_desenhar_boss`: na revelação de um acerto a barra desce em `DURACAO_DANO` (0,6 s) e o boss treme e pisca em vermelho | A regra já tirou a vida em `partida_responder`; aqui é só o efeito. |
+| `src/tela.c` | `tela_revelacao_*`: boss no centro, mensagem (acertou / derrotado / errou), som `dano`, Continuar com o roteamento (derrota, boss derrotado + próximo boss, vitória, próxima pergunta) | Tela pronta. |
+| `src/tela.c` | `tela_resultado_*`: título por estado, retrato e agradecimento, prêmio final, marco garantido, dicas descontadas; "Reiniciar (ENTER)" chama `jogo_nova_partida` | Tela pronta. O aviso provisório foi removido. |
+| `include/tela.h`, `docs/ARQUITETURA.md` | Documentação e fluxo atualizados | Coerência. |
+
+### Como foi testado
+- Jogo real jogado de ponta a ponta por um "jogador" automático (teclas enviadas à janela):
+  derrota na pergunta 7 (depois do marco: leva 10 − 1 de dica = 9), reinício, e duas vitórias
+  completas (15 perguntas, 5 bosses, 299 esmeraldas com 1 de dica). Prints de cada tela conferidos.
+- As vitórias rodaram com AddressSanitizer/UBSan: nenhum erro.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64, também com `-O2`; `make teste` passa.
+- Não testado: som (o ambiente não tem placa de som) e o clique do mouse (o teste usou o teclado).
+
+---
+
+## 22/11/2026 (tarde) — tela de pergunta com o boss à direita e som de entrada
+
+### Pedido
+Tela de pergunta no formato do Jogo do Milhão: enunciado e alternativas alinhados à esquerda,
+uma embaixo da outra; o boss à direita com a barra de vida embaixo; esmeraldas no canto superior
+direito; um som na entrada de cada boss (arquivo colocado pela equipe).
+
+### Mudanças
+| Arquivo | Mudança | Motivo |
+|---|---|---|
+| `src/jogo.c` | Macros de layout e `area_da_alternativa`: alternativas A-D uma embaixo da outra numa coluna de 760 px | O lado direito fica livre para o boss. |
+| `include/assets.h`, `src/assets.c` | `SOM_ENTRADA_CREEPER` ... `SOM_ENTRADA_HEROBRINE` (arquivos `entrada_<boss>`) | Som próprio de cada boss; `SOM_ENTRADA_CREEPER + boss->id` segue a ordem do enum `BossId`, como `CENA_BOSS_CREEPER + BossId`. |
+| `src/tela.c` | `tela_pergunta_atualizar`: respostas, dica paga, eliminar, parar e o som de entrada (só na 1ª pergunta do boss, vida cheia) | Tela de pergunta pronta. |
+| `src/tela.c` | `tela_pergunta_desenhar`: enunciado, botões e quadro da dica; usa as funções já previstas `tela_desenhar_hud` (saldo, "Pergunta N/15", nível) e `tela_desenhar_boss` (nome, sprite, barra e "Vida x/y"), agora implementadas | Idem. A primeira versão criou funções `static` paralelas a essas; corrigido para reaproveitar as do `tela.h`, que a revelação também pode usar. |
+| `src/tela.c` | Seções reorganizadas: 3) pergunta (pronta), 4) revelação/resultado (a implementar) | O aviso provisório agora só serve às duas telas que faltam. |
+| `include/tela.h`, `assets/README.md` | Layout e passos atualizados; nomes dos sons de entrada | Coerência. |
+
+### Como foi testado
+- Jogo aberto direto na tela de pergunta (1ª pergunta e 2ª com dica comprada): print conferido.
+- Compila sem avisos (`-Werror`) no Linux e no Windows 64; `make teste`: 5943 verificações, 0 falhas.
+- Não testado aqui: clique real nessa tela e o som (o ambiente de teste não tem placa de som).
+
+---
+
 ## 22/11/2026 (madrugada) — dica comprada com esmeraldas (minigame e loja cortados)
 
 ### Pedido

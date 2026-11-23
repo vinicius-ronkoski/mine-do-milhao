@@ -2,45 +2,31 @@
  * @file jogo.c
  * @brief Laço principal visual (ver jogo.h). Compila só com USE_RAYLIB.
  *
- * Organização: 1) layout dos botões, 2) funções internas, 3) ciclo de vida
- * (executar/iniciar/encerrar), 4) laço por quadro, 5) telas, cenas e botões.
+ * Organização: 1) funções internas, 2) ciclo de vida (executar/iniciar/encerrar),
+ * 3) laço por quadro, 4) telas, cenas e botões. As posições dos botões estão em layout.h.
  */
 #ifdef USE_RAYLIB
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include "jogo.h"
+#include "layout.h"
 #include "tela.h"
+#include "sorteio.h"
 #include "utils.h"
 
 /* ========================================================================= */
-/* 1. Layout dos botões (em pixels, janela LARGURA_JANELA x ALTURA_JANELA)   */
-/*    Para mudar a posição dos botões, altere só estes valores.              */
+/* 1. Funções internas                                                       */
 /* ========================================================================= */
 
-#define MARGEM_ESQUERDA        30.0f   /**< Começo da coluna do jogo. */
-#define LARGURA_COLUNA_JOGO   920.0f   /**< Largura da coluna do jogo (a escada fica à direita). */
-#define ESPACO_ENTRE_BOTOES    20.0f   /**< Espaço entre botões vizinhos. */
-
-#define TOPO_ALTERNATIVAS     435.0f   /**< y da primeira linha de alternativas. */
-#define ALTURA_ALTERNATIVA     90.0f   /**< Altura de cada alternativa. */
-
-#define TOPO_AJUDAS           645.0f   /**< y da linha PARAR / DICA / ELIMINAR. */
-#define ALTURA_AJUDA           50.0f   /**< Altura dos botões de ajuda. */
-
-/* ========================================================================= */
-/* 2. Funções internas                                                       */
-/* ========================================================================= */
-
-/** @brief Retângulo da alternativa `posicao` numa grade 2x2 (A B / C D). */
+/** @brief Retângulo da alternativa `posicao`: uma embaixo da outra (A, B, C, D). */
 static Rectangle area_da_alternativa(int posicao)
 {
     Rectangle area;
-    float largura = (LARGURA_COLUNA_JOGO - ESPACO_ENTRE_BOTOES) / 2.0f;
 
-    area.x = MARGEM_ESQUERDA + (float)(posicao % 2) * (largura + ESPACO_ENTRE_BOTOES);
-    area.y = TOPO_ALTERNATIVAS + (float)(posicao / 2) * (ALTURA_ALTERNATIVA + ESPACO_ENTRE_BOTOES / 2.0f);
-    area.width = largura;
+    area.x = MARGEM_ESQUERDA;
+    area.y = TOPO_ALTERNATIVAS + (float)posicao * (ALTURA_ALTERNATIVA + ESPACO_ENTRE_BOTOES);
+    area.width = LARGURA_COLUNA_JOGO;
     area.height = ALTURA_ALTERNATIVA;
     return area;
 }
@@ -79,8 +65,11 @@ static Status criar_botoes(Jogo *jogo)
         status = botao_criar(&jogo->botao_eliminar, area_da_ajuda(2), "Eliminar 2 (E)", KEY_E);
     }
     if (status == STATUS_OK) {
-        /* Continuar ocupa o lugar do botão do meio (as ajudas não aparecem na revelação) */
-        status = botao_criar(&jogo->botao_continuar, area_da_ajuda(1), "Continuar (ENTER)", KEY_ENTER);
+        /* Continuar fica centralizado na janela (revelação e resultado não mostram as ajudas) */
+        Rectangle area_continuar = { ((float)LARGURA_JANELA - LARGURA_CONTINUAR) / 2.0f, TOPO_AJUDAS,
+                                     LARGURA_CONTINUAR, ALTURA_AJUDA };
+
+        status = botao_criar(&jogo->botao_continuar, area_continuar, "Continuar (ENTER)", KEY_ENTER);
     }
     return status;
 }
@@ -131,7 +120,7 @@ static void atualizar_cursor(Jogo *jogo)
 }
 
 /* ========================================================================= */
-/* 3. Ciclo de vida                                                          */
+/* 2. Ciclo de vida                                                          */
 /* ========================================================================= */
 
 Status jogo_executar(const Banco *banco)
@@ -246,7 +235,7 @@ Status jogo_nova_partida(Jogo *jogo)
 }
 
 /* ========================================================================= */
-/* 4. Laço por quadro                                                        */
+/* 3. Laço por quadro                                                        */
 /* ========================================================================= */
 
 void jogo_atualizar(Jogo *jogo, float dt)
@@ -291,7 +280,7 @@ void jogo_desenhar(const Jogo *jogo)
 }
 
 /* ========================================================================= */
-/* 5. Telas, cenas e botões                                                  */
+/* 4. Telas, cenas e botões                                                  */
 /* ========================================================================= */
 
 void jogo_trocar_tela(Jogo *jogo, TelaJogo nova_tela)
@@ -321,6 +310,36 @@ Status jogo_tocar_cena(Jogo *jogo, CenaId cena, TelaJogo depois)
     }
 
     jogo->tela_apos_dialogo = depois;
+    jogo_trocar_tela(jogo, TELA_DIALOGO);
+    return STATUS_OK;
+}
+
+Status jogo_tocar_reacao(Jogo *jogo)
+{
+    const PerguntaSorteada *pergunta;
+    const Boss *boss;
+    Status status;
+
+    if (jogo == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    pergunta = partida_pergunta_atual(&jogo->partida);
+    boss = partida_boss_atual(&jogo->partida);
+    if (pergunta == NULL || boss == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+
+    dialogo_limpar(&jogo->dialogo);
+    status = dialogo_anexar_reacao(&jogo->dialogo, jogo->partida.ultima_acertou,
+                                   sorteio_texto_alternativa(pergunta, pergunta->posicao_correta),
+                                   boss_nome(boss->id), jogo->partida.esmeraldas,
+                                   sorteio_inteiro(0, REACOES_POR_RESULTADO - 1));
+    if (status != STATUS_OK) {
+        jogo_registrar_erro(jogo, status, "reação");
+        jogo_trocar_tela(jogo, TELA_REVELACAO);  /* pula a fala em vez de travar */
+        return status;
+    }
+    jogo->tela_apos_dialogo = TELA_REVELACAO;
     jogo_trocar_tela(jogo, TELA_DIALOGO);
     return STATUS_OK;
 }
@@ -371,13 +390,21 @@ Status jogo_preparar_botoes_pergunta(Jogo *jogo)
     jogo->botao_parar.habilitado = true;
 
     /* Dica paga: o rótulo mostra o preço da rodada; desabilitada sem saldo ou já comprada */
-    snprintf(rotulo, sizeof(rotulo), "Dica: %d esm. (H)", partida_custo_dica(&jogo->partida));
+    snprintf(rotulo, sizeof(rotulo), "Dica (H)  %d", partida_custo_dica(&jogo->partida));
     status = botao_definir_rotulo(&jogo->botao_dica, rotulo);
     if (status != STATUS_OK) {
         return status;
     }
+    jogo->botao_dica.icone = IMG_ESMERALDA;  /* o preço aparece como número + ícone */
     jogo->botao_dica.habilitado = partida_pode_comprar_dica(&jogo->partida);
-    jogo->botao_eliminar.habilitado = !jogo->partida.eliminacao_usada;
+    /* Eliminar duas também é pago: mesmo esquema da dica */
+    snprintf(rotulo, sizeof(rotulo), "Eliminar (E)  %d", partida_custo_eliminar(&jogo->partida));
+    status = botao_definir_rotulo(&jogo->botao_eliminar, rotulo);
+    if (status != STATUS_OK) {
+        return status;
+    }
+    jogo->botao_eliminar.icone = IMG_ESMERALDA;
+    jogo->botao_eliminar.habilitado = partida_pode_eliminar(&jogo->partida);
     return STATUS_OK;
 }
 

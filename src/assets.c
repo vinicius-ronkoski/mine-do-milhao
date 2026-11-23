@@ -79,9 +79,14 @@ static const char *nome_arquivo_som(SomId id)
         "clique",                /* SOM_CLIQUE         */
         "acerto",                /* SOM_ACERTO         */
         "erro",                  /* SOM_ERRO           */
-        "dano_boss",             /* SOM_DANO_BOSS      */
+        "dano",                  /* SOM_DANO_BOSS      */
         "boss_derrotado",        /* SOM_BOSS_DERROTADO */
-        "vitoria"                /* SOM_VITORIA        */
+        "vitoria",               /* SOM_VITORIA        */
+        "entrada_creeper",       /* SOM_ENTRADA_CREEPER */
+        "entrada_wither",        /* SOM_ENTRADA_WITHER  */
+        "entrada_warden",        /* SOM_ENTRADA_WARDEN  */
+        "entrada_ender_dragon",  /* SOM_ENTRADA_ENDER_DRAGON */
+        "entrada_herobrine"      /* SOM_ENTRADA_HEROBRINE */
     };
 
     if ((int)id < 0 || id >= SOM_QUANTIDADE) {
@@ -503,6 +508,30 @@ static void desenhar_textura_esticada(Texture2D textura, Rectangle destino, Colo
     DrawTexturePro(textura, origem, destino, sem_rotacao, 0.0f, tint);
 }
 
+/**
+ * @brief Desenha a textura o maior possível dentro de `destino` SEM distorcer (mantém a proporção)
+ *        e centralizada. Um frame quadrado ocupa o quadrado inteiro; um retangular sobra nas laterais
+ *        (ou em cima e embaixo). Usada nos bosses, onde esticar deformaria o desenho.
+ */
+static void desenhar_textura_encaixada(Texture2D textura, Rectangle destino, Color tint)
+{
+    float escala_x, escala_y, escala;
+    Rectangle encaixe;
+
+    if (textura.width <= 0 || textura.height <= 0) {
+        return;
+    }
+    escala_x = destino.width / (float)textura.width;
+    escala_y = destino.height / (float)textura.height;
+    escala = escala_x < escala_y ? escala_x : escala_y;
+
+    encaixe.width = (float)textura.width * escala;
+    encaixe.height = (float)textura.height * escala;
+    encaixe.x = destino.x + (destino.width - encaixe.width) / 2.0f;
+    encaixe.y = destino.y + (destino.height - encaixe.height) / 2.0f;
+    desenhar_textura_esticada(textura, encaixe, tint);
+}
+
 void assets_desenhar_fundo(const Assets *assets, ImagemId fundo_padrao, BossId boss)
 {
     Rectangle janela = { 0.0f, 0.0f, (float)LARGURA_JANELA, (float)ALTURA_JANELA };
@@ -570,7 +599,7 @@ void assets_desenhar_boss(const Assets *assets, BossId id, float tempo, Rectangl
     if (quadro_atual < 0) {
         quadro_atual = 0;
     }
-    desenhar_textura_esticada(animacao->quadros[quadro_atual], destino, tint);
+    desenhar_textura_encaixada(animacao->quadros[quadro_atual], destino, tint);
 }
 
 /* ========================================================================= */

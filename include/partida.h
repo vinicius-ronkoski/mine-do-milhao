@@ -16,7 +16,8 @@
  *   - partida_comprar_dica(): paga CUSTO_DICA_POR_NIVEL esmeraldas e mostra a dica da pergunta
  *     (campo `dica` do CSV) até a rodada acabar. Pode comprar em várias perguntas, uma vez em cada.
  *     O que foi gasto (esmeraldas_gastas) é descontado do prêmio final;
- *   - partida_eliminar_duas(): grátis, UMA vez por partida; desabilita duas alternativas erradas.
+ *   - partida_eliminar_duas(): paga CUSTO_ELIMINAR_POR_NIVEL esmeraldas, UMA vez por partida;
+ *     desabilita duas alternativas erradas. Também conta em esmeraldas_gastas.
  *
  * Saldo = esmeraldas (prêmio acumulado) - esmeraldas_gastas. É o que o jogador pode gastar.
  * Na primeira pergunta o saldo é 0, então a dica só pode ser comprada a partir da segunda.
@@ -49,7 +50,7 @@ typedef struct {
     bool ultima_acertou;         /**< Resultado da última resposta. */
     bool boss_derrotado_agora;   /**< true se a ÚLTIMA resposta derrotou o boss do nível. Vale da resposta até a próxima
                                       (inclusive depois de partida_confirmar_revelacao(), quando o boss "atual" já é outro). */
-    int esmeraldas_gastas;       /**< Total pago em dicas (descontado do prêmio final). */
+    int esmeraldas_gastas;       /**< Total pago em ajudas (dica e eliminar; descontado do prêmio final). */
     bool dica_visivel;           /**< Dica comprada na rodada atual (volta a false na próxima rodada). */
     bool eliminacao_usada;       /**< A ajuda "eliminar duas" já foi gasta nesta partida. */
     bool alternativa_eliminada[NUM_ALTERNATIVAS]; /**< Posições desabilitadas na rodada atual. */
@@ -139,9 +140,20 @@ Status partida_comprar_dica(Partida *partida);
 /** @brief Texto da dica da pergunta atual se ela estiver visível; NULL caso contrário. */
 const char *partida_dica_atual(const Partida *partida);
 
+/** @brief Preço de "eliminar duas" na rodada atual (CUSTO_ELIMINAR_POR_NIVEL); 0 se NULL ou encerrada. */
+int partida_custo_eliminar(const Partida *partida);
+
 /**
- * @brief Ajuda "eliminar duas": sorteia duas alternativas ERRADAS e as marca como eliminadas.
- * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (já usada, NULL ou fora de ESTADO_RESPONDENDO).
+ * @brief true se "eliminar duas" pode ser usada agora: ESTADO_RESPONDENDO, ainda não usada na partida
+ *        e saldo suficiente. Use para habilitar/desabilitar o botão.
+ */
+bool partida_pode_eliminar(const Partida *partida);
+
+/**
+ * @brief Ajuda "eliminar duas": paga partida_custo_eliminar() e marca duas alternativas ERRADAS
+ *        sorteadas como eliminadas (uma vez por partida).
+ * @return STATUS_OK; STATUS_SALDO_INSUFICIENTE (nada é cobrado nem eliminado); STATUS_ERRO_PARAMETRO
+ *         (já usada, NULL ou fora de ESTADO_RESPONDENDO).
  */
 Status partida_eliminar_duas(Partida *partida);
 

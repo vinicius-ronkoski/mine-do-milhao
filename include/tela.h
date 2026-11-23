@@ -18,10 +18,8 @@
  *             partida_confirmar_revelacao, partida_premio_final... (partida.h)
  *   - fluxo:  jogo_trocar_tela, jogo_tocar_cena, jogo_anexar_cena, jogo_preparar_botoes_pergunta
  *
- * Layout sugerido (1280x720), o mesmo usado para posicionar os botões em jogo.c:
- *   HUD y 16-56 | boss x 30, y 70, 180x180 (nome e barra à direita dele)
- *   enunciado x 30, y 270, 920x150 | alternativas 2x2 a partir de y 435
- *   PARAR / DICA / ELIMINAR em y 645 | escada de prêmios x 980, y 16, 280x688
+ * Posições e tamanhos de todas as telas (e dos botões criados em jogo.c): include/layout.h,
+ * que também tem um mapa da tela de pergunta.
  *
  * Só compila com USE_RAYLIB=1.
  */
@@ -39,53 +37,53 @@ void tela_dialogo_atualizar(Jogo *jogo, float dt);
 /** @brief Fundo IMG_FUNDO_DIALOGO, boss da rodada ao centro e a caixa de diálogo. */
 void tela_dialogo_desenhar(const Jogo *jogo);
 
-/* ---------- Tela de pergunta (A IMPLEMENTAR) ---------- */
+/* ---------- Tela de pergunta (IMPLEMENTADA) ---------- */
 
 /**
- * @brief Lê os botões da pergunta. Passos sugeridos (todo botão via jogo_botao_acionado, que já
- *        toca o clique e ignora cliques nos primeiros ATRASO_ENTRADA_TELA segundos):
+ * @brief Lê os botões da pergunta (todo botão via jogo_botao_acionado, que já toca o clique e
+ *        ignora cliques nos primeiros ATRASO_ENTRADA_TELA segundos):
+ *   0. Na 1ª pergunta de cada boss (vida cheia), toca SOM_ENTRADA_CREEPER + boss->id, uma vez.
  *   1. Para cada alternativa: se jogo_botao_acionado(jogo, &jogo->alternativas[posicao])
  *      -> partida_responder(posicao) e jogo_trocar_tela(TELA_REVELACAO).
  *   2. botao_parar -> partida_parar(); jogo_tocar_cena(CENA_PARADA, TELA_RESULTADO).
  *   3. botao_dica -> partida_comprar_dica(); jogo_preparar_botoes_pergunta() (desabilita o botão).
  *      O botão já vem desabilitado sem saldo (partida_pode_comprar_dica) e mostra o preço.
- *   4. botao_eliminar -> partida_eliminar_duas(); jogo_preparar_botoes_pergunta().
+ *   4. botao_eliminar -> partida_eliminar_duas(); jogo_preparar_botoes_pergunta()
+ *      (também pago: desabilitado sem saldo por partida_pode_eliminar, mostra o preço).
  *   5. Status diferente de STATUS_OK -> jogo_registrar_erro().
  */
 void tela_pergunta_atualizar(Jogo *jogo, float dt);
 
 /**
- * @brief Fundo da fase (assets_desenhar_fundo com tela_boss_da_fase), HUD, boss, painel do enunciado
- *        (assets_desenhar_texto_ajustado), botões, dica (partida_dica_atual, se não for NULL) e escada de prêmios.
+ * @brief Fundo da fase; à esquerda o enunciado (com a dica comprada numa faixa embaixo dele),
+ *        as alternativas e as ajudas (preço = número + ícone da esmeralda); à direita o HUD
+ *        e o boss com nome e barra de vida.
  */
 void tela_pergunta_desenhar(const Jogo *jogo);
 
-/* ---------- Tela de revelação (A IMPLEMENTAR) ---------- */
+/* ---------- Tela de revelação (IMPLEMENTADA) ---------- */
 
 /**
- * @brief Mostra o resultado da resposta. Passos sugeridos:
- *   1. Se !jogo->efeito_da_tela_tocado: tocar SOM_ACERTO ou SOM_ERRO (partida.ultima_acertou),
- *      marcar destaque dos botões (DESTAQUE_CORRETO na posicao_correta, DESTAQUE_ERRADO na escolha errada)
- *      e efeito_da_tela_tocado = true.
- *   2. jogo_botao_acionado(jogo, &jogo->botao_continuar) -> partida_confirmar_revelacao(); então:
- *      - partida.boss_derrotado_agora (NÃO use boss_derrotado(partida_boss_atual()): depois de
- *        confirmar, o boss "atual" já é o do próximo nível) -> jogo_tocar_cena(CENA_BOSS_DERROTADO, ...)
- *        e, se a partida continua, jogo_anexar_cena(dialogo_cena_do_boss(próximo boss));
- *      - partida_encerrada() -> cena CENA_VITORIA ou CENA_DERROTA e depois TELA_RESULTADO;
- *      - senão -> jogo_preparar_botoes_pergunta() e TELA_PERGUNTA.
+ * @brief Vem depois da reação do apresentador (jogo_tocar_reacao). Ao entrar, toca SOM_DANO_BOSS
+ *        ("dano") se acertou. Continuar -> partida_confirmar_revelacao() e então:
+ *   - errou (ESTADO_FIM_ERRO) -> CENA_DERROTA (agradecimento) e TELA_RESULTADO;
+ *   - venceu (ESTADO_FIM_VITORIA) -> CENA_BOSS_DERROTADO + CENA_VITORIA e TELA_RESULTADO;
+ *   - boss caiu (boss_derrotado_agora) -> CENA_BOSS_DERROTADO + entrada do próximo boss e TELA_PERGUNTA;
+ *   - senão -> TELA_PERGUNTA.
  */
 void tela_revelacao_atualizar(Jogo *jogo, float dt);
 
-/** @brief Igual à tela de pergunta, com as cores de certo/errado e o boss piscando ao tomar dano. */
+/** @brief Sem pergunta nem alternativas: boss no centro (a barra desce e ele pisca se tomou dano),
+ *         "Acertou! -1 de vida" / "<boss> derrotado!" / "Errou! Nenhum dano." e o botão Continuar. */
 void tela_revelacao_desenhar(const Jogo *jogo);
 
-/* ---------- Tela de resultado (A IMPLEMENTAR) ---------- */
+/* ---------- Tela de resultado (IMPLEMENTADA) ---------- */
 
-/** @brief jogo_botao_acionado(jogo, &jogo->botao_continuar) ("Jogar de novo") -> jogo_nova_partida(); ESC fecha a janela e volta ao menu. */
+/** @brief Botão "Reiniciar (ENTER)" -> jogo_nova_partida() (volta à introdução); ESC volta ao menu. */
 void tela_resultado_atualizar(Jogo *jogo, float dt);
 
-/** @brief Fundo IMG_FUNDO_RESULTADO (assets_desenhar_fundo com BOSS_QUANTIDADE: sem fundo de fase),
- *        partida_premio_final() em esmeraldas e mensagem por estado. */
+/** @brief Título por estado (Fim de jogo / Você parou / Vitória!), retrato e agradecimento do apresentador,
+ *         prêmio final (partida_premio_final) e de onde ele veio (marco de segurança, dicas descontadas). */
 void tela_resultado_desenhar(const Jogo *jogo);
 
 /* ---------- Desenhos compartilhados ---------- */
@@ -100,10 +98,13 @@ void tela_resultado_desenhar(const Jogo *jogo);
  */
 BossId tela_boss_da_fase(const Jogo *jogo);
 
-/** @brief (A IMPLEMENTAR) "Pergunta N/15" (partida_numero_da_rodada), nível (pergunta_nome_nivel) e esmeraldas. */
+/** @brief (IMPLEMENTADA) Saldo de esmeraldas (canto superior direito), "Pergunta N/15" e o nome do nível. */
 void tela_desenhar_hud(const Jogo *jogo);
 
-/** @brief (A IMPLEMENTAR) Boss da rodada (assets_desenhar_boss) + nome (boss_nome) + barra (boss_calculo_vida). */
+/**
+ * @brief (IMPLEMENTADA) Boss da rodada dentro de `area`: nome em cima, sprite quadrado (lado = largura
+ *        da área), barra de vida e "Vida x/y" embaixo. A altura usada é largura + 40 + 15 + 24 + 30.
+ */
 void tela_desenhar_boss(const Jogo *jogo, Rectangle area);
 
 /** @brief (IMPLEMENTADA) Barra horizontal de vida: fundo, preenchimento proporcional a `fracao` (0 a 1), borda. */

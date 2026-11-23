@@ -99,7 +99,7 @@ nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,
 1. **Partida** no estilo SBT: 15 perguntas, perguntas e alternativas sorteadas por nível, marcos de segurança nas perguntas 5 e 10.
 2. **Bosses** (um por nível de dificuldade) que perdem vida a cada acerto: Creeper, Wither, Warden, Ender Dragon e Herobrine.
 3. **Esmeraldas como moeda:** as esmeraldas acumuladas são o prêmio e também o saldo para comprar a **dica** da pergunta. O preço sobe com o nível (1, 2, 5, 10 e 20 esmeraldas); pode-se comprar uma vez por pergunta, e o que foi gasto é descontado do prêmio final.
-4. **Eliminar duas:** ajuda grátis, uma vez por partida, que desabilita duas alternativas erradas.
+4. **Eliminar duas:** desabilita duas alternativas erradas, uma vez por partida. Também é paga com esmeraldas, pelo dobro do preço da dica (2, 4, 10, 20 e 40), e o botão fica desabilitado sem saldo.
 5. **Polimento:** tela inicial no estilo do menu do Minecraft, animações, músicas e arte feita à mão.
 
 

@@ -6,7 +6,8 @@
  * pode juntar várias cenas em sequência com dialogo_anexar_cena() — por exemplo
  * "boss derrotado" seguida da entrada do próximo boss.
  *
- * COMO PERSONALIZAR AS FALAS: edite o `case` da cena em dialogo_anexar_cena() (dialogo.c).
+ * COMO PERSONALIZAR AS FALAS: edite o `case` da cena em dialogo_anexar_cena() (dialogo.c);
+ *   as reações a acerto/erro ficam nas tabelas de dialogo_anexar_reacao() (dialogo.c).
  * COMO ADICIONAR UMA CENA: (1) novo id em CenaId, antes de CENA_QUANTIDADE;
  *                          (2) novo `case` em dialogo_anexar_cena().
  *
@@ -20,6 +21,9 @@
 #include "config.h"
 #include "assets.h"
 #include "boss.h"
+
+/** Quantas variações de reação existem para acerto e para erro (dialogo_anexar_reacao). */
+#define REACOES_POR_RESULTADO 3
 
 /** Uma fala. */
 typedef struct {
@@ -66,6 +70,22 @@ Status dialogo_adicionar_fala(Dialogo *dialogo, const char *personagem, const ch
  * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (cena inválida ou falas demais).
  */
 Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena);
+
+/**
+ * @brief Acrescenta a reação do apresentador a uma resposta (falas montadas na hora).
+ *
+ * Há REACOES_POR_RESULTADO variações para acerto e para erro, com estruturas diferentes
+ * (citam a resposta, o boss ou as esmeraldas). `variante` escolhe qual (use um número sorteado).
+ *
+ * @param acertou         Resultado da resposta.
+ * @param resposta_certa  Texto da alternativa correta.
+ * @param nome_boss       Nome do boss do nível (boss_nome).
+ * @param esmeraldas      Esmeraldas acumuladas depois da resposta.
+ * @param variante        Qualquer inteiro; usa-se variante % REACOES_POR_RESULTADO.
+ * @return STATUS_OK ou STATUS_ERRO_PARAMETRO.
+ */
+Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *resposta_certa,
+                             const char *nome_boss, int esmeraldas, int variante);
 
 /** @brief Limpa o diálogo e carrega uma cena (= dialogo_limpar + dialogo_anexar_cena). */
 Status dialogo_carregar_cena(Dialogo *dialogo, CenaId cena);

@@ -44,10 +44,12 @@ typedef struct {
     bool visivel;                     /**< false: não desenha nem reage. */
     EstadoBotao estado;               /**< Atualizado por botao_atualizar(). */
     DestaqueBotao destaque;           /**< Certo/errado na revelação. */
+    ImagemId icone;                   /**< Ícone desenhado depois do texto (ex.: IMG_ESMERALDA ao lado
+                                           do preço), ou IMG_NENHUMA. Com ícone o rótulo fica numa linha. */
 } Botao;
 
 /**
- * @brief Inicializa um botão (visível, habilitado, sem destaque).
+ * @brief Inicializa um botão (visível, habilitado, sem destaque e sem ícone).
  * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (NULL ou rótulo maior que o buffer).
  */
 Status botao_criar(Botao *botao, Rectangle area, const char *rotulo, int tecla_atalho);
@@ -70,7 +72,8 @@ bool botao_sob_mouse(const Botao *botao);
 
 /**
  * @brief Desenha o botão: skin IMG_BOTAO (ou retângulo, se faltar) na cor do estado/destaque,
- *        com o rótulo diminuindo a fonte até caber.
+ *        com o rótulo diminuindo a fonte até caber. Se houver `icone`, texto e ícone ficam
+ *        lado a lado, centralizados, numa linha só.
  * @param tamanho_fonte Tamanho máximo do texto.
  */
 void botao_desenhar(const Botao *botao, const Assets *assets, float tamanho_fonte);

@@ -52,6 +52,12 @@ Fundos de fase ausentes geram uma linha só no terminal ("N de 5 fundos de fase"
 
 Sequência numerada a partir de `00`, até 8 quadros. Um único arquivo `_00` = imagem parada.
 
+Tamanho recomendado: **64x64** (pixel art), PNG com fundo transparente, todos os quadros do mesmo
+tamanho. O boss aparece num quadrado de 384 pixels (6 x 64, ver `include/layout.h`),
+então cada pixel da arte vira um bloco de 6x6, sempre do mesmo tamanho. 32x32 e 16x16 também
+encaixam. Imagem que não for quadrada não é esticada: aparece inteira, centralizada, sem deformar.
+Cada quadro fica 0,15 s na tela.
+
 | Boss | Nomes |
 |---|---|
 | Creeper | `creeper_00`, `creeper_01`, ... |
@@ -69,9 +75,10 @@ Se nenhum quadro existir, aparece um xadrez magenta (a "textura faltando" do Min
 | `clique` | Clique em botão |
 | `acerto` | Resposta certa |
 | `erro` | Resposta errada |
-| `dano_boss` | Boss perde vida |
+| `dano` | Boss perde vida (tela de revelação, depois da fala do apresentador) |
 | `boss_derrotado` | Boss derrotado |
 | `vitoria` | Prêmio máximo |
+| `entrada_creeper`, `entrada_wither`, `entrada_warden`, `entrada_ender_dragon`, `entrada_herobrine` | Entrada do boss: 1ª pergunta da fase dele (toca uma vez) |
 | `musica` | Música de fundo (em loop) |
 
 Se faltar: silêncio. O volume de cada grupo fica em `include/config.h` (`VOLUME_MUSICA`, `VOLUME_EFEITOS`);

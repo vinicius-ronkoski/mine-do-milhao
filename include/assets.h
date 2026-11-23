@@ -79,6 +79,11 @@ typedef enum {
     SOM_DANO_BOSS,        /**< Boss perdeu vida. */
     SOM_BOSS_DERROTADO,   /**< Boss caiu. */
     SOM_VITORIA,          /**< Prêmio máximo. */
+    SOM_ENTRADA_CREEPER,  /**< Entrada de cada boss: SOM_ENTRADA_CREEPER + BossId (mesma ordem do enum BossId). */
+    SOM_ENTRADA_WITHER,
+    SOM_ENTRADA_WARDEN,
+    SOM_ENTRADA_ENDER_DRAGON,
+    SOM_ENTRADA_HEROBRINE,
     SOM_QUANTIDADE        /**< Quantidade de sons (não é um som). */
 } SomId;
 

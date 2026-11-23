@@ -104,6 +104,12 @@ Status jogo_tocar_cena(Jogo *jogo, CenaId cena, TelaJogo depois);
 Status jogo_anexar_cena(Jogo *jogo, CenaId cena);
 
 /**
+ * @brief Depois de partida_responder(): toca a reação do apresentador (acerto ou erro, variação
+ *        sorteada, citando a resposta certa) e, quando ela acaba, vai para TELA_REVELACAO.
+ */
+Status jogo_tocar_reacao(Jogo *jogo);
+
+/**
  * @brief Prepara os botões da pergunta atual: rótulos "A) ...", alternativas eliminadas
  *        desabilitadas, ajudas já usadas desabilitadas, sem destaque.
  *        Chame ao entrar na tela de pergunta e depois de usar uma ajuda.
