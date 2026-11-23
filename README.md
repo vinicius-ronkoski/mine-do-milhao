@@ -24,12 +24,13 @@ Requer `gcc` e `make`. Execute sempre a partir da **raiz do projeto** (os caminh
 | `make debug`      | Abre o executável no `gdb`                             |
 | `make clear_data` | Apaga os `.dat` de `data/` (o jogo volta a ler o CSV)  |
 | `make teste`      | Testa a lógica da partida (sorteio, boss, regras) sem abrir janela |
+| `make USE_RAYLIB=1`   | compila com Raylib  |
 
 Na 2ª entrega (raylib): `make USE_RAYLIB=1` (objetos em `build/raylib-<compilador>/`). O `raylib.h` e as bibliotecas ficam em `third_party/raylib/` (Linux em `lib/linux/`, Windows em `lib/windows/`). O jogo é aberto pela opção **8 - JOGAR** do menu.
 
-**Windows:** o jogo (`USE_RAYLIB=1`) precisa de um **gcc de 64 bits** (MinGW-w64, ex.: w64devkit); o MinGW clássico de 32 bits só compila o modo texto. Confira com `gcc -dumpmachine` (deve mostrar `x86_64-w64-mingw32`). Passo a passo em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md#windows-o-jogo-precisa-de-um-gcc-de-64-bits). No Linux, se o link falhar com `cannot find -lGL`: `make USE_RAYLIB=1 GL_LIB=-l:libGL.so.1`. Detalhes em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md#9-compilar-no-windows-e-no-linux).
+**Windows:** o jogo (`USE_RAYLIB=1`) precisa de um **gcc de 64 bits** (MinGW-w64, ex.: w64devkit); o MinGW clássico de 32 bits só compila o modo texto. Confira com `gcc -dumpmachine` (deve mostrar `x86_64-w64-mingw32`)
 
-**Documentação:** [`docs/GUIA_RAPIDO.md`](docs/GUIA_RAPIDO.md) tem as receitas para criar cenas, cenários, sons e imagens; [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) explica cada arquivo e como eles se ligam; [`docs/MUDANCAS.md`](docs/MUDANCAS.md) registra cada mudança. Os nomes dos arquivos de imagem e som estão em [`assets/README.md`](assets/README.md).
+**Documentação:** Os nomes dos arquivos de imagem e som estão em [`assets/README.md`](assets/README.md).
 
 ## Estrutura
 
@@ -45,7 +46,7 @@ jogo-milhao-minecraft/
 │   ├── perguntas.dat     # gerado na 1ª execução (fora do Git)
 │   ├── ranking.dat       # criativo (fora do Git)
 │   └── exportados/       # saída de "exportar CSV"
-├── docs/                 # GUIA_RAPIDO.md, ARQUITETURA.md, MUDANCAS.md, slides
+├── docs/                 # GUIA_RAPIDO.md, 
 ├── include/              # só .h
 ├── src/                  # só .c
 ├── tests/                # teste_partida.c (make teste)
