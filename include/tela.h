@@ -42,7 +42,6 @@ void tela_dialogo_desenhar(const Jogo *jogo);
 /**
  * @brief Lê os botões da pergunta (todo botão via jogo_botao_acionado, que já toca o clique e
  *        ignora cliques nos primeiros ATRASO_ENTRADA_TELA segundos):
- *   0. Na 1ª pergunta de cada boss (vida cheia), toca SOM_ENTRADA_CREEPER + boss->id, uma vez.
  *   1. Para cada alternativa: se jogo_botao_acionado(jogo, &jogo->alternativas[posicao])
  *      -> partida_responder(posicao) e jogo_trocar_tela(TELA_REVELACAO).
  *   2. botao_parar -> partida_parar(); jogo_tocar_cena(CENA_PARADA, TELA_RESULTADO).

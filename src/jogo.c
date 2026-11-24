@@ -221,6 +221,7 @@ Status jogo_nova_partida(Jogo *jogo)
     /* Partida nova começa sem o banner de erro da anterior */
     jogo->ultimo_erro = STATUS_OK;
     jogo->tempo_do_erro = 0.0f;
+    jogo->ultima_variante_reacao = -1;  /* 1ª reação da partida pode ser qualquer variação */
 
     status = partida_iniciar(&jogo->partida, jogo->banco);
     if (status != STATUS_OK) {
@@ -332,6 +333,7 @@ Status jogo_tocar_reacao(Jogo *jogo)
     const PerguntaSorteada *pergunta;
     const Boss *boss;
     Status status;
+    int variante;
 
     if (jogo == NULL) {
         return STATUS_ERRO_PARAMETRO;
@@ -342,11 +344,22 @@ Status jogo_tocar_reacao(Jogo *jogo)
         return STATUS_ERRO_PARAMETRO;
     }
 
+    /* Sorteia a variação da reação sem repetir a anterior: sorteia entre uma a menos e,
+     * se cair na anterior ou depois dela, pula uma. Assim as outras têm a mesma chance. */
+    if (jogo->ultima_variante_reacao < 0 || REACOES_POR_RESULTADO < 2) {
+        variante = sorteio_inteiro(0, REACOES_POR_RESULTADO - 1);
+    } else {
+        variante = sorteio_inteiro(0, REACOES_POR_RESULTADO - 2);
+        if (variante >= jogo->ultima_variante_reacao) {
+            variante++;
+        }
+    }
+    jogo->ultima_variante_reacao = variante;
+
     dialogo_limpar(&jogo->dialogo);
     status = dialogo_anexar_reacao(&jogo->dialogo, jogo->partida.ultima_acertou,
                                    sorteio_texto_alternativa(pergunta, pergunta->posicao_correta),
-                                   boss_nome(boss->id), jogo->partida.esmeraldas,
-                                   sorteio_inteiro(0, REACOES_POR_RESULTADO - 1));
+                                   boss->id, partida_saldo(&jogo->partida), variante);  /* saldo = o que o HUD mostra */
     if (status != STATUS_OK) {
         jogo_registrar_erro(jogo, status, "reação");
         jogo_trocar_tela(jogo, TELA_REVELACAO);  /* pula a fala em vez de travar */

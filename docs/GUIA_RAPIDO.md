@@ -1,7 +1,7 @@
 # Guia rápido — cenas, cenários, sons e imagens
 
-Receitas curtas para mexer no jogo sem procurar no código. Detalhes de como tudo funciona:
-[`ARQUITETURA.md`](ARQUITETURA.md). Nomes e tamanhos de arquivo: [`assets/README.md`](../assets/README.md).
+Receitas curtas para mexer no jogo sem procurar no código. Nomes e tamanhos de arquivo:
+[`assets/README.md`](../assets/README.md).
 
 Regras que valem para tudo:
 - Arquivos em `assets/` são citados **sem extensão** no código (o jogo testa `.png`, `.jpg`, `.ogg`...).
@@ -26,9 +26,12 @@ Dentro do `case` de uma cena, em `dialogo_anexar_cena()` (`dialogo.c`):
 | Atalho | O que faz |
 |---|---|
 | `FALA(personagem, texto, retrato)` | Uma fala |
-| `FALA_SOM(personagem, texto, retrato, SOM_X)` | Uma fala que toca `SOM_X` quando aparece |
-| `CENARIO(IMG_X)` | As falas seguintes usam esse fundo (sem o boss). `CENARIO(IMG_NENHUMA)` volta ao fundo da fase |
+| `CENARIO(IMG_X)` | A próxima fala **e as seguintes** usam esse fundo (sem o boss). `CENARIO(IMG_NENHUMA)` volta ao fundo da fase |
+| `SOM(SOM_X)` | A **próxima** fala toca `SOM_X` quando aparece (só ela) |
 | `MUSICA(MUSICA_X)` | A música troca quando a **próxima** fala aparecer e continua depois da cena (ver seção 5b) |
+
+**Regra única: tudo que modifica uma fala vem antes dela.** `SOM` ou `MUSICA` no fim do `case`, sem
+`FALA` depois, é ignorado (o terminal avisa).
 
 `personagem` é um texto (`NOME_APRESENTADOR` = "Silvio Aldeão"); `retrato` é um `IMG_*` ou `IMG_NENHUMA`.
 
@@ -48,7 +51,8 @@ encadeadas** (`DIALOGO_MAX_FALAS`, em `config.h`).
    case CENA_HISTORIA_6:
        CENARIO(IMG_CENARIO_NETHER);
        FALA(NOME_APRESENTADOR, "Chegamos ao Nether.", IMG_RETRATO_ALDEAO);
-       FALA_SOM(NOME_APRESENTADOR, "Ouviu isso?", IMG_RETRATO_ALDEAO, SOM_TROVAO);
+       SOM(SOM_TROVAO);
+       FALA(NOME_APRESENTADOR, "Ouviu isso?", IMG_RETRATO_ALDEAO);
        break;
    ```
 3. **Chamar** no ponto do fluxo onde ela deve tocar (próxima seção).
@@ -99,7 +103,7 @@ exatamente um `%s` (resposta certa ou nome do boss).
 
 Usos:
 - **Cenário de cena:** `CENARIO(IMG_CENARIO_NETHER);` no `case`. Proporção 16:9 (pixel art: 320x180 ou 640x360).
-- **Retrato de personagem:** último argumento de `FALA`/`FALA_SOM`. Quadrado.
+- **Retrato de personagem:** último argumento de `FALA`. Quadrado.
 - **Ícone num botão:** `botao.icone = IMG_X;` (ao lado do texto; ex.: preço da dica). Ícone de pixel art 16x16
   aparece em 32 px (`LADO_ICONE_ESMERALDA`, em `layout.h`).
 - **Desenhar em qualquer tela:** `assets_desenhar_imagem(&jogo->assets, IMG_X, retangulo, WHITE);`
@@ -118,7 +122,7 @@ A ordem do enum e a da tabela **têm de bater**: o enum é o índice da tabela.
 3. **`assets.c`** — nome do arquivo na tabela de `nome_arquivo_som()`, na mesma posição.
 
 Usos:
-- **Numa fala:** `FALA_SOM(..., SOM_TROVAO);`
+- **Numa fala:** `SOM(SOM_TROVAO);` na linha antes da `FALA(...)`.
 - **Em qualquer lugar:** `assets_tocar_som(&jogo->assets, SOM_TROVAO);` (`SOM_NENHUM` não toca nada).
 
 Sons que o jogo já toca sozinho: `clique` (botões e diálogo), `acerto`, `erro`, `dano` (revelação),

@@ -55,22 +55,63 @@
  */
 static const char *nome_arquivo_imagem(ImagemId id)
 {
+    
     static const char *const nomes[IMG_QUANTIDADE] = {
-        "fundo_pergunta",        /* IMG_FUNDO_PERGUNTA   */
-        "fundo_dialogo",         /* IMG_FUNDO_DIALOGO    */
-        "fundo_resultado",       /* IMG_FUNDO_RESULTADO  */
-        "painel_enunciado",      /* IMG_PAINEL_ENUNCIADO */
-        "botao",                 /* IMG_BOTAO            */
-        "caixa_dialogo",         /* IMG_CAIXA_DIALOGO    */
-        "esmeralda",             /* IMG_ESMERALDA        */
-        "retrato_aldeao",        /* IMG_RETRATO_ALDEAO   */
-        "auditorio",             /* IMG_FUNDO_AUDITORIO  */
-        "palco",                 /* IMG_FUNDO_PALCO  */
-        "retrato_desconhecido",  /* IMG_RETRATO_DESCONHECIDO*/
-        "fundo_preto"            /* IMG_FUNDO_PRETO*/
+        /* Objetos */
+        "painel_enunciado",         /* IMG_PAINEL_ENUNCIADO       */
+        "botao",                    /* IMG_BOTAO                  */
+        "caixa_dialogo",            /* IMG_CAIXA_DIALOGO          */
+        "esmeralda",                /* IMG_ESMERALDA              */
+
+        /* Fundos */
+        "fundo_pergunta",           /* IMG_FUNDO_PERGUNTA         */
+        "fundo_dialogo",            /* IMG_FUNDO_DIALOGO          */
+        "palco",                    /* IMG_FUNDO_PALCO            */
+        "auditorio",                /* IMG_FUNDO_AUDITORIO        */
+        "fundo_preto",              /* IMG_FUNDO_PRETO            */
+        "fundo_vitoria",            /* IMG_FUNDO_VITORIA          */
+        "fundo_derrota",            /* IMG_FUNDO_DERROTA          */
+        "fundo_resultado",          /* IMG_FUNDO_RESULTADO        */
+
+        /* Ícones */
+        "icone_aldeao00",           /* IMG_ICONE_ALDEAO           */
+        "icone_aldeao01",           /* IMG_ICONE_ALDEAO_ASSUSTADO */
+        "icone_desconhecido00",     /* IMG_ICONE_DESCONHECIDO     */
+        "icone_desconhecido01",     /* IMG_ICONE_DESCONHECIDO     */
+        "retrato_creeper",          /* IMG_ICONE_CREEPER          */
+        "retrato_wither",           /* IMG_ICONE_WITHER           */
+        "retrato_warden",           /* IMG_ICONE_WARDEN           */
+        "retrato_ender_dragon",     /* IMG_ICONE_ENDER_DRAGON     */
+        "retrato_steve",            /* IMG_ICONE_STEVE            */
+        "retrato_herobrine",        /* IMG_ICONE_HEROBRINE        */
+
+        /* História 1 */
+        "h1_00", "h1_01","h1_02",   /* IMG_H1_CENA_1...3          */
+
+        /* História 2 */
+        "h2_00", "h2_01", "h2_02",  /* IMG_H2_CENA_1...3          */
+        "h2_03", "h2_04", "h2_05",  /* IMG_H1_CENA_4...6          */
+        "h2_06", "h2_07", "h2_08",  /* IMG_H1_CENA_7...9          */
+
+        /* História 3 */
+        "h3_00", "h3_01", "h3_02",  /* IMG_H3_CENA_1...3          */               
+        "h3_03",                    /* IMG_H3_CENA_4              */
+
+        /* História 4 */
+        "h4_00", "h4_01", "h4_02",  /* IMG_H4_CENA_1...3          */
+        "h4_03", "h4_04", "h4_05",  /* IMG_H4_CENA_4...6          */                
+
+        /* História 5 */
+        "h5_00", "h5_01", "h5_02",  /* IMG_H5_CENA_1...3          */             
+
+        /* História 6 (final) */
+        "h6_00", "h6_01", "h6_02",  /* IMG_H6_CENA_1...3          */             
+        "h6_03", "h6_04", "h6_05",  /* IMG_H6_CENA_4...6          */               
+        "h6_06", "h6_07", "h6_08",  /* IMG_H6_CENA_7...9          */               
+        "h6_09"                     /* IMG_H6_CENA_10             */
     };
 
-    if ((int)id < 0 || id >= IMG_QUANTIDADE) {
+    if ((int)id < 0 || id >= IMG_QUANTIDADE || nomes[id] == NULL) {
         return "";
     }
     return nomes[id];
@@ -88,7 +129,7 @@ static const char *nome_arquivo_musica(MusicaId id)
         "musica_herobrine"       /* MUSICA_HEROBRINE     */
     };
 
-    if ((int)id < 0 || id >= MUSICA_QUANTIDADE) {
+    if ((int)id < 0 || id >= MUSICA_QUANTIDADE || nomes[id] == NULL) {
         return "";
     }
     return nomes[id];
@@ -103,15 +144,10 @@ static const char *nome_arquivo_som(SomId id)
         "dano",                  /* SOM_DANO_BOSS             */
         "boss_derrotado",        /* SOM_BOSS_DERROTADO        */
         "vitoria",               /* SOM_VITORIA               */
-        "entrada_creeper",       /* SOM_ENTRADA_CREEPER       */
-        "entrada_wither",        /* SOM_ENTRADA_WITHER        */
-        "entrada_warden",        /* SOM_ENTRADA_WARDEN        */
-        "entrada_ender_dragon",  /* SOM_ENTRADA_ENDER_DRAGON  */
-        "entrada_herobrine",     /* SOM_ENTRADA_HEROBRINE     */
         "plateia",               /* SOM_PLATEIA               */
     };
 
-    if ((int)id < 0 || id >= SOM_QUANTIDADE) {
+    if ((int)id < 0 || id >= SOM_QUANTIDADE || nomes[id] == NULL) {
         return "";
     }
     return nomes[id];

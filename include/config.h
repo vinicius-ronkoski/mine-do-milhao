@@ -80,7 +80,7 @@
 #define PERGUNTAS_POR_NIVEL     { 2, 2, 4, 4, 3 }
 
 /** Esmeraldas ACUMULADAS ao acertar cada rodada (15 valores, uma por pergunta). */
-#define PREMIOS_ESMERALDAS      { 1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 70, 100, 150, 300 }
+#define PREMIOS_ESMERALDAS      { 1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 70, 100, 150, 384 }
 
 /** Preço da dica em esmeraldas, por nível (1 a 5). O valor gasto sai do prêmio final. */
 #define CUSTO_DICA_POR_NIVEL    { 1, 2, 5, 10, 20 }

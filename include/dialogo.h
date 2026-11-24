@@ -16,8 +16,8 @@
  *   em assets/sprites/ (16:9).
  * HISTÓRIA: as cenas CENA_HISTORIA_* são chamadas direto, com jogo_anexar_cena(), nos pontos do
  *   fluxo onde devem tocar: jogo_nova_partida() (jogo.c) e tela_revelacao_atualizar() (tela.c).
- * SOM EM UMA FALA: use FALA_SOM(personagem, texto, retrato, SOM_X) no lugar de FALA(...).
- *   O som toca uma vez, quando a fala aparece. Som novo: id no enum SomId (assets.h),
+ * SOM EM UMA FALA: SOM(SOM_X) logo antes da FALA(...). Vale só para essa fala e
+ *   toca uma vez, quando ela aparece. Som novo: id no enum SomId (assets.h),
  *   nome do arquivo em nome_arquivo_som() (assets.c) e o arquivo em assets/sounds/.
  * MÚSICA: MUSICA(MUSICA_X) dentro do `case` troca a música quando a PRÓXIMA fala aparecer.
  *   A música continua depois da cena: para voltar, outro MUSICA(...) (não volta sozinha).
@@ -37,14 +37,14 @@
 #include "boss.h"
 
 /** Quantas variações de reação existem para acerto e para erro (dialogo_anexar_reacao). */
-#define REACOES_POR_RESULTADO 3
+#define REACOES_POR_RESULTADO 4
 
 /** Uma fala. */
 typedef struct {
     char personagem[TAM_NOME_PERSONAGEM];  /**< Nome mostrado acima do texto. */
     char texto[TAM_FALA];                  /**< Conteúdo (UTF-8, com acentos). */
     ImagemId retrato;                      /**< Retrato (IMG_*) ou IMG_NENHUMA. */
-    SomId som;                             /**< Som que toca quando a fala aparece, ou SOM_NENHUM. */
+    SomId som;                             /**< Som que toca quando a fala aparece (SOM) ou SOM_NENHUM. */
     ImagemId fundo;                        /**< Cenário desta fala (CENARIO) ou IMG_NENHUMA = fundo da fase. */
     MusicaId musica;                       /**< Música que começa nesta fala (MUSICA) ou MUSICA_MANTER. */
 } Fala;
@@ -58,7 +58,6 @@ typedef enum {
     CENA_BOSS_ENDER_DRAGON,
     CENA_BOSS_HEROBRINE,
     CENA_BOSS_DERROTADO,    /**< Reação depois de derrotar um boss. */
-    CENA_VITORIA,           /**< Acertou as 15. */
     CENA_DERROTA,           /**< Errou. */
     CENA_PARADA,            /**< Parou e levou as esmeraldas. */
     CENA_HISTORIA_1,        /**< Parte introdutória com o creeper. */
@@ -85,12 +84,12 @@ void dialogo_limpar(Dialogo *dialogo);
 
 /**
  * @brief Acrescenta uma fala ao fim.
- * @param som Som tocado quando a fala aparecer (ver dialogo_fala_nova), ou SOM_NENHUM.
- *            A música da fala começa como MUSICA_MANTER (a macro MUSICA troca).
+ * A fala começa sem som (SOM_NENHUM), sem cenário (IMG_NENHUMA) e sem troca de música
+ * (MUSICA_MANTER); dentro de dialogo_anexar_cena as macros SOM, CENARIO e MUSICA preenchem esses campos.
  * @return STATUS_OK ou STATUS_ERRO_PARAMETRO (NULL, texto longo demais ou DIALOGO_MAX_FALAS excedido).
  */
 Status dialogo_adicionar_fala(Dialogo *dialogo, const char *personagem, const char *texto,
-                              ImagemId retrato, SomId som);
+                              ImagemId retrato);
 
 /**
  * @brief A fala que acabou de aparecer, entregue UMA vez por fala (nas outras chamadas, NULL).
@@ -107,20 +106,18 @@ const Fala *dialogo_fala_nova(Dialogo *dialogo);
 Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena);
 
 /**
- * @brief Acrescenta a reação do apresentador a uma resposta (falas montadas na hora).
- *
- * Há REACOES_POR_RESULTADO variações para acerto e para erro, com estruturas diferentes
- * (citam a resposta, o boss ou as esmeraldas). `variante` escolhe qual (use um número sorteado).
- *
- * @param acertou         Resultado da resposta.
- * @param resposta_certa  Texto da alternativa correta.
- * @param nome_boss       Nome do boss do nível (boss_nome).
- * @param esmeraldas      Esmeraldas acumuladas depois da resposta.
- * @param variante        Qualquer inteiro; usa-se variante % REACOES_POR_RESULTADO.
+ * @brief Reação do apresentador a uma resposta: até 3 falas, cada uma sorteada entre 3 variações.
+ *        1ª: resposta certa; 2ª: frase do boss atual; 3ª (só no acerto): saldo de esmeraldas.
+ *        Texto vazio ("") nas tabelas de dialogo.c = essa fala não aparece.
+ * @param acertou         Se o jogador acertou.
+ * @param resposta_certa  Texto da alternativa certa (entra no %s da 1ª fala).
+ * @param boss_id         Boss atual: escolhe a linha das tabelas do boss (nome no %s via boss_nome).
+ * @param esmeraldas      Saldo atual (entra no %d da fala das esmeraldas).
+ * @param variante        Qualquer inteiro; usa-se |variante| % REACOES_POR_RESULTADO.
  * @return STATUS_OK ou STATUS_ERRO_PARAMETRO.
  */
 Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *resposta_certa,
-                             const char *nome_boss, int esmeraldas, int variante);
+                             BossId boss_id, int esmeraldas, int variante);
 
 /** @brief Limpa o diálogo e carrega uma cena (= dialogo_limpar + dialogo_anexar_cena). */
 Status dialogo_carregar_cena(Dialogo *dialogo, CenaId cena);

@@ -222,7 +222,6 @@ void tela_dialogo_desenhar(const Jogo *jogo)
 
 void tela_pergunta_atualizar(Jogo *jogo, float dt)
 {
-    const Boss *boss;
     Status status = STATUS_OK;
     int posicao;
 
@@ -230,13 +229,6 @@ void tela_pergunta_atualizar(Jogo *jogo, float dt)
     if (jogo == NULL) {
         return;
     }
-
-    /* Som de entrada: só na 1ª pergunta do boss (vida cheia) e uma vez por tela */
-    boss = partida_boss_atual(&jogo->partida);
-    if (!jogo->efeito_da_tela_tocado && boss != NULL && boss->vida_atual == boss->vida_maxima) {
-        assets_tocar_som(&jogo->assets, (SomId)(SOM_ENTRADA_CREEPER + boss->id));
-    }
-    jogo->efeito_da_tela_tocado = true;
 
     for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
         if (jogo_botao_acionado(jogo, &jogo->alternativas[posicao])) {
@@ -355,7 +347,6 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
     case ESTADO_FIM_VITORIA:     /* acertou a 15ª: o último boss caiu */
         jogo_tocar_cena(jogo, CENA_BOSS_DERROTADO, TELA_RESULTADO);
         jogo_anexar_cena(jogo, CENA_HISTORIA_FIM);
-        jogo_anexar_cena(jogo, CENA_VITORIA);
         break;
     default:                     /* a partida continua */
         jogo_preparar_botoes_pergunta(jogo);
@@ -455,6 +446,7 @@ void tela_resultado_atualizar(Jogo *jogo, float dt)
 void tela_resultado_desenhar(const Jogo *jogo)
 {
     const Partida *partida;
+    const char *mensagem_resultado;
     const char *titulo;
     Rectangle janela_titulo = { 0.0f, TOPO_TITULO_RESULTADO, (float)LARGURA_JANELA, 70.0f };
     Rectangle retrato = { ((float)LARGURA_JANELA - LADO_RETRATO_RESULTADO) / 2.0f, TOPO_RETRATO_RESULTADO,
@@ -464,24 +456,44 @@ void tela_resultado_desenhar(const Jogo *jogo)
     Rectangle linha_detalhe1 = { 0.0f, TOPO_DETALHE1_RESULTADO, (float)LARGURA_JANELA, 32.0f };
     Rectangle linha_detalhe2 = { 0.0f, TOPO_DETALHE2_RESULTADO, (float)LARGURA_JANELA, 32.0f };
     char texto[96];
+    ImagemId fundo, icone;
 
     if (jogo == NULL) {
         return;
     }
     partida = &jogo->partida;
-    assets_desenhar_fundo(&jogo->assets, IMG_FUNDO_RESULTADO, BOSS_QUANTIDADE);
-
+    
     switch (partida->estado) {
-    case ESTADO_FIM_VITORIA: titulo = "Vitória!";      break;
-    case ESTADO_FIM_PARADA:  titulo = "Você parou";    break;
-    default:                 titulo = "Fim de jogo";   break;
+    case ESTADO_FIM_VITORIA: 
+        titulo = "Vitória!";
+        icone = IMG_ICONE_ALDEAO;
+        mensagem_resultado = "\"O Villager hipotético sente orgulho!\"";
+        fundo = IMG_FUNDO_VITORIA;
+        break;
+            
+    case ESTADO_FIM_PARADA:  
+        titulo = "Você parou";
+        icone = IMG_ICONE_ALDEAO_ASSUSTADO;    
+        mensagem_resultado = "Vai me deixar lutar sozinho?";
+        fundo = IMG_FUNDO_RESULTADO;
+        break;
+
+    default:                 
+        titulo = "Fim de jogo";
+        icone = IMG_ICONE_DESCONHECIDO_2;   
+        mensagem_resultado = "A maior virtude humana é a determinação.";
+        fundo = IMG_FUNDO_DERROTA;
+        break;
     }
+
+    /* Mensagem Resultado */
+    assets_desenhar_fundo(&jogo->assets, fundo, BOSS_QUANTIDADE);
+    assets_desenhar_texto_centralizado(&jogo->assets, mensagem_resultado, linha_obrigado, 28.0f, PALETA_TEXTO); 
+
+    assets_desenhar_imagem(&jogo->assets, icone, retrato, WHITE);
     assets_desenhar_texto_centralizado(&jogo->assets, titulo, janela_titulo, 56.0f, PALETA_DESTAQUE);
 
-    /* O apresentador agradece */
-    assets_desenhar_imagem(&jogo->assets, IMG_RETRATO_ALDEAO, retrato, WHITE);
-    assets_desenhar_texto_centralizado(&jogo->assets, "Obrigado por jogar o Mine do Milhão!",
-                                       linha_obrigado, 28.0f, PALETA_TEXTO);
+    
 
     /* Prêmio final (já com marco de segurança e dicas descontadas) */
     snprintf(texto, sizeof(texto), "Você leva %d esmeralda%s", partida_premio_final(partida),

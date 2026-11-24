@@ -29,8 +29,8 @@ banco_falso.c
 # tests/ é ignorada
 tests/*
 
-# arquivos locais
+# Documentação local (só na máquina de quem escreveu; não vai para o Git)
 docs/ARQUITETURA.md
-docs/MUDANÇAS.md
+docs/MUDANCAS.md
 
 data/perguntas.dat.tmp

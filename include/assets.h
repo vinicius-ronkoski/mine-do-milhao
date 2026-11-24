@@ -57,19 +57,87 @@
 
 /** Imagens estáticas (arquivos em assets/sprites/, nomes na tabela de assets.c). */
 typedef enum {
-    IMG_FUNDO_PERGUNTA = 0,   /**< Fundo da tela de perguntas (1280x720). */
-    IMG_FUNDO_DIALOGO,        /**< Fundo das cenas de diálogo. */
-    IMG_FUNDO_RESULTADO,      /**< Fundo da tela final. */
-    IMG_PAINEL_ENUNCIADO,     /**< Moldura atrás do enunciado (fallback: painel cinza). */
-    IMG_BOTAO,                /**< Skin única dos botões; o estado só muda a cor (fallback: retângulo). */
-    IMG_CAIXA_DIALOGO,        /**< Caixa de fala (fallback: painel cinza). */
-    IMG_ESMERALDA,            /**< Ícone da esmeralda (HUD e escada de prêmios). */
-    IMG_RETRATO_ALDEAO,       /**< Retrato do apresentador nos diálogos. */
-    IMG_FUNDO_AUDITORIO,      /**< Imagem do auditório (Minecraft)*/
-    IMG_FUNDO_PALCO,          /**< Imagem do palco (Minecraft) */
-    IMG_RETRATO_DESCONHECIDO, /**< Imagem desconhecido (Herobrine) */
-    IMG_FUNDO_PRETO,          /**< Fundo preto (Herobrine) */
-    IMG_QUANTIDADE            /**< Quantidade de imagens (não é uma imagem). */
+    // Objetos
+    IMG_PAINEL_ENUNCIADO = 0,         /**< Moldura atrás do enunciado (fallback: painel cinza). */
+    IMG_BOTAO,                        /**< Skin única dos botões; o estado só muda a cor (fallback: retângulo). */
+    IMG_CAIXA_DIALOGO,                /**< Caixa de fala (fallback: painel cinza). */
+    IMG_ESMERALDA,                    /**< Ícone da esmeralda (HUD e escada de prêmios). */
+
+    // Fundos
+    IMG_FUNDO_PERGUNTA,               /**< Fundo da tela de perguntas (1280x720). */
+    IMG_FUNDO_DIALOGO,                /**< Fundo das cenas de diálogo. */
+    IMG_FUNDO_PALCO,                  /**< Imagem do palco (Minecraft) */
+    IMG_FUNDO_AUDITORIO,              /**< Imagem do auditório (Minecraft)*/
+    IMG_FUNDO_PRETO,                  /**< Fundo Preto */
+    IMG_FUNDO_VITORIA,                /**< Fundo com vitória */
+    IMG_FUNDO_DERROTA,                /**< Fundo com derrota */
+    IMG_FUNDO_RESULTADO,              /**< Fundo da tela final. (Fundo de terra) */
+
+    // Icones
+    IMG_ICONE_ALDEAO,                 /**< Icone Villager*/
+    IMG_ICONE_ALDEAO_ASSUSTADO,       /**< Icone Villager asustado*/
+    IMG_ICONE_DESCONHECIDO_1,         /**< Icone desconhecido (Herobrine) */
+    IMG_ICONE_DESCONHECIDO_2,         /**< Icone desconhecido (Sem interrogação) */ 
+    IMG_ICONE_CREEPER,                /**< Icone Creeper */
+    IMG_ICONE_WITHER,                 /**< Icone Wither */
+    IMG_ICONE_WARDEN,                 /**< Icone Warden (Herobrine) */
+    IMG_ICONE_ENDER_DRAGON,           /**< Icone Ender Dragon */
+    IMG_ICONE_STEVE,                  /**< Icone Steve */
+    IMG_ICONE_HEROBRINE,              /**< Icone Herobrine */
+
+    // Historia 1
+    IMG_H1_CENA_1,                     /*< Frame 1 do Creeper auditorio */
+    IMG_H1_CENA_2,                     /*< Frame 2 do Creeper auditorio */ 
+    IMG_H1_CENA_3,                     /*< Apresentador olha para o Creeper */
+    // Cena Creeper
+
+    // Historia 2
+    IMG_H2_CENA_1,                     /*< Creeper dropa item */
+    IMG_H2_CENA_2,                     /*< Leitura do livro com enigma */
+    IMG_H2_CENA_3,                     /*< Villager olha para o jogador */
+    IMG_H2_CENA_4,                     /*< Portal do nether desativado */
+    IMG_H2_CENA_5,                     /*< Portal do nether ativado */
+    IMG_H2_CENA_6,                     /*< Entram no nether, com portal no fundo */
+    IMG_H2_CENA_7,                     /*< Villager olha para o lado */
+    IMG_H2_CENA_8,                     /*< Villager com Wither sem estar montado */
+    // Cena_Wither
+    IMG_H2_CENA_9,                     /*< Villager olha pra cima, chamar img nenhuma  */
+
+    // Historia 3
+    IMG_H3_CENA_1,                     /*< Villager aliviado olha para o jogador */
+    IMG_H3_CENA_2,                     /*< Voltam, dentro de caverna, Villager olha para o portal */
+    IMG_H3_CENA_3,                     /*< Villager olha para o jogador na caverna */
+    IMG_H3_CENA_4,                     /*< Sensor de Sculk ativa, chamando o warden */
+
+    // Historia 4
+    IMG_H4_CENA_1,                     /*< Villager aponta para saída com sua seta mágica */
+    IMG_H4_CENA_2,                     /*< Villager encontra um portal convenientemente colocado ali */
+    IMG_H4_CENA_3,                     /*< Villager e jogador vão para o end */
+    IMG_H4_CENA_4,                     /*< Jogador olha para o redomoinho */
+    IMG_H4_CENA_5,                     /*< Villager mostra sua roupa nova e zomba */
+    IMG_H4_CENA_6,                     /*< Barulho do ender dragon */
+    // Cena Ender Dragon
+
+    // Historia 5
+    IMG_H5_CENA_1,                     /*< Cena do fim do jogo */
+    IMG_H5_CENA_2,                     /*< Villager e Player no mapa do herobrine */
+    IMG_H5_CENA_3,                     /*< Fica escuro e villager pergunta se está tudo bem */
+    // Cena Herobrine
+
+    // Historia 6 (Final)
+    IMG_H6_CENA_1,                     /*< Frame 1 - Villager na paz */
+    IMG_H6_CENA_2,                     /*< Frame 2 - Villager na paz */
+    IMG_H6_CENA_3,                     /*< Frame 3 - Villager na paz */
+    IMG_H6_CENA_4,                     /*< Frame 4 - Villager na paz */
+    IMG_H6_CENA_5,                     /*< De volta ao palco, olhar baixo */
+    IMG_H6_CENA_6,                     /*< No palco, anunciando do vencedor*/
+    IMG_H6_CENA_7,                     /*< Frame 1 - Steve pulando*/
+    IMG_H6_CENA_8,                     /*< Frame 2 - Steve pulando*/
+    IMG_H6_CENA_9,                     /*< Frame 1 - Steve pulando com esmeralda*/
+    IMG_H6_CENA_10,                    /*< Frame 2 - Steve pulando com esmeralda*/
+
+    // Quantidade (SEMPRE MANTER)
+    IMG_QUANTIDADE                      /**< Quantidade de imagens (não é uma imagem). */
 } ImagemId;
 
 /** Use em Fala.retrato quando a fala não tem retrato. */
@@ -84,11 +152,6 @@ typedef enum {
     SOM_DANO_BOSS,        /**< Boss perdeu vida. */
     SOM_BOSS_DERROTADO,   /**< Boss caiu. */
     SOM_VITORIA,          /**< Prêmio máximo. */
-    SOM_ENTRADA_CREEPER,  /**< Entrada de cada boss: SOM_ENTRADA_CREEPER + BossId (mesma ordem do enum BossId). */
-    SOM_ENTRADA_WITHER,
-    SOM_ENTRADA_WARDEN,
-    SOM_ENTRADA_ENDER_DRAGON,
-    SOM_ENTRADA_HEROBRINE,
     SOM_PLATEIA,          /**< Som de entrada da plateia*/
     SOM_QUANTIDADE        /**< Quantidade de sons (não é um som). */
 } SomId;
