@@ -24,12 +24,19 @@ Requer `gcc` e `make`. Execute sempre a partir da **raiz do projeto** (os caminh
 | `make debug`      | Abre o executável no `gdb`                             |
 | `make clear_data` | Apaga os `.dat` de `data/` (o jogo volta a ler o CSV)  |
 | `make teste`      | Testa a lógica da partida (sorteio, boss, regras) sem abrir janela |
+| `make USE_RAYLIB=1`   | compila com Raylib  |
 
 Na 2ª entrega (raylib): `make USE_RAYLIB=1` (objetos em `build/raylib-<compilador>/`). O `raylib.h` e as bibliotecas ficam em `third_party/raylib/` (Linux em `lib/linux/`, Windows em `lib/windows/`). O jogo é aberto pela opção **8 - JOGAR** do menu.
 
+<<<<<<< HEAD
 **Windows:** o jogo (`USE_RAYLIB=1`) precisa de um **gcc de 64 bits** (MinGW-w64, ex.: w64devkit); o MinGW clássico de 32 bits só compila o modo texto. Confira com `gcc -dumpmachine` (deve mostrar `x86_64-w64-mingw32`). Se mostrar outra coisa, instale o w64devkit e coloque a pasta `bin` dele no `PATH` antes do gcc antigo. No Linux, se o link falhar com `cannot find -lGL`: `make USE_RAYLIB=1 GL_LIB=-l:libGL.so.1`.
 
 **Documentação:** [`docs/GUIA_RAPIDO.md`](docs/GUIA_RAPIDO.md) tem as receitas para criar cenas, cenários, sons e imagens. O código é documentado com comentários Doxygen em cada `.h`. Os nomes dos arquivos de imagem e som estão em [`assets/README.md`](assets/README.md).
+=======
+**Windows:** o jogo (`USE_RAYLIB=1`) precisa de um **gcc de 64 bits** (MinGW-w64, ex.: w64devkit); o MinGW clássico de 32 bits só compila o modo texto. Confira com `gcc -dumpmachine` (deve mostrar `x86_64-w64-mingw32`)
+
+**Documentação:** Os nomes dos arquivos de imagem e som estão em [`assets/README.md`](assets/README.md).
+>>>>>>> bffbb2d71ddcc00e9670592014c5df0c170a57a5
 
 ## Estrutura
 
@@ -45,7 +52,11 @@ jogo-milhao-minecraft/
 │   ├── perguntas.dat     # gerado na 1ª execução (fora do Git)
 │   ├── ranking.dat       # criativo (fora do Git)
 │   └── exportados/       # saída de "exportar CSV"
+<<<<<<< HEAD
 ├── docs/                 # GUIA_RAPIDO.md, slides
+=======
+├── docs/                 # GUIA_RAPIDO.md, 
+>>>>>>> bffbb2d71ddcc00e9670592014c5df0c170a57a5
 ├── include/              # só .h
 ├── src/                  # só .c
 ├── tests/                # teste_partida.c (make teste)
