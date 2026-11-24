@@ -129,7 +129,8 @@ static const char *nome_arquivo_musica(MusicaId id)
         "musica_warden",         /* MUSICA_WARDEN        */
         "musica_end",            /* MUSICA_END           */
         "musica_moog_city",      /* MUSICA_MOOG_CITY     */
-        "musica_herobrine"       /* MUSICA_HEROBRINE     */
+        "musica_herobrine",      /* MUSICA_HEROBRINE     */
+        "musica_equinoxe"        /* MUSICA_EQUINOXE      */
     };
 
     if ((int)id < 0 || id >= MUSICA_QUANTIDADE || nomes[id] == NULL) {
@@ -153,7 +154,10 @@ static const char *nome_arquivo_som(SomId id)
         "aldeao",                /* SOM_ALDEAO               */
         "sculk",                 /* SOM_SCULK                */
         "ender_dragon_00",       /* SOM_ENDER_DRAGON_VOO     */
-        "ender_dragon_01"        /* SOM_ENDER_DRAGON_IDLE    */
+        "ender_dragon_01",       /* SOM_ENDER_DRAGON_IDLE    */
+        "flint_and_steel",       /* SOM_FLINT_AND_STEEL      */
+        "the_nether",            /* SOM_THE_NETHER           */
+        "receba"                 /* SOM_RECEBA               */
     };
 
     if ((int)id < 0 || id >= SOM_QUANTIDADE || nomes[id] == NULL) {

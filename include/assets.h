@@ -160,7 +160,10 @@ typedef enum {
     SOM_ALDEAO,           /**< Som de aldeão */
     SOM_SCULK,            /**< Som de Sculk */
     SOM_ENDER_DRAGON_VOO, /**< Som do Ender Dragon Voando */
-    SOM_ENDER_DRAGON_IDLE,/**< Som do ender dragon */  
+    SOM_ENDER_DRAGON_IDLE,/**< Som do ender dragon */ 
+    SOM_FLINT_AND_STEEL,  /**< Som do Minecraft Movie */   
+    SOM_THE_NETHER,       /**< Som do Minecraft Movie */
+    SOM_RECEBA,           /**< Receba (Luva de Pedreiro) */    
     SOM_QUANTIDADE        /**< Quantidade de sons (não é um som). */
 } SomId;
 
@@ -179,6 +182,7 @@ typedef enum {
     MUSICA_END,               /**< C418 original The End, placeholder */
     MUSICA_MOOG_CITY,         /**< C418 original Moog City, placeho;der */
     MUSICA_HEROBRINE,
+    MUSICA_EQUINOXE,           /**< C418 original Equinoxe, placeholder */
     MUSICA_QUANTIDADE,        /**< Quantidade de músicas (não é uma música). */
     MUSICA_SILENCIO           /**< Comando, não arquivo: para a música atual (MUSICA(MUSICA_SILENCIO)). */
 } MusicaId;

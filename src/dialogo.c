@@ -140,7 +140,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         break;
     case CENA_DERROTA:
         RETRATO(IMG_ICONE_ALDEAO);
-        FALA(NOME_APRESENTADOR, "Droga! O Jogador! Ele caiu! O que farei agora?");
+        FALA(NOME_APRESENTADOR, "Droga! O(A) Jogador(a)! Ele caiu! O que farei agora?");
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
         FALA(NOME_APRESENTADOR, "Ei cara, levante, precisamos de você!");
         break;
@@ -179,7 +179,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
     case CENA_HISTORIA_2:
         // Inicio Cena Historia 1
         CENARIO(IMG_FUNDO_PALCO);
-        MUSICA(MUSICA_SILENCIO);
+        
 
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
         FALA(NOME_APRESENTADOR, "Ainda bem que nada aconteceu, obrigado por nos salvar!");
@@ -209,11 +209,19 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "Como assim? Isso nem faz sentido");
         FALA(NOME_APRESENTADOR, "Quem escreveu isso com certeza é um péssimo escritor...");
         FALA(NOME_APRESENTADOR, "Mas, me deu uma ideia muito interessante!");
-        FALA(NOME_APRESENTADOR, "Chamas, ossos carbonizados, oposição aos céus... É óbvio que é o NETHER!");
+
+        MUSICA(MUSICA_SILENCIO);
+        FALA(NOME_APRESENTADOR, "Chamas, ossos carbonizados, oposição aos céus... É óbvio que é");
+        
+        SOM(SOM_THE_NETHER);
+        FALA(NOME_APRESENTADOR, "O NETHER");
 
         // O chamado
         RETRATO(IMG_NENHUMA);
-        FALA("Você", "Mas, como iremos para o Nether?");
+        FALA("Você", "Mas, como iremos para");
+        
+        SOM(SOM_THE_NETHER);
+        FALA("Você", "O NETHER");
 
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Venha comigo... e plateia, boa noite!");
@@ -229,10 +237,13 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "Olha só, um portal do nether que por algum motivo a nossa equipe da...");
         FALA(NOME_APRESENTADOR, "Muriel Eixo Games, ou MEG, deixou para trás.");
         FALA(NOME_APRESENTADOR, "Vou usar meus poderes de apresentador para acender o portal!");
-        FALA(NOME_APRESENTADOR, "Argh...");
+
+        SOM(SOM_FLINT_AND_STEEL);
+        FALA(NOME_APRESENTADOR, "FLINT AND STEEL");
 
         CENARIO(IMG_H2_CENA_5);
-        FALA(NOME_APRESENTADOR, "Resenha ou morte? Vamos logo, e depois te trarei uns aviõezinhos de esmeraldas.");
+        SOM(SOM_RECEBA);
+        FALA(NOME_APRESENTADOR, "Receba. Vamos logo");
 
         // No portal
         CENARIO(IMG_FUNDO_PORTAL);
@@ -255,14 +266,18 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
 
         CENARIO(IMG_H2_CENA_8);
         FALA(NOME_APRESENTADOR, "Três Soul Sands e Três cabeças de esqueleto wither...");
+        FALA(NOME_APRESENTADOR, "Você sabe o que isso significa?");
+
 
         RETRATO(IMG_ICONE_ALDEAO);
-        FALA(NOME_APRESENTADOR, "Isso que é trio. Ha Ha Ha...");
+        FALA(NOME_APRESENTADOR, "Que tem três blocos e três cabeças");
+        FALA(NOME_APRESENTADOR, "Ha ha ha ha...");
+        FALA(NOME_APRESENTADOR, "Essa piada nem fez sentiddo... Enfim, provavelmente é para invocarmos uma entidade.");
         FALA(NOME_APRESENTADOR, "Vou usar os poderes novamente e invocar o próprio Wither!");
         break;
     case CENA_HISTORIA_3:
         // Inicio Historia parte 3
-        CENARIO(IMG_H2_CENA_8);
+        CENARIO(IMG_H2_CENA_9);
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Ufa, conseguimos vencer ele, mesmo com perguntas bem mais difíceis!");
 
@@ -271,10 +286,12 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         // Jogador
         RETRATO(IMG_NENHUMA);
         FALA("Você", "Foi bem fácil, na verdade.");
+
         // Villager
+        MUSICA(MUSICA_SILENCIO);
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Como assim?! Você deveria ver as perguntas do Mine do Milhão para conseguir o prêmio final!");
-        FALA(NOME_APRESENTADOR, "Bem, vamos voltar logo");
+        FALA(NOME_APRESENTADOR, "Bem, vamos voltar logo.");
 
         // No portal
         CENARIO(IMG_FUNDO_PORTAL);
@@ -296,37 +313,37 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         CENARIO(IMG_H3_CENA_4);
         SOM(SOM_SCULK);
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
-        FALA(NOME_APRESENTADOR, "Mas que mer-");
+        FALA(NOME_APRESENTADOR, "Mas que-");
         break;
     case CENA_HISTORIA_4:
         // Inicio parte 4 - Historia
         CENARIO(IMG_H3_CENA_5);
-        MUSICA(MUSICA_SILENCIO);
         SOM(SOM_ALDEAO);
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Hmm...");
         FALA(NOME_APRESENTADOR, "Parabéns... eu acho.");
         FALA(NOME_APRESENTADOR, "Bem enquanto você lutava com suas respostas, eu reparei num quarto no final da sala.");
-
+        
         // Apresentador aponta sala do fim do corredor
         CENARIO(IMG_H4_CENA_1);
         FALA(NOME_APRESENTADOR, "Caso não tenha visto, olhe a literal seta mágica que eu fiz com poderes de apresentador.");
         FALA(NOME_APRESENTADOR, "Vamos lá!");
-
+        
         // Perto do portal
         CENARIO(IMG_H4_CENA_2);
         FALA(NOME_APRESENTADOR, 
             "Olha só! Um portal do fim convenientemente colocada como recurso para cortar roteiro! Que incrível!");
         FALA(NOME_APRESENTADOR, "Deve ser coisa da MEG");
-        FALA(NOME_APRESENTADOR, "Nós poderiamos voltar pelo portal do nether? Claro!");
+        FALA(NOME_APRESENTADOR, "Ah! Se nós poderiamos voltar pelo portal do nether? Claro!");
         FALA(NOME_APRESENTADOR, 
-            "Mas será mais divertido! Uma ótima aventura... não é como se a equipe de escrita estivesse com preguiça");
+            "Mas será mais divertido! " 
+            "Não é como se eu estivesse com preguiça de andar alguns blocos para trás");
         
         RETRATO(IMG_ICONE_DESCONHECIDO_1);
-        FALA("???", "Por qual razão insiste tanto em derrubar os muros que o prendem nesta realidade?");
+        FALA("???", "Cuidado com o te aguarda. A curiosidade sempre mata o gato.");
 
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
-        FALA(NOME_APRESENTADOR, "Q-quem está falando isso? Foi você Jogador?");
+        FALA(NOME_APRESENTADOR, "Q-quem está falando isso? Foi você Jogador(a)?");
 
         RETRATO(IMG_NENHUMA);
         FALA(" ", "*Você nega balançando a cabeça*");
@@ -335,10 +352,12 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "Então vamos logo!");
 
         // Entrando no end
-
+        MUSICA(MUSICA_SILENCIO);
+        RETRATO(IMG_NENHUMA);
         CENARIO(IMG_H4_CENA_3);
         FALA(" ", "*Você avista uma fenda em meio de uma tempestade*");
         
+        RETRATO(IMG_ICONE_ALDEAO);
         CENARIO(IMG_H4_CENA_4);
         FALA(NOME_APRESENTADOR, "Olha só, até ganhei roupas novas! Que lugar maravilhoso!");
 
@@ -348,6 +367,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "...");
 
         // Ender Dragon
+        CENARIO(IMG_H4_CENA_5);
         RETRATO(IMG_ICONE_ENDER_DRAGON);
         SOM(SOM_ENDER_DRAGON_IDLE);
         FALA("Dragão do Fim", "*Sons absurdamente insanos*");
@@ -360,27 +380,30 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         RETRATO(IMG_NENHUMA);
         FALA(
             " ", 
-            "*Você derrotou o Dragão do fim. Um grande portal se abre no centro da ilha."
-            "Pulando dentro dele, sua visão é acobertado por uma interpretação espiritual da realidade.*"
+            "*Você derrotou o Dragão do fim. Um grande portal se abre no centro da ilha.*"
         );
+
+        CENARIO(IMG_FUNDO_PRETO);
+        FALA(" ", "*Pulando dentro dele, sua visão é acobertado por uma interpretação abstrata da realidade.*");
 
         // Baseado em "End Poem" com tradução não oficial
         CENARIO(IMG_H5_CENA_1);
         MUSICA(MUSICA_MOOG_CITY);
         FALA(" ", "Quando tomar coragem para finalizar sua exploração pelo vasto universo:");
-        FALA(" ", "Sentira maior remorso do que foi ou não foi feito?");
+        FALA(" ", "Sentirá maior remorso do que foi ou não foi feito?");
         FALA(" ", "Se a dúvida o tem; \"Navegue para longe do porto seguro.");
         FALA(" ", "Pegue os ventos alísios em suas velas. Explore. Sonhe. Descubra\"");
-        FALA(" ", "A única estrela que guia o norte da sua jornada, e que amarguramente foi devastada pela bússuola da vida,");
+        FALA(" ", "A única estrela que guia o norte da sua jornada, foi amarguramente devastada pela bússuola da vida,");
         FALA(" ", "encontrando-se entre devaneios de um mundo que sequer já existiu.");
-        FALA(" ", "Em seu leito, carregara a resposta que determinava o mapa dos mares que já navegara.");
+        FALA(" ", "Em seu leito, carregara a resposta que determinava o mapa dos mares que já navegou.");
         FALA(" ", "Mapa esse que, oculto pelos pensamentos da estrela, na determinação de sua jornada encontrou todas as respostas.");
-        FALA(" ", "E mesmo sem poder interpretar o próprio achado, encontrou o responsável da indescoberta aventura...");
+        FALA(" ", "E mesmo sem poder interpretar o próprio achado, descobriu o responsável da indescoberta aventura...");
         FALA(" ", "...que nunca acontecera devido aos anseios e temores de quem estava no controle do leme.");
 
         CENARIO(IMG_H5_CENA_2);
         MUSICA(MUSICA_SILENCIO);
 
+        // Villager e Player acordando
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Ei... você está bem?");
         FALA(NOME_APRESENTADOR, "Eu tive um sonho...");
@@ -394,8 +417,93 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA("\"Você\"", "...olhos?");
         break;
     case CENA_HISTORIA_FIM:
+        // Fim da historia
         RETRATO(IMG_ICONE_ALDEAO);
-        FALA(NOME_APRESENTADOR, "[História final: escrever as falas em dialogo.c]");
+        MUSICA(MUSICA_SILENCIO);
+        CENARIO(IMG_H5_CENA_3);
+
+        FALA(NOME_APRESENTADOR, "...");
+        FALA(NOME_APRESENTADOR, "...");
+        
+        RETRATO(IMG_ICONE_STEVE);
+        FALA("Você", "O-o que aconteceu?");
+
+        RETRATO(IMG_ICONE_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Venha comigo.");
+
+        CENARIO(IMG_FUNDO_PRETO);
+        FALA(NOME_APRESENTADOR, "...");
+
+        MUSICA(MUSICA_EQUINOXE);
+        CENARIO(IMG_H6_CENA_1);
+        FALA(NOME_APRESENTADOR, "...");
+        FALA(NOME_APRESENTADOR, "Você caiu, com olhos brancos e começou a se debater.");
+        FALA(NOME_APRESENTADOR, "Estava dizendo sobre esmeraldas, do porquê ter buscado os prêmios");
+        FALA(NOME_APRESENTADOR, 
+            "Eu não sei o que te motivou a chegar aqui, mas não deveria se culpar por conquistar algo");
+        
+        // Villager hipotético
+        CENARIO(IMG_H6_CENA_2);
+        FALA(NOME_APRESENTADOR, "Você poderia ter parado na primeira pergunta, ignorando a aventura.");
+
+        CENARIO(IMG_H6_CENA_3);
+        FALA(NOME_APRESENTADOR, "Mas, você decidiu vir até aqui, e não desistiu em qualquer momento.");
+        FALA(NOME_APRESENTADOR, "Mesmo quando o seu maior inimigo era...");
+
+        CENARIO(IMG_H6_CENA_4);
+        FALA(NOME_APRESENTADOR, "Você.");
+        FALA(NOME_APRESENTADOR, "E só você teve a coragem de enfrentar");
+        FALA(NOME_APRESENTADOR, 
+            "Uma entidade explosiva, um espirito voador de três cabeças, um gigante feito de almas," 
+            "e um Dragão gigante");
+        FALA(NOME_APRESENTADOR, "Mas, se não tivesse a coragem de vencer a si mesmo, jamais teria chegado tão longe.");
+        FALA(NOME_APRESENTADOR, "Vamos voltar para casa, meu amigo.");
+
+        RETRATO(IMG_ICONE_STEVE);
+        FALA("Você", "...");
+        FALA("Você", "Obrigado.");
+
+        CENARIO(IMG_H6_CENA_5);
+        RETRATO(IMG_ICONE_ALDEAO);
+        FALA(NOME_APRESENTADOR, "...");
+
+        CENARIO(IMG_H6_CENA_6);
+        SOM(SOM_PLATEIA);
+        FALA(NOME_APRESENTADOR, "Muito obrigado, muito obrigado! Hmm!");
+        FALA(
+            NOME_APRESENTADOR, 
+            "Boa noite senhoras e senhores! Boa noite moças e rapazes! Boa noite meninas e meninos!"
+        );
+        FALA(NOME_APRESENTADOR, "Auditório, boa noite!");
+
+        // Auditorio
+        CENARIO(IMG_FUNDO_AUDITORIO);
+        RETRATO(IMG_NENHUMA);
+        SOM(SOM_PLATEIA);
+        FALA("Plateia", "BOA NOITE!");
+
+        // Apresentador
+        CENARIO(IMG_H6_CENA_6);
+        RETRATO(IMG_ICONE_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Voltamos com a programação normal. E vim anunciar o vencedor do...");
+        FALA(NOME_APRESENTADOR, "MINE DO MILHÃO");
+
+        CENARIO(IMG_H6_CENA_7);
+
+        FALA(NOME_APRESENTADOR, "Uma salva de palmas para o nosso vencendor!");
+
+        CENARIO(IMG_H6_CENA_8);
+        RETRATO(IMG_NENHUMA);
+        SOM(SOM_PLATEIA);
+        FALA("Plateia", "WOAH!");
+
+        CENARIO(IMG_H6_CENA_6);
+        RETRATO(IMG_ICONE_ALDEAO);
+        FALA(NOME_APRESENTADOR, "E lembrem-se crianças:");
+        FALA(NOME_APRESENTADOR, "O verdadeiro Mine do Milhão são os amigos que fazemos pelo caminho");
+
+        SOM(SOM_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Muito obrigado, muito obrigado! E Boa noite!");
         break;
     default:
         status = STATUS_ERRO_PARAMETRO;  /* cena inexistente */
@@ -445,8 +553,6 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
      * - Cada fala tem REACOES_POR_RESULTADO (4) variações; uma delas é sorteada por reação. */
 
     /* 1ª fala: a resposta certa (%s = texto da alternativa certa). */
-
-    #define REACOES_ESMERALDA (REACOES_POR_RESULTADO * 2)
 
     static const char *const acerto_resposta[REACOES_POR_RESULTADO] = {
         "Isso! \"%s\" está certíssimo! Ainda bem que acertou!",
@@ -555,40 +661,29 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
     
 
     /* 3ª fala, só no acerto: saldo de esmeraldas (%d = saldo atual). */
-    static const char *const acerto_esmeraldas[REACOES_ESMERALDA] = {
-        "Vou guardar %d esmeraldas para você!",
-        "Me lembre de te dar %d esmeraldas depois!",
+    static const char *const acerto_esmeraldas[REACOES_POR_RESULTADO] = {
+        "",
+        "",
         "Você vai querer usar essas %d esmeraldas! Guarde elas!",
-        "Esmeraldas, esmeraldas e agora tens %d esmeraldas!",
-        "",
-        "",
-        "",
-        "",
+        "Esmeraldas, esmeraldas e agora tens %d esmeraldas!"
     };
 
-    static const char *const acerto_esmeraldas_herobrine[REACOES_ESMERALDA] = {
-        "Por que eu quero ter %d esmeraldas?",
+    static const char *const acerto_esmeraldas_herobrine[REACOES_POR_RESULTADO] = {
+        "Por que eu quero ter mais %d esmeraldas?",
         "Pra que tantas esmeraldas?",
         "Tudo isso para... %d esmeraldas?",
         "",
-        "",
-        "",
-        "",
-        ""
     };
 
     Status status = STATUS_OK;
     const char *texto;
     char fala[TAM_FALA];
-    int indice, indice_esmeralda;
+    int indice;
 
     if (dialogo == NULL || resposta_certa == NULL || (int)boss_id < 0 || boss_id >= BOSS_QUANTIDADE) {
         return STATUS_ERRO_PARAMETRO;
     }
     indice = (variante < 0 ? -variante : variante) % REACOES_POR_RESULTADO;
-    indice_esmeralda = (variante < 0 ? -variante : variante) % REACOES_ESMERALDA;
-
-    
 
     /* 1ª fala: resposta certa */
     /* Remove a primeira parte caso o boss seja o Herobrine*/
@@ -613,12 +708,12 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
 
     /* 3ª fala (só no acerto): esmeraldas */
     if (boss_id == BOSS_HEROBRINE ) {
-        texto = acerto_esmeraldas_herobrine[indice_esmeralda];
+        texto = acerto_esmeraldas_herobrine[indice];
     } else if (boss_id == BOSS_WARDEN){
         // Diz "..." caso seja o warden
         texto = "...%d esmeraldas";
     } else {
-        texto = acerto_esmeraldas[indice_esmeralda];
+        texto = acerto_esmeraldas[indice];
     }
 
     if (status == STATUS_OK && acertou && texto != NULL && texto[0] != '\0') {
