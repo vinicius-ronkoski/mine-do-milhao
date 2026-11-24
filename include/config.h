@@ -118,7 +118,7 @@
 /**@}*/
 
 /** Falas num diálogo, somando as cenas encadeadas (ex.: boss derrotado + história + próximo boss). */
-#define DIALOGO_MAX_FALAS          32
+#define DIALOGO_MAX_FALAS          64
 #define TAM_FALA                   256
 #define TAM_NOME_PERSONAGEM        32
 #define DIALOGO_LETRAS_POR_SEGUNDO 40

@@ -67,6 +67,8 @@ typedef enum {
     IMG_FUNDO_PERGUNTA,               /**< Fundo da tela de perguntas (1280x720). */
     IMG_FUNDO_DIALOGO,                /**< Fundo das cenas de diálogo. */
     IMG_FUNDO_PALCO,                  /**< Imagem do palco (Minecraft) */
+    IMG_FUNDO_PORTAL,                 /**< Imagem do portal do Nether */  
+    IMG_FUNDO_FIM,                    /**< Imagem de fundo do fim */
     IMG_FUNDO_AUDITORIO,              /**< Imagem do auditório (Minecraft)*/
     IMG_FUNDO_PRETO,                  /**< Fundo Preto */
     IMG_FUNDO_VITORIA,                /**< Fundo com vitória */
@@ -108,14 +110,14 @@ typedef enum {
     IMG_H3_CENA_2,                     /*< Voltam, dentro de caverna, Villager olha para o portal */
     IMG_H3_CENA_3,                     /*< Villager olha para o jogador na caverna */
     IMG_H3_CENA_4,                     /*< Sensor de Sculk ativa, chamando o warden */
+    IMG_H3_CENA_5,                     /*< Mesmo fundo do warden */ 
 
     // Historia 4
     IMG_H4_CENA_1,                     /*< Villager aponta para saída com sua seta mágica */
     IMG_H4_CENA_2,                     /*< Villager encontra um portal convenientemente colocado ali */
-    IMG_H4_CENA_3,                     /*< Villager e jogador vão para o end */
-    IMG_H4_CENA_4,                     /*< Jogador olha para o redomoinho */
-    IMG_H4_CENA_5,                     /*< Villager mostra sua roupa nova e zomba */
-    IMG_H4_CENA_6,                     /*< Barulho do ender dragon */
+    IMG_H4_CENA_3,                     /*< Jogador olha para o redomoinho */
+    IMG_H4_CENA_4,                     /*< Villager mostra sua roupa nova e zomba */
+    IMG_H4_CENA_5,                     /*< Barulho do ender dragon */
     // Cena Ender Dragon
 
     // Historia 5
@@ -153,6 +155,12 @@ typedef enum {
     SOM_BOSS_DERROTADO,   /**< Boss caiu. */
     SOM_VITORIA,          /**< Prêmio máximo. */
     SOM_PLATEIA,          /**< Som de entrada da plateia*/
+    SOM_CREEPER,          /**< Som do creeper */
+    SOM_PORTAL,           /**< Som do portal do Nether */
+    SOM_ALDEAO,           /**< Som de aldeão */
+    SOM_SCULK,            /**< Som de Sculk */
+    SOM_ENDER_DRAGON_VOO, /**< Som do Ender Dragon Voando */
+    SOM_ENDER_DRAGON_IDLE,/**< Som do ender dragon */  
     SOM_QUANTIDADE        /**< Quantidade de sons (não é um som). */
 } SomId;
 
@@ -168,7 +176,8 @@ typedef enum {
     MUSICA_CREEPER,           /**< Seção de cada boss: MUSICA_CREEPER + BossId (mesma ordem do enum BossId). */
     MUSICA_WITHER,
     MUSICA_WARDEN,
-    MUSICA_ENDER_DRAGON,
+    MUSICA_END,               /**< C418 original The End, placeholder */
+    MUSICA_MOOG_CITY,         /**< C418 original Moog City, placeho;der */
     MUSICA_HEROBRINE,
     MUSICA_QUANTIDADE,        /**< Quantidade de músicas (não é uma música). */
     MUSICA_SILENCIO           /**< Comando, não arquivo: para a música atual (MUSICA(MUSICA_SILENCIO)). */

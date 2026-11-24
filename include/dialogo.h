@@ -57,7 +57,6 @@ typedef enum {
     CENA_BOSS_WARDEN,
     CENA_BOSS_ENDER_DRAGON,
     CENA_BOSS_HEROBRINE,
-    CENA_BOSS_DERROTADO,    /**< Reação depois de derrotar um boss. */
     CENA_DERROTA,           /**< Errou. */
     CENA_PARADA,            /**< Parou e levou as esmeraldas. */
     CENA_HISTORIA_1,        /**< Parte introdutória com o creeper. */

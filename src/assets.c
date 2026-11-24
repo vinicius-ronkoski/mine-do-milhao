@@ -67,6 +67,8 @@ static const char *nome_arquivo_imagem(ImagemId id)
         "fundo_pergunta",           /* IMG_FUNDO_PERGUNTA         */
         "fundo_dialogo",            /* IMG_FUNDO_DIALOGO          */
         "palco",                    /* IMG_FUNDO_PALCO            */
+        "fundo_portal",             /* IMG_FUNDO_PORTAL           */
+        "fundo_fim",                /* IMG_FUNDO_FIM              */    
         "auditorio",                /* IMG_FUNDO_AUDITORIO        */
         "fundo_preto",              /* IMG_FUNDO_PRETO            */
         "fundo_vitoria",            /* IMG_FUNDO_VITORIA          */
@@ -95,11 +97,11 @@ static const char *nome_arquivo_imagem(ImagemId id)
 
         /* História 3 */
         "h3_00", "h3_01", "h3_02",  /* IMG_H3_CENA_1...3          */               
-        "h3_03",                    /* IMG_H3_CENA_4              */
+        "h3_03", "h3_04",           /* IMG_H3_CENA_4...5          */
 
         /* História 4 */
         "h4_00", "h4_01", "h4_02",  /* IMG_H4_CENA_1...3          */
-        "h4_03", "h4_04", "h4_05",  /* IMG_H4_CENA_4...6          */                
+        "h4_03", "h4_04",           /* IMG_H4_CENA_4...5          */                
 
         /* História 5 */
         "h5_00", "h5_01", "h5_02",  /* IMG_H5_CENA_1...3          */             
@@ -125,7 +127,8 @@ static const char *nome_arquivo_musica(MusicaId id)
         "musica_creeper",        /* MUSICA_CREEPER       */
         "musica_wither",         /* MUSICA_WITHER        */
         "musica_warden",         /* MUSICA_WARDEN        */
-        "musica_ender_dragon",   /* MUSICA_ENDER_DRAGON  */
+        "musica_end",            /* MUSICA_END           */
+        "musica_moog_city",      /* MUSICA_MOOG_CITY     */
         "musica_herobrine"       /* MUSICA_HEROBRINE     */
     };
 
@@ -138,13 +141,19 @@ static const char *nome_arquivo_musica(MusicaId id)
 static const char *nome_arquivo_som(SomId id)
 {
     static const char *const nomes[SOM_QUANTIDADE] = {
-        "clique",                /* SOM_CLIQUE                */
-        "acerto",                /* SOM_ACERTO                */
-        "erro",                  /* SOM_ERRO                  */
-        "dano",                  /* SOM_DANO_BOSS             */
-        "boss_derrotado",        /* SOM_BOSS_DERROTADO        */
-        "vitoria",               /* SOM_VITORIA               */
-        "plateia",               /* SOM_PLATEIA               */
+        "clique",                /* SOM_CLIQUE               */
+        "acerto",                /* SOM_ACERTO               */
+        "erro",                  /* SOM_ERRO                 */
+        "dano",                  /* SOM_DANO_BOSS            */
+        "boss_derrotado",        /* SOM_BOSS_DERROTADO       */
+        "vitoria",               /* SOM_VITORIA              */
+        "plateia",               /* SOM_PLATEIA              */
+        "entrada_creeper",       /* SOM_CREEPER              */
+        "portal",                /* SOM_PORTAL               */
+        "aldeao",                /* SOM_ALDEAO               */
+        "sculk",                 /* SOM_SCULK                */
+        "ender_dragon_00",       /* SOM_ENDER_DRAGON_VOO     */
+        "ender_dragon_01"        /* SOM_ENDER_DRAGON_IDLE    */
     };
 
     if ((int)id < 0 || id >= SOM_QUANTIDADE || nomes[id] == NULL) {

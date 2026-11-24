@@ -345,23 +345,30 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
         jogo_tocar_cena(jogo, CENA_DERROTA, TELA_RESULTADO);
         break;
     case ESTADO_FIM_VITORIA:     /* acertou a 15ª: o último boss caiu */
-        jogo_tocar_cena(jogo, CENA_BOSS_DERROTADO, TELA_RESULTADO);
-        jogo_anexar_cena(jogo, CENA_HISTORIA_FIM);
+        jogo_tocar_cena(jogo, CENA_HISTORIA_FIM, TELA_RESULTADO);
         break;
     default:                     /* a partida continua */
         jogo_preparar_botoes_pergunta(jogo);
         proximo_boss = partida_boss_atual(&jogo->partida);
         if (jogo->partida.boss_derrotado_agora && proximo_boss != NULL) {
-            /* Boss caiu: comemoração, história e entrada do boss do próximo nível */
-            jogo_tocar_cena(jogo, CENA_BOSS_DERROTADO, TELA_PERGUNTA);
+            /* Boss caiu: história da transição e entrada do boss do próximo nível.
+             * A primeira cena começa o diálogo (tocar); a entrada do boss vem anexada. */
+            CenaId historia = CENA_QUANTIDADE;   /* CENA_QUANTIDADE = sem história */
+
             switch (proximo_boss->id) {
-            case BOSS_WITHER:       jogo_anexar_cena(jogo, CENA_HISTORIA_2); break;  /* indo para o Nether */
-            case BOSS_WARDEN:       jogo_anexar_cena(jogo, CENA_HISTORIA_3); break;
-            case BOSS_ENDER_DRAGON: jogo_anexar_cena(jogo, CENA_HISTORIA_4); break;  /* indo para o Fim */
-            case BOSS_HEROBRINE:    jogo_anexar_cena(jogo, CENA_HISTORIA_5); break;  /* voltando do Fim */
-            default:                break;                                           /* sem história */
+            case BOSS_WITHER:       historia = CENA_HISTORIA_2; break;  /* indo para o Nether */
+            case BOSS_WARDEN:       historia = CENA_HISTORIA_3; break;
+            case BOSS_ENDER_DRAGON: historia = CENA_HISTORIA_4; break;  /* indo para o Fim */
+            case BOSS_HEROBRINE:    historia = CENA_HISTORIA_5; break;  /* voltando do Fim */
+            default:                break;
             }
-            jogo_anexar_cena(jogo, dialogo_cena_do_boss(proximo_boss->id));
+
+            if (historia != CENA_QUANTIDADE) {
+                jogo_tocar_cena(jogo, historia, TELA_PERGUNTA);
+                jogo_anexar_cena(jogo, dialogo_cena_do_boss(proximo_boss->id));
+            } else {
+                jogo_tocar_cena(jogo, dialogo_cena_do_boss(proximo_boss->id), TELA_PERGUNTA);
+            }
         } else {
             jogo_trocar_tela(jogo, TELA_PERGUNTA);
         }

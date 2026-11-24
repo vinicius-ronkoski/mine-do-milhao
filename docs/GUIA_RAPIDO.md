@@ -25,15 +25,16 @@ Dentro do `case` de uma cena, em `dialogo_anexar_cena()` (`dialogo.c`):
 
 | Atalho | O que faz |
 |---|---|
-| `FALA(personagem, texto, retrato)` | Uma fala |
+| `FALA(personagem, texto)` | Uma fala |
 | `CENARIO(IMG_X)` | A próxima fala **e as seguintes** usam esse fundo (sem o boss). `CENARIO(IMG_NENHUMA)` volta ao fundo da fase |
+| `RETRATO(IMG_X)` | A próxima fala **e as seguintes** usam esse retrato. `RETRATO(IMG_NENHUMA)` = sem retrato. Toda cena começa sem retrato |
 | `SOM(SOM_X)` | A **próxima** fala toca `SOM_X` quando aparece (só ela) |
 | `MUSICA(MUSICA_X)` | A música troca quando a **próxima** fala aparecer e continua depois da cena (ver seção 5b) |
 
 **Regra única: tudo que modifica uma fala vem antes dela.** `SOM` ou `MUSICA` no fim do `case`, sem
 `FALA` depois, é ignorado (o terminal avisa).
 
-`personagem` é um texto (`NOME_APRESENTADOR` = "Silvio Aldeão"); `retrato` é um `IMG_*` ou `IMG_NENHUMA`.
+`personagem` é um texto (`NOME_APRESENTADOR` = "Silvio Aldeão"). Ao trocar de personagem, troque o `RETRATO` junto.
 
 Limites: cada fala até 255 caracteres (`TAM_FALA`); um diálogo até 32 falas, **somando as cenas
 encadeadas** (`DIALOGO_MAX_FALAS`, em `config.h`).
@@ -50,9 +51,10 @@ encadeadas** (`DIALOGO_MAX_FALAS`, em `config.h`).
    ```c
    case CENA_HISTORIA_6:
        CENARIO(IMG_CENARIO_NETHER);
-       FALA(NOME_APRESENTADOR, "Chegamos ao Nether.", IMG_RETRATO_ALDEAO);
+       RETRATO(IMG_ICONE_ALDEAO);
+       FALA(NOME_APRESENTADOR, "Chegamos ao Nether.");
        SOM(SOM_TROVAO);
-       FALA(NOME_APRESENTADOR, "Ouviu isso?", IMG_RETRATO_ALDEAO);
+       FALA(NOME_APRESENTADOR, "Ouviu isso?");
        break;
    ```
 3. **Chamar** no ponto do fluxo onde ela deve tocar (próxima seção).
@@ -103,7 +105,7 @@ exatamente um `%s` (resposta certa ou nome do boss).
 
 Usos:
 - **Cenário de cena:** `CENARIO(IMG_CENARIO_NETHER);` no `case`. Proporção 16:9 (pixel art: 320x180 ou 640x360).
-- **Retrato de personagem:** último argumento de `FALA`. Quadrado.
+- **Retrato de personagem:** `RETRATO(IMG_X);` antes da `FALA`. Quadrado.
 - **Ícone num botão:** `botao.icone = IMG_X;` (ao lado do texto; ex.: preço da dica). Ícone de pixel art 16x16
   aparece em 32 px (`LADO_ICONE_ESMERALDA`, em `layout.h`).
 - **Desenhar em qualquer tela:** `assets_desenhar_imagem(&jogo->assets, IMG_X, retangulo, WHITE);`

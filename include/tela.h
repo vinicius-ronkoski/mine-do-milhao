@@ -66,8 +66,8 @@ void tela_pergunta_desenhar(const Jogo *jogo);
  * @brief Vem depois da reação do apresentador (jogo_tocar_reacao). Ao entrar, toca SOM_DANO_BOSS
  *        ("dano") se acertou. Continuar -> partida_confirmar_revelacao() e então:
  *   - errou (ESTADO_FIM_ERRO) -> CENA_DERROTA (agradecimento) e TELA_RESULTADO;
- *   - venceu (ESTADO_FIM_VITORIA) -> CENA_BOSS_DERROTADO + CENA_VITORIA e TELA_RESULTADO;
- *   - boss caiu (boss_derrotado_agora) -> CENA_BOSS_DERROTADO + entrada do próximo boss e TELA_PERGUNTA;
+ *   - venceu (ESTADO_FIM_VITORIA) -> CENA_HISTORIA_FIM e TELA_RESULTADO;
+ *   - boss caiu (boss_derrotado_agora) -> CENA_HISTORIA_2..5 + entrada do próximo boss e TELA_PERGUNTA;
  *   - senão -> TELA_PERGUNTA.
  */
 void tela_revelacao_atualizar(Jogo *jogo, float dt);
