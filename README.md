@@ -49,8 +49,7 @@ jogo-milhao-minecraft/
 ├── build/                # .o gerados (fora do Git)
 ├── data/
 │   ├── perguntas.csv     # dados iniciais (vai para o Git)
-│   ├── perguntas.dat     # gerado na 1ª execução (fora do Git)
-│   ├── ranking.dat       # criativo (fora do Git)
+│   ├── perguntas.dat     # gerado na 1ª e
 │   └── exportados/       # saída de "exportar CSV"
 <<<<<<< HEAD
 ├── docs/                 # GUIA_RAPIDO.md, slides
