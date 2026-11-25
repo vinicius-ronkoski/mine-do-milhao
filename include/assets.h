@@ -29,6 +29,7 @@
 #include "raylib.h"
 #include "config.h"
 #include "boss.h"
+#include "escala.h"
 
 /* ------------------------------------------------------------------------- */
 /* Paleta de cores da interface (usada também como fallback de imagens)      */
@@ -230,8 +231,12 @@ typedef struct {
     MusicaId musica_atual;                   /**< A que está tocando (MUSICA_MANTER = nenhuma). */
     Font fonte;                              /**< Fonte do jogo. */
     bool fonte_propria;                      /**< false = usando a fonte padrão da raylib. */
+    float zoom_fonte;                        /**< Zoom para o qual a fonte foi lida (assets_ajustar_fonte). */
     bool audio_ativo;                        /**< false = sem dispositivo de áudio (tudo em silêncio). */
     int total_fallbacks;                     /**< Quantos assets caíram no fallback (aviso no terminal). */
+    Escala escala;                           /**< Posição do quadro 1280x720 na janela real (tela cheia).
+                                                  Atualizada por jogo_atualizar(); usada para alinhar as
+                                                  imagens a pixels inteiros da tela. */
 } Assets;
 
 /* ------------------------------------------------------------------------- */
@@ -249,6 +254,12 @@ typedef struct {
  *         STATUS_ERRO_PARAMETRO (NULL) ou STATUS_ERRO_GRAFICO (janela ainda não criada).
  */
 Status assets_carregar(Assets *assets);
+
+/**
+ * @brief Relê a fonte no tamanho em que ela aparece na tela (TAM_FONTE_BASE x zoom), para o texto
+ *        ficar nítido em tela cheia. Só relê quando o zoom muda. Chame depois de escala_atualizar().
+ */
+void assets_ajustar_fonte(Assets *assets, float zoom);
 
 /** @brief Libera texturas, sons, música e fonte e fecha o áudio. Chame antes de CloseWindow(). */
 void assets_descarregar(Assets *assets);

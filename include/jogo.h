@@ -9,6 +9,9 @@
  *   jogo_atualizar()  -> lê entrada da tela ativa (tela_X_atualizar) e chama partida.h
  *   jogo_desenhar()   -> desenha a tela ativa (tela_X_desenhar), sem alterar nada
  *
+ * Tela cheia: F11 (TECLA_TELA_CHEIA). Tudo é desenhado em 1280x720 virtuais e escala.h ajusta
+ * ao tamanho real da janela (faixas pretas se não for 16:9), inclusive o mouse.
+ *
  * Telas: DIALOGO -> PERGUNTA <-> REVELACAO -> ... -> RESULTADO. ESC ou fechar a janela volta ao menu.
  * Só compila com USE_RAYLIB=1.
  */
@@ -22,6 +25,9 @@
 #include "partida.h"
 #include "dialogo.h"
 #include "botao.h"
+
+/** Tecla que alterna a tela cheia (ver escala.h). */
+#define TECLA_TELA_CHEIA KEY_F11
 
 /** Segundos que o banner de erro fica na tela antes de sumir sozinho. */
 #define DURACAO_BANNER_ERRO 5.0f

@@ -15,6 +15,7 @@
 #ifdef USE_RAYLIB
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "assets.h"
 
 /* ========================================================================= */
@@ -38,6 +39,13 @@
 
 /** Espessura da borda dos painéis desenhados como fallback. */
 #define BORDA_PAINEL 3.0f
+
+/** Imagens com pelo menos esta largura são cenários (suavizados); as menores são pixel art (nítidas).
+ *  Os fundos têm 854 px ou mais; retratos e ícones, no máximo 600 px. */
+#define LARGURA_MINIMA_SUAVIZADA 800
+
+/** Maior ampliação usada para reler a fonte (4x = 128 px: monitores 4K e acima reaproveitam este atlas). */
+#define ZOOM_MAXIMO_FONTE 4.0f
 
 /** Distância entre linhas de texto, em múltiplos do tamanho da fonte. */
 #define ESPACO_ENTRE_LINHAS 1.25f
@@ -296,7 +304,19 @@ static bool carregar_textura_de_arquivo(const char *caminho, Texture2D *destino)
 
     *destino = LoadTextureFromImage(imagem);
     UnloadImage(imagem);
-    return IsTextureValid(*destino);
+    if (!IsTextureValid(*destino)) {
+        return false;
+    }
+
+    /* Filtro de ampliação/redução:
+     *   - imagens grandes (fundos e cenas, desenhos com muitas cores): BILINEAR, que suaviza
+     *     quando a tela cheia amplia o fundo de 1280x720 (sem isso apareceriam serrilhados);
+     *   - imagens pequenas (pixel art: bosses, retratos, ícones): POINT (padrão da raylib),
+     *     que mantém cada pixel da arte como um bloco nítido. */
+    if (destino->width >= LARGURA_MINIMA_SUAVIZADA) {
+        SetTextureFilter(*destino, TEXTURE_FILTER_BILINEAR);
+    }
+    return true;
 }
 
 /** @brief Carrega uma imagem estática; se falhar, usa o xadrez. */
@@ -423,33 +443,71 @@ static bool carregar_musica(Assets *assets, MusicaId id)
 }
 
 /** @brief Carrega ARQUIVO_FONTE (.ttf/.otf) com os caracteres 32..255; se faltar, usa a fonte padrão. */
-static void carregar_fonte(Assets *assets)
+/**
+ * @brief Lê a fonte do jogo em `tamanho` pixels. Devolve false se o arquivo falta ou é inválido.
+ *
+ * O tamanho é o da textura com as letras (atlas): desenhar o texto bem maior que isso o amplia
+ * e borra; por isso assets_ajustar_fonte() relê a fonte quando a tela cheia muda o zoom.
+ */
+static bool ler_fonte(int tamanho, Font *saida)
 {
     char caminho[TAM_CAMINHO_ASSET];
     int codepoints[NUM_CODEPOINTS];
     int indice;
     Font fonte_lida;
-    bool achou;
 
-    assets->fonte = GetFontDefault();
-    assets->fonte_propria = false;
-
-    achou = achar_fonte(ARQUIVO_FONTE, caminho, sizeof(caminho));
-    if (achou) {
-        for (indice = 0; indice < NUM_CODEPOINTS; indice++) {
-            codepoints[indice] = CODEPOINT_INICIAL + indice;
-        }
-        fonte_lida = LoadFontEx(caminho, TAM_FONTE_BASE, codepoints, NUM_CODEPOINTS);
-        /* Se a leitura falha, a raylib devolve a fonte padrão: não pode ser descarregada depois */
-        if (IsFontValid(fonte_lida) && fonte_lida.texture.id != GetFontDefault().texture.id) {
-            assets->fonte = fonte_lida;
-            assets->fonte_propria = true;
-        }
+    if (!achar_fonte(ARQUIVO_FONTE, caminho, sizeof(caminho))) {
+        return false;
     }
+    for (indice = 0; indice < NUM_CODEPOINTS; indice++) {
+        codepoints[indice] = CODEPOINT_INICIAL + indice;
+    }
+    fonte_lida = LoadFontEx(caminho, tamanho, codepoints, NUM_CODEPOINTS);
+    /* Se a leitura falha, a raylib devolve a fonte padrão: não pode ser descarregada depois */
+    if (!IsFontValid(fonte_lida) || fonte_lida.texture.id == GetFontDefault().texture.id) {
+        return false;
+    }
+    *saida = fonte_lida;
+    return true;
+}
+
+static void carregar_fonte(Assets *assets)
+{
+    assets->fonte = GetFontDefault();
+    assets->fonte_propria = ler_fonte(TAM_FONTE_BASE, &assets->fonte);
+    assets->zoom_fonte = 1.0f;
 
     if (!assets->fonte_propria) {
-        avisar_fallback(assets, caminho, achou ? "inválido" : "não encontrado");
+        assets->fonte = GetFontDefault();
+        avisar_fallback(assets, ARQUIVO_FONTE, "não encontrado ou inválido");
     }
+}
+
+void assets_ajustar_fonte(Assets *assets, float zoom)
+{
+    Font nova;
+    int tamanho;
+
+    if (assets == NULL || !assets->fonte_propria || zoom <= 0.0f) {
+        return;
+    }
+    if (zoom > ZOOM_MAXIMO_FONTE) {
+        zoom = ZOOM_MAXIMO_FONTE;
+    }
+    if (fabsf(zoom - assets->zoom_fonte) < 0.01f) {
+        return;   /* mesmo zoom: nada a fazer (a fonte só é relida quando a janela muda de tamanho) */
+    }
+
+    /* Atlas no tamanho em que o texto aparece na tela: em 1920x1080 (zoom 1,5) a fonte de 32 px
+     * vira 48 px, e um texto de tamanho 32 é desenhado 1:1, sem ampliar a textura. As medidas do
+     * texto não mudam: DrawTextEx calcula tudo pelo tamanho pedido, não pelo tamanho do atlas. */
+    tamanho = (int)roundf((float)TAM_FONTE_BASE * zoom);
+    if (!ler_fonte(tamanho, &nova)) {
+        return;   /* mantém a fonte atual */
+    }
+    UnloadFont(assets->fonte);
+    assets->fonte = nova;
+    assets->zoom_fonte = zoom;
 }
 
 /** @brief Espaço entre letras proporcional ao tamanho (igual ao que a raylib usa na fonte padrão). */
@@ -595,36 +653,32 @@ bool assets_imagem_fallback(const Assets *assets, ImagemId id)
 }
 
 /** @brief Desenha uma textura inteira esticada no retângulo de destino. */
-static void desenhar_textura_esticada(Texture2D textura, Rectangle destino, Color tint)
+static void desenhar_textura_esticada(const Escala *escala, Texture2D textura, Rectangle destino, Color tint)
 {
     Rectangle origem = { 0.0f, 0.0f, (float)textura.width, (float)textura.height };
     Vector2 sem_rotacao = { 0.0f, 0.0f };
 
-    DrawTexturePro(textura, origem, destino, sem_rotacao, 0.0f, tint);
+    /* Bordas em pixels inteiros da tela: em tela cheia (zoom 1,5) nada fica "entre" dois pixels */
+    DrawTexturePro(textura, origem, escala_alinhar_aos_pixels(escala, destino), sem_rotacao, 0.0f, tint);
 }
 
 /**
- * @brief Desenha a textura o maior possível dentro de `destino` SEM distorcer (mantém a proporção)
+ * @brief Desenha pixel art o maior possível dentro de `destino` SEM distorcer (mantém a proporção)
  *        e centralizada. Um frame quadrado ocupa o quadrado inteiro; um retangular sobra nas laterais
  *        (ou em cima e embaixo). Usada nos bosses, onde esticar deformaria o desenho.
  */
-static void desenhar_textura_encaixada(Texture2D textura, Rectangle destino, Color tint)
+static void desenhar_textura_encaixada(const Escala *escala, Texture2D textura, Rectangle destino, Color tint)
 {
-    float escala_x, escala_y, escala;
-    Rectangle encaixe;
+    Rectangle origem = { 0.0f, 0.0f, (float)textura.width, (float)textura.height };
+    Vector2 sem_rotacao = { 0.0f, 0.0f };
 
     if (textura.width <= 0 || textura.height <= 0) {
         return;
     }
-    escala_x = destino.width / (float)textura.width;
-    escala_y = destino.height / (float)textura.height;
-    escala = escala_x < escala_y ? escala_x : escala_y;
-
-    encaixe.width = (float)textura.width * escala;
-    encaixe.height = (float)textura.height * escala;
-    encaixe.x = destino.x + (destino.width - encaixe.width) / 2.0f;
-    encaixe.y = destino.y + (destino.height - encaixe.height) / 2.0f;
-    desenhar_textura_esticada(textura, encaixe, tint);
+    /* Escala INTEIRA em pixels da tela (6x na janela, 9x em 1920x1080): todo pixel da arte
+     * vira um bloco do mesmo tamanho, em qualquer resolução (ver escala_alinhar_pixel_art). */
+    DrawTexturePro(textura, origem, escala_alinhar_pixel_art(escala, destino, textura.width, textura.height),
+                   sem_rotacao, 0.0f, tint);
 }
 
 void assets_desenhar_fundo(const Assets *assets, ImagemId fundo_padrao, BossId boss)
@@ -638,13 +692,13 @@ void assets_desenhar_fundo(const Assets *assets, ImagemId fundo_padrao, BossId b
 
     /* 1. Fundo próprio da fase */
     if (boss_valido && !assets->fundos_boss[boss].fallback) {
-        desenhar_textura_esticada(assets->fundos_boss[boss].textura, janela, WHITE);
+        desenhar_textura_esticada(&assets->escala, assets->fundos_boss[boss].textura, janela, WHITE);
         return;
     }
 
     /* 2. Fundo padrão da tela */
     if (!assets_imagem_fallback(assets, fundo_padrao)) {
-        desenhar_textura_esticada(assets->imagens[fundo_padrao].textura, janela, WHITE);
+        desenhar_textura_esticada(&assets->escala, assets->imagens[fundo_padrao].textura, janela, WHITE);
         return;
     }
 
@@ -658,14 +712,14 @@ void assets_desenhar_imagem(const Assets *assets, ImagemId id, Rectangle destino
     if (assets == NULL || (int)id < 0 || id >= IMG_QUANTIDADE) {
         return;
     }
-    desenhar_textura_esticada(assets->imagens[id].textura, destino, tint);
+    desenhar_textura_esticada(&assets->escala, assets->imagens[id].textura, destino, tint);
 }
 
 void assets_desenhar_painel(const Assets *assets, ImagemId id, Rectangle destino,
                             Color cor_se_faltar, Color tint)
 {
     if (!assets_imagem_fallback(assets, id)) {
-        desenhar_textura_esticada(assets->imagens[id].textura, destino, tint);
+        desenhar_textura_esticada(&assets->escala, assets->imagens[id].textura, destino, tint);
         return;
     }
 
@@ -694,7 +748,7 @@ void assets_desenhar_boss(const Assets *assets, BossId id, float tempo, Rectangl
     if (quadro_atual < 0) {
         quadro_atual = 0;
     }
-    desenhar_textura_encaixada(animacao->quadros[quadro_atual], destino, tint);
+    desenhar_textura_encaixada(&assets->escala, animacao->quadros[quadro_atual], destino, tint);
 }
 
 /* ========================================================================= */

@@ -141,11 +141,14 @@ Status jogo_executar(const Banco *banco)
 
     /* Janela */
     SetTraceLogLevel(LOG_WARNING);  /* só avisos e erros da raylib no terminal */
-    SetConfigFlags(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT);
+    /* FLAG_WINDOW_RESIZABLE: o jogador pode redimensionar a janela; F11 alterna a tela cheia.
+     * O layout continua em 1280x720 e escala.c ajusta tudo ao tamanho real. */
+    SetConfigFlags(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
     InitWindow(LARGURA_JANELA, ALTURA_JANELA, TITULO_JANELA);
     if (!IsWindowReady()) {
         return STATUS_ERRO_GRAFICO;
     }
+    SetWindowMinSize(LARGURA_MINIMA_JANELA, ALTURA_MINIMA_JANELA);
     SetTargetFPS(FPS_ALVO);
     sorteio_semear((unsigned int)time(NULL));
 
@@ -161,7 +164,9 @@ Status jogo_executar(const Banco *banco)
         jogo_atualizar(&jogo, GetFrameTime());
 
         BeginDrawing();
+        escala_comecar_desenho(&jogo.assets.escala);   /* daqui em diante: coordenadas 1280x720 */
         jogo_desenhar(&jogo);
+        escala_terminar_desenho();
         EndDrawing();
     }
 
@@ -250,6 +255,16 @@ void jogo_atualizar(Jogo *jogo, float dt)
         return;
     }
 
+    /* Tela cheia: F11 alterna entre janela e "janela sem borda do tamanho do monitor".
+     * Borderless em vez de ToggleFullscreen(): não troca a resolução do monitor e alterna
+     * sem tela preta nem perda do contexto OpenGL, principalmente no Windows. */
+    if (IsKeyPressed(TECLA_TELA_CHEIA)) {
+        ToggleBorderlessWindowed();
+    }
+    /* Antes de ler os botões: converte o mouse para as coordenadas 1280x720 */
+    escala_atualizar(&jogo->assets.escala, GetScreenWidth(), GetScreenHeight());
+    assets_ajustar_fonte(&jogo->assets, jogo->assets.escala.camera.zoom);
+
     assets_atualizar_musica(&jogo->assets);
     jogo->tempo_na_tela += dt;
     jogo->tempo_total += dt;
@@ -279,7 +294,8 @@ void jogo_desenhar(const Jogo *jogo)
         return;
     }
 
-    ClearBackground(PALETA_FUNDO);
+    /* Fundo só na área do jogo (1280x720 virtuais); as faixas pretas fora dela vêm de escala.c */
+    DrawRectangle(0, 0, LARGURA_JANELA, ALTURA_JANELA, PALETA_FUNDO);
     switch (jogo->tela) {
     case TELA_DIALOGO:   tela_dialogo_desenhar(jogo);   break;
     case TELA_PERGUNTA:  tela_pergunta_desenhar(jogo);  break;
