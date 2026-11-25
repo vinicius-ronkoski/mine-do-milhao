@@ -440,9 +440,9 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
 
             if (historia != CENA_QUANTIDADE) {
                 jogo_tocar_cena(jogo, historia, TELA_PERGUNTA);
-                jogo_anexar_cena(jogo, dialogo_cena_do_boss(proximo_boss->id));
+                jogo_anexar_cena(jogo, historia_cena_do_boss(proximo_boss->id));
             } else {
-                jogo_tocar_cena(jogo, dialogo_cena_do_boss(proximo_boss->id), TELA_PERGUNTA);
+                jogo_tocar_cena(jogo, historia_cena_do_boss(proximo_boss->id), TELA_PERGUNTA);
             }
         } else {
             jogo_trocar_tela(jogo, TELA_PERGUNTA);

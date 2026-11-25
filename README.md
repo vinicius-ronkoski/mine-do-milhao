@@ -78,7 +78,8 @@ jogo-milhao-minecraft/
 | `partida.h/.c`        | Regras do Jogo do Milhão: rodadas, prêmios, marcos, parar/errar, ajudas | não |
 | `assets.h/.c`         | Imagens, sons, música, fonte e texto, com fallback                | sim |
 | `botao.h/.c`          | Botões clicáveis com atalho de teclado                            | sim |
-| `dialogo.h/.c`        | Falas dos personagens com efeito de máquina de escrever           | sim |
+| `dialogo.h/.c`        | Motor das falas: sequência, máquina de escrever e caixa de diálogo | sim |
+| `historia.h/.c`       | Conteúdo da história: falas de cada cena e reações do apresentador | sim |
 | `tela.h/.c`           | Atualização e desenho de cada tela                                | sim |
 | `escala.h/.c`         | Tela cheia (F11) e janela redimensionável: ajusta o quadro 1280x720 à tela, mantendo a pixel art nítida | sim |
 | `jogo.h/.c`           | Janela, laço principal e troca de telas                           | sim |

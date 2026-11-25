@@ -17,6 +17,7 @@
 #include "assets.h"
 #include "partida.h"
 #include "dialogo.h"
+#include "historia.h"
 #include "botao.h"
 
 /** Alterna a tela cheia (escala.h). */
@@ -123,7 +124,7 @@ Status jogo_tocar_cena(Jogo *jogo, CenaId cena, TelaJogo depois);
 /** @brief Acrescenta uma cena ao diálogo atual (ex.: história + entrada do próximo boss). */
 Status jogo_anexar_cena(Jogo *jogo, CenaId cena);
 
-/** @brief Após partida_responder: toca a reação (dialogo_anexar_reacao) e depois vai para TELA_REVELACAO. */
+/** @brief Após partida_responder: toca a reação (historia_anexar_reacao) e depois vai para TELA_REVELACAO. */
 Status jogo_tocar_reacao(Jogo *jogo);
 
 /** @brief Rótulos "A) ..." e preços, habilita/desabilita alternativas e ajudas. Chame a cada pergunta e após uma ajuda. */

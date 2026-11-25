@@ -258,7 +258,7 @@ Status jogo_nova_partida(Jogo *jogo)
     /* Introdução -> história antes do 1º boss -> entrada do 1º boss -> pergunta */
     jogo_tocar_cena(jogo, CENA_INTRO, TELA_PERGUNTA);
     jogo_anexar_cena(jogo, CENA_HISTORIA_1);
-    jogo_anexar_cena(jogo, dialogo_cena_do_boss(partida_boss_atual(&jogo->partida)->id));
+    jogo_anexar_cena(jogo, historia_cena_do_boss(partida_boss_atual(&jogo->partida)->id));
     return STATUS_OK;
 }
 
@@ -349,7 +349,7 @@ Status jogo_tocar_cena(Jogo *jogo, CenaId cena, TelaJogo depois)
         return STATUS_ERRO_PARAMETRO;
     }
 
-    status = dialogo_carregar_cena(&jogo->dialogo, cena);
+    status = historia_carregar_cena(&jogo->dialogo, cena);
     if (status != STATUS_OK) {
         jogo_registrar_erro(jogo, status, "carregar cena");
         jogo_trocar_tela(jogo, depois);  /* pula a cena em vez de travar */
@@ -390,7 +390,7 @@ Status jogo_tocar_reacao(Jogo *jogo)
     jogo->ultima_variante_reacao = variante;
 
     dialogo_limpar(&jogo->dialogo);
-    status = dialogo_anexar_reacao(&jogo->dialogo, jogo->partida.ultima_acertou,
+    status = historia_anexar_reacao(&jogo->dialogo, jogo->partida.ultima_acertou,
                                    sorteio_texto_alternativa(pergunta, pergunta->posicao_correta),
                                    boss->id, partida_saldo(&jogo->partida), variante);  /* saldo = o que o HUD mostra */
     if (status != STATUS_OK) {
@@ -410,7 +410,7 @@ Status jogo_anexar_cena(Jogo *jogo, CenaId cena)
     if (jogo == NULL) {
         return STATUS_ERRO_PARAMETRO;
     }
-    status = dialogo_anexar_cena(&jogo->dialogo, cena);
+    status = historia_anexar_cena(&jogo->dialogo, cena);
     if (status != STATUS_OK) {
         jogo_registrar_erro(jogo, status, "anexar cena");
     }
