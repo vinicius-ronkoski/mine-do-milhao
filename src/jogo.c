@@ -69,10 +69,14 @@ static Status criar_botoes_menu(Jogo *jogo)
         status = botao_criar(&jogo->botoes[BOTAO_SAIR], area_sair, "Sair do jogo", KEY_NULL);
     }
 
-    /* Créditos: apagado até existir a tela. "Carregar jogo" é habilitado ao entrar no menu,
-     * se houver save válido (tela_menu_atualizar). */
+    /* Texturas do tamanho de cada botão, para a pixel art não ser esticada (fallback: IMG_BOTAO) */
+    jogo->botoes[BOTAO_JOGAR].skin = IMG_BOTAO_MENU;
+    jogo->botoes[BOTAO_CARREGAR].skin = IMG_BOTAO_MENU;
+    jogo->botoes[BOTAO_CREDITOS].skin = IMG_BOTAO_MENU_PEQUENO;
+    jogo->botoes[BOTAO_SAIR].skin = IMG_BOTAO_MENU_PEQUENO;
+
+    /* "Carregar jogo" é habilitado ao entrar no menu, se houver save válido (tela_menu_atualizar). */
     jogo->botoes[BOTAO_CARREGAR].habilitado = false;
-    jogo->botoes[BOTAO_CREDITOS].habilitado = false;
     return status;
 }
 
@@ -246,6 +250,7 @@ Status jogo_nova_partida(Jogo *jogo)
     jogo->ultimo_erro = STATUS_OK;
     jogo->tempo_do_erro = 0.0f;
     jogo->ultima_variante_reacao = -1;  /* 1ª reação da partida pode ser qualquer variação */
+    jogo->cena_salva = FALA_SEM_CENA;   /* nenhuma cena gravada ainda nesta partida */
 
     status = partida_iniciar(&jogo->partida, jogo->banco);
     if (status != STATUS_OK) {
@@ -266,6 +271,7 @@ Status jogo_nova_partida(Jogo *jogo)
 Status jogo_continuar_save(Jogo *jogo)
 {
     Save save;
+    BossId boss;
     Status status;
 
     if (jogo == NULL) {
@@ -279,7 +285,10 @@ Status jogo_continuar_save(Jogo *jogo)
     if (status != STATUS_OK) {
         return status;
     }
-    status = partida_iniciar_no_boss(&jogo->partida, jogo->banco, save.boss, save.esmeraldas,
+
+    /* A partida recomeça na 1ª pergunta do boss da cena salva, com o saldo daquele momento */
+    boss = historia_boss_da_cena_salva(save.cena);
+    status = partida_iniciar_no_boss(&jogo->partida, jogo->banco, boss, save.esmeraldas,
                                      save.eliminacao_usada);
     if (status != STATUS_OK) {
         return status;
@@ -289,8 +298,12 @@ Status jogo_continuar_save(Jogo *jogo)
         return status;
     }
 
-    /* Começa onde a luta começa: a entrada do boss (que também troca a música da seção) */
-    jogo_tocar_cena(jogo, historia_cena_do_boss(save.boss), TELA_PERGUNTA);
+    /* Toca a cena salva; se for a história, a entrada do boss vem em seguida */
+    jogo->cena_salva = (int)save.cena;   /* já está no save: não regrava ao tocar */
+    jogo_tocar_cena(jogo, save.cena, TELA_PERGUNTA);
+    if (save.cena != historia_cena_do_boss(boss)) {
+        jogo_anexar_cena(jogo, historia_cena_do_boss(boss));
+    }
     return STATUS_OK;
 }
 
@@ -331,6 +344,7 @@ void jogo_atualizar(Jogo *jogo, float dt)
     case TELA_PERGUNTA:  tela_pergunta_atualizar(jogo, dt);  break;
     case TELA_REVELACAO: tela_revelacao_atualizar(jogo, dt); break;
     case TELA_RESULTADO: tela_resultado_atualizar(jogo, dt); break;
+    case TELA_CREDITOS:  tela_creditos_atualizar(jogo, dt);  break;
     default: break;
     }
 
@@ -352,6 +366,7 @@ void jogo_desenhar(const Jogo *jogo)
     case TELA_PERGUNTA:  tela_pergunta_desenhar(jogo);  break;
     case TELA_REVELACAO: tela_revelacao_desenhar(jogo); break;
     case TELA_RESULTADO: tela_resultado_desenhar(jogo); break;
+    case TELA_CREDITOS:  tela_creditos_desenhar(jogo);  break;
     default: break;
     }
 

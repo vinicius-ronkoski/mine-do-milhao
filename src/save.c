@@ -1,7 +1,8 @@
 /**
  * @file save.c
- * @brief Save do jogo em arquivo de texto (ver save.h). Sem raylib.
+ * @brief Save do jogo em arquivo de texto (ver save.h). Só compila com USE_RAYLIB.
  */
+#ifdef USE_RAYLIB
 
 #include <stdio.h>
 #include <errno.h>
@@ -13,19 +14,22 @@
 #define TAM_CAMINHO_SAVE 256
 
 /** Primeira linha do arquivo: explica os números para quem abrir o save. */
-#define CABECALHO_SAVE "# Mine do Milhao - save: boss esmeraldas eliminar_usada"
+#define CABECALHO_SAVE "# Mine do Milhao - save: cena esmeraldas eliminar_usada"
 
-/** @brief true se o conteúdo cabe nas regras do jogo (o saldo não passa do prêmio até o boss). */
+/** Maior nome de cena lido do arquivo (o sscanf usa %31s: TAM_NOME_CENA - 1). */
+#define TAM_NOME_CENA 32
+
+/** @brief true se a cena grava o save e o saldo não passa do prêmio acumulado até aquele boss. */
 static bool save_valido(const Save *save)
 {
-    int primeira_rodada, premio_ate_boss;
+    BossId boss = historia_boss_da_cena_salva(save->cena);
+    int primeira_rodada;
 
-    if (save->boss < BOSS_WITHER || save->boss > BOSS_HEROBRINE) {
-        return false;   /* o Creeper não é salvo: é o começo do jogo */
+    if (boss == BOSS_QUANTIDADE) {
+        return false;   /* cena que não grava (intro, derrota...) ou nome desconhecido */
     }
-    primeira_rodada = partida_primeira_rodada_do_nivel((int)save->boss + NIVEL_MIN);
-    premio_ate_boss = partida_premio_da_rodada(primeira_rodada - 1);
-    return save->esmeraldas >= 0 && save->esmeraldas <= premio_ate_boss;
+    primeira_rodada = partida_primeira_rodada_do_nivel((int)boss + NIVEL_MIN);
+    return save->esmeraldas >= 0 && save->esmeraldas <= partida_premio_da_rodada(primeira_rodada - 1);
 }
 
 Status save_gravar(const char *caminho, const Save *save)
@@ -46,7 +50,7 @@ Status save_gravar(const char *caminho, const Save *save)
         perror(temporario);
         return STATUS_ERRO_ARQUIVO;
     }
-    if (fprintf(arquivo, "%s\n%d %d %d\n", CABECALHO_SAVE, (int)save->boss, save->esmeraldas,
+    if (fprintf(arquivo, "%s\n%s %d %d\n", CABECALHO_SAVE, historia_nome_cena(save->cena), save->esmeraldas,
                 save->eliminacao_usada ? 1 : 0) < 0) {
         status = STATUS_ERRO_ARQUIVO;
     }
@@ -67,9 +71,9 @@ Status save_gravar(const char *caminho, const Save *save)
 
 Status save_ler(const char *caminho, Save *save)
 {
-    char linha[128];
+    char linha[128], nome_cena[TAM_NOME_CENA], sobra;
     FILE *arquivo;
-    int boss, esmeraldas, eliminacao, lidos = 0;
+    int esmeraldas, eliminacao, lidos = 0;
     Save lido;
 
     if (caminho == NULL || save == NULL) {
@@ -80,12 +84,13 @@ Status save_ler(const char *caminho, Save *save)
         return STATUS_ERRO_ARQUIVO;   /* sem save: normal na primeira vez */
     }
 
-    /* Pula comentários (#) e linhas vazias; a primeira linha de dados tem os 3 números */
+    /* Pula comentários (#) e linhas vazias; a primeira linha de dados tem os 3 números.
+     * O 4º campo (%c) só é lido se sobrar texto: linhas com campos a mais são recusadas. */
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
         if (linha[0] == '#' || linha[0] == '\n' || linha[0] == '\r') {
             continue;
         }
-        lidos = sscanf(linha, "%d %d %d", &boss, &esmeraldas, &eliminacao);
+        lidos = sscanf(linha, "%31s %d %d %c", nome_cena, &esmeraldas, &eliminacao, &sobra);
         break;
     }
     fclose(arquivo);
@@ -93,7 +98,7 @@ Status save_ler(const char *caminho, Save *save)
     if (lidos != 3 || (eliminacao != 0 && eliminacao != 1)) {
         return STATUS_ERRO_FORMATO;
     }
-    lido.boss = (BossId)boss;
+    lido.cena = historia_cena_pelo_nome(nome_cena);
     lido.esmeraldas = esmeraldas;
     lido.eliminacao_usada = eliminacao == 1;
     if (!save_valido(&lido)) {
@@ -114,3 +119,5 @@ Status save_apagar(const char *caminho)
     }
     return STATUS_OK;
 }
+
+#endif /* USE_RAYLIB */

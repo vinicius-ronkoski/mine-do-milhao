@@ -5,7 +5,7 @@
  * Carregado uma vez em jogo_iniciar (assets_carregar) e usado pelas telas, botões e diálogos.
  * Arquivo faltando não para o jogo: vira xadrez, painel colorido, degradê, silêncio ou fonte padrão.
  * Imagem/som novo: arquivo na pasta, id no enum (antes do *_QUANTIDADE) e nome na tabela de assets.c.
- * Frames dos bosses: frames/<boss>_00..07; fundo de cada fase: fundos/<boss>.
+ * Frames dos bosses: frames/<boss>_00..07; fundo de cada fase: IMG_FUNDO_<BOSS> (fundos/<boss>).
  * Só compila com USE_RAYLIB=1.
  */
 #ifndef ASSETS_H
@@ -41,7 +41,9 @@
 typedef enum {
     // Objetos
     IMG_PAINEL_ENUNCIADO = 0,         /**< Moldura atrás do enunciado (fallback: painel cinza). */
-    IMG_BOTAO,                        /**< Skin única dos botões; o estado só muda a cor (fallback: retângulo). */
+    IMG_BOTAO,                        /**< Skin padrão dos botões; o estado só muda a cor (fallback: retângulo). */
+    IMG_BOTAO_MENU,                   /**< Botões largos do menu, 530x50 (fallback: IMG_BOTAO). */
+    IMG_BOTAO_MENU_PEQUENO,           /**< Créditos e Sair, 258x50 (fallback: IMG_BOTAO). */
     IMG_CAIXA_DIALOGO,                /**< Caixa de fala (fallback: painel cinza). */
     IMG_ESMERALDA,                    /**< Ícone da esmeralda (HUD e preços das ajudas). */
     IMG_TITULO,                       /**< Logo do menu (fallback: TITULO_JANELA em texto). */
@@ -58,6 +60,11 @@ typedef enum {
     IMG_FUNDO_VITORIA,                /**< Fundo com vitória */
     IMG_FUNDO_DERROTA,                /**< Fundo com derrota */
     IMG_FUNDO_RESULTADO,              /**< Fundo da tela final. (Fundo de terra) */
+    IMG_FUNDO_CREEPER,                /**< Fundo da fase do Creeper (fundos/creeper). */
+    IMG_FUNDO_WITHER,                 /**< Fundo da fase do Wither (fundos/wither). */
+    IMG_FUNDO_WARDEN,                 /**< Fundo da fase do Warden (fundos/warden). */
+    IMG_FUNDO_ENDER_DRAGON,           /**< Fundo da fase do Ender Dragon (fundos/ender_dragon). */
+    IMG_FUNDO_HEROBRINE,              /**< Fundo da fase do Herobrine (fundos/herobrine). */
 
     // Icones
     IMG_ICONE_ALDEAO,                 /**< Icone Villager*/
@@ -148,6 +155,7 @@ typedef enum {
     SOM_FLINT_AND_STEEL,  /**< Som do Minecraft Movie */
     SOM_THE_NETHER,       /**< Som do Minecraft Movie */
     SOM_RECEBA,           /**< Receba (Luva de Pedreiro) */
+    SOM_VINE_BOOM,        /**< Som de Vine Boom */
     SOM_QUANTIDADE        /**< Quantidade de sons (não é um som). */
 } SomId;
 
@@ -157,13 +165,15 @@ typedef enum {
 /** Músicas de fundo: uma por vez, em loop, até assets_trocar_musica ou MUSICA(...) numa cena. */
 typedef enum {
     MUSICA_PRINCIPAL = 0,     /**< "musica": abertura e telas fora das seções. */
-    MUSICA_CREEPER,           /**< Seção de cada boss: MUSICA_CREEPER + BossId. */
+    MUSICA_CREEPER,           /**< Seção do Creeper (sem uso: a fase do Creeper usa a principal). */
     MUSICA_WITHER,
     MUSICA_WARDEN,
     MUSICA_END,               /**< C418 original The End, placeholder */
     MUSICA_MOOG_CITY,         /**< C418 original Moog City, placeholder */
     MUSICA_HEROBRINE,
-    MUSICA_EQUINOXE,           /**< C418 original Equinoxe, placeholder */
+    MUSICA_EQUINOXE,          /**< C418 original Equinoxe, placeholder */
+    MUSICA_PIGSTEP,           /**< Lena Raine */
+    MUSICA_CREDITOS,          /**< Tela de créditos. */
     MUSICA_QUANTIDADE,        /**< Quantidade (não é uma música). */
     MUSICA_SILENCIO           /**< Comando: para a música atual. */
 } MusicaId;
@@ -203,7 +213,6 @@ typedef struct {
     Imagem imagens[IMG_QUANTIDADE];          /**< Imagens estáticas (ImagemId). */
     Efeito sons[SOM_QUANTIDADE];             /**< Efeitos sonoros (SomId). */
     Animacao bosses[BOSS_QUANTIDADE];        /**< Frames de cada boss (índice = BossId). */
-    Imagem fundos_boss[BOSS_QUANTIDADE];     /**< Fundo de cada fase (opcional). */
     Music musicas[MUSICA_QUANTIDADE];        /**< Streams (MusicaId). */
     bool musica_valida[MUSICA_QUANTIDADE];   /**< false = arquivo faltou. */
     MusicaId musica_atual;                   /**< MUSICA_MANTER = nenhuma. */
@@ -232,7 +241,7 @@ void assets_descarregar(Assets *assets);
 /* ---- Imagens ---- */
 
 /**
- * @brief Fundo da tela inteira: o da fase (fundos/<boss>), senão `fundo_padrao`, senão degradê na cor do boss.
+ * @brief Fundo da tela inteira: o da fase (IMG_FUNDO_<BOSS>), senão `fundo_padrao`, senão degradê na cor do boss.
  * @param boss BOSS_QUANTIDADE para não usar fundo de fase (ex.: resultado).
  */
 void assets_desenhar_fundo(const Assets *assets, ImagemId fundo_padrao, BossId boss);

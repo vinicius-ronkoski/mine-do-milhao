@@ -69,6 +69,8 @@ static const char *nome_arquivo_imagem(ImagemId id)
         /* Objetos */
         "painel_enunciado",         /* IMG_PAINEL_ENUNCIADO       */
         "botao",                    /* IMG_BOTAO                  */
+        "botao_menu",               /* IMG_BOTAO_MENU             */
+        "botao_menu_pequeno",       /* IMG_BOTAO_MENU_PEQUENO     */
         "caixa_dialogo",            /* IMG_CAIXA_DIALOGO          */
         "esmeralda",                /* IMG_ESMERALDA              */
         "titulo",                   /* IMG_TITULO                 */
@@ -85,6 +87,11 @@ static const char *nome_arquivo_imagem(ImagemId id)
         "fundo_vitoria",            /* IMG_FUNDO_VITORIA          */
         "fundo_derrota",            /* IMG_FUNDO_DERROTA          */
         "fundo_resultado",          /* IMG_FUNDO_RESULTADO        */
+        "fundos/creeper",           /* IMG_FUNDO_CREEPER          */
+        "fundos/wither",            /* IMG_FUNDO_WITHER           */
+        "fundos/warden",            /* IMG_FUNDO_WARDEN           */
+        "fundos/ender_dragon",      /* IMG_FUNDO_ENDER_DRAGON     */
+        "fundos/herobrine",         /* IMG_FUNDO_HEROBRINE        */
 
         /* Ícones */
         "icone_aldeao00",           /* IMG_ICONE_ALDEAO           */
@@ -103,8 +110,8 @@ static const char *nome_arquivo_imagem(ImagemId id)
 
         /* História 2 */
         "h2_00", "h2_01", "h2_02",  /* IMG_H2_CENA_1...3          */
-        "h2_03", "h2_04", "h2_05",  /* IMG_H1_CENA_4...6          */
-        "h2_06", "h2_07", "h2_08",  /* IMG_H1_CENA_7...9          */
+        "h2_03", "h2_04", "h2_05",  /* IMG_H2_CENA_4...6          */
+        "h2_06", "h2_07", "h2_08",  /* IMG_H2_CENA_7...9          */
 
         /* História 3 */
         "h3_00", "h3_01", "h3_02",  /* IMG_H3_CENA_1...3          */
@@ -141,7 +148,9 @@ static const char *nome_arquivo_musica(MusicaId id)
         "musica_end",            /* MUSICA_END           */
         "musica_moog_city",      /* MUSICA_MOOG_CITY     */
         "musica_herobrine",      /* MUSICA_HEROBRINE     */
-        "musica_equinoxe"        /* MUSICA_EQUINOXE      */
+        "musica_equinoxe",       /* MUSICA_EQUINOXE      */
+        "musica_pigstep",        /* MUSICA_PIGSTEP       */
+        "musica_creditos"        /* MUSICA_CREDITOS      */
     };
 
     if ((int)id < 0 || id >= MUSICA_QUANTIDADE || nomes[id] == NULL) {
@@ -168,7 +177,8 @@ static const char *nome_arquivo_som(SomId id)
         "ender_dragon_01",       /* SOM_ENDER_DRAGON_IDLE    */
         "flint_and_steel",       /* SOM_FLINT_AND_STEEL      */
         "the_nether",            /* SOM_THE_NETHER           */
-        "receba"                 /* SOM_RECEBA               */
+        "receba",                /* SOM_RECEBA               */
+        "vine_boom"              /* SOM_VINE_BOOM            */
     };
 
     if ((int)id < 0 || id >= SOM_QUANTIDADE || nomes[id] == NULL) {
@@ -177,10 +187,20 @@ static const char *nome_arquivo_som(SomId id)
     return nomes[id];
 }
 
-/**
- * @brief Nome-base dos arquivos de cada boss: frames (CAMINHO_FRAMES/<prefixo>_00...) e
- *        fundo da fase (CAMINHO_FUNDOS/<prefixo>), sempre + extensão de imagem.
- */
+/** @brief Nome-base dos frames de cada boss (CAMINHO_FRAMES/<prefixo>_00...), + extensão de imagem. */
+/** @brief Fundo da fase de cada boss (na ordem de BossId); IMG_NENHUMA se o boss é inválido. */
+static ImagemId fundo_do_boss(BossId id)
+{
+    static const ImagemId fundos[BOSS_QUANTIDADE] = {
+        IMG_FUNDO_CREEPER, IMG_FUNDO_WITHER, IMG_FUNDO_WARDEN, IMG_FUNDO_ENDER_DRAGON, IMG_FUNDO_HEROBRINE
+    };
+
+    if ((int)id < 0 || id >= BOSS_QUANTIDADE) {
+        return IMG_NENHUMA;
+    }
+    return fundos[id];
+}
+
 static const char *prefixo_do_boss(BossId id)
 {
     static const char *const prefixos[BOSS_QUANTIDADE] = {
@@ -332,29 +352,6 @@ static void carregar_imagem(Assets *assets, ImagemId id)
         imagem->textura = gerar_textura_fallback();
         avisar_fallback(assets, caminho, achou ? "inválido" : "não encontrado");
     }
-}
-
-/**
- * @brief Carrega o fundo de uma fase (opcional). Se não existir, fica sem textura e
- *        assets_desenhar_fundo usa o fundo padrão da tela. Só um arquivo corrompido gera aviso.
- * @return true se o fundo foi carregado.
- */
-static bool carregar_fundo_boss(Assets *assets, BossId id)
-{
-    char base[TAM_CAMINHO_ASSET], caminho[TAM_CAMINHO_ASSET];
-    Imagem *fundo = &assets->fundos_boss[id];
-    bool achou;
-
-    snprintf(base, sizeof(base), "%s%s", CAMINHO_FUNDOS, prefixo_do_boss(id));
-    achou = achar_imagem(base, caminho, sizeof(caminho));
-    fundo->fallback = !achou || !carregar_textura_de_arquivo(caminho, &fundo->textura);
-    if (fundo->fallback) {
-        fundo->textura.id = 0;  /* sem textura: nada a descarregar */
-        if (achou) {
-            avisar_fallback(assets, caminho, "inválido");
-        }
-    }
-    return !fundo->fallback;
 }
 
 /** @brief Carrega os frames de um boss até o primeiro que faltar; nenhum -> 1 quadro sem textura. */
@@ -518,7 +515,7 @@ static float espacamento_letras(float tamanho)
 
 Status assets_carregar(Assets *assets)
 {
-    int indice, fundos_encontrados, musicas_encontradas;
+    int indice, musicas_encontradas;
 
     if (assets == NULL) {
         return STATUS_ERRO_PARAMETRO;
@@ -541,17 +538,6 @@ Status assets_carregar(Assets *assets)
     }
     for (indice = 0; indice < BOSS_QUANTIDADE; indice++) {
         carregar_animacao_boss(assets, (BossId)indice);
-    }
-
-    /* Fundos de fase são opcionais: um aviso só, com quantos foram encontrados */
-    fundos_encontrados = 0;
-    for (indice = 0; indice < BOSS_QUANTIDADE; indice++) {
-        fundos_encontrados += carregar_fundo_boss(assets, (BossId)indice) ? 1 : 0;
-    }
-    if (fundos_encontrados < BOSS_QUANTIDADE) {
-        fprintf(stderr, "Aviso: %d de %d fundos de fase em " CAMINHO_FUNDOS
-                " (opcional: os outros usam o fundo padrão da tela)\n",
-                fundos_encontrados, BOSS_QUANTIDADE);
     }
 
     for (indice = 0; indice < SOM_QUANTIDADE; indice++) {
@@ -593,13 +579,6 @@ void assets_descarregar(Assets *assets)
     for (indice = 0; indice < IMG_QUANTIDADE; indice++) {
         if (assets->imagens[indice].textura.id > 0) {
             UnloadTexture(assets->imagens[indice].textura);
-        }
-    }
-
-    // Descarrega as texturas dos bosses
-    for (indice = 0; indice < BOSS_QUANTIDADE; indice++) {
-        if (assets->fundos_boss[indice].textura.id > 0) {
-            UnloadTexture(assets->fundos_boss[indice].textura);
         }
     }
 
@@ -679,14 +658,15 @@ void assets_desenhar_fundo(const Assets *assets, ImagemId fundo_padrao, BossId b
 {
     Rectangle janela = { 0.0f, 0.0f, (float)LARGURA_JANELA, (float)ALTURA_JANELA };
     bool boss_valido = (int)boss >= 0 && boss < BOSS_QUANTIDADE;
+    ImagemId fundo_da_fase = fundo_do_boss(boss);
 
     if (assets == NULL) {
         return;
     }
 
-    /* 1. Fundo próprio da fase */
-    if (boss_valido && !assets->fundos_boss[boss].fallback) {
-        desenhar_textura_esticada(&assets->escala, assets->fundos_boss[boss].textura, janela, WHITE);
+    /* 1. Fundo próprio da fase (IMG_FUNDO_<BOSS>) */
+    if (fundo_da_fase != IMG_NENHUMA && !assets_imagem_fallback(assets, fundo_da_fase)) {
+        desenhar_textura_esticada(&assets->escala, assets->imagens[fundo_da_fase].textura, janela, WHITE);
         return;
     }
 

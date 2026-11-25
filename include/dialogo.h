@@ -21,7 +21,11 @@ typedef struct {
     SomId som;                             /**< Som ao aparecer (SOM) ou SOM_NENHUM. */
     ImagemId fundo;                        /**< Cenário (CENARIO) ou IMG_NENHUMA = fundo da fase. */
     MusicaId musica;                       /**< Música que começa aqui (MUSICA) ou MUSICA_MANTER. */
+    int cena;                              /**< CenaId de origem (historia.h); FALA_SEM_CENA nas reações. */
 } Fala;
+
+/** Fala que não veio de uma cena da história (reações do apresentador). */
+#define FALA_SEM_CENA (-1)
 
 /** Sequência de falas em reprodução. */
 typedef struct {

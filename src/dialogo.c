@@ -43,6 +43,7 @@ Status dialogo_adicionar_fala(Dialogo *dialogo, const char *personagem, const ch
     nova_fala->som = SOM_NENHUM;        /* a macro FALA troca se houver SOM(...) antes */
     nova_fala->fundo = IMG_NENHUMA;     /* a macro FALA troca pelo CENARIO atual */
     nova_fala->musica = MUSICA_MANTER;  /* a macro FALA troca se houver MUSICA(...) antes */
+    nova_fala->cena = FALA_SEM_CENA;    /* a macro FALA marca a cena de origem */
     dialogo->quantidade++;
     dialogo->terminou = false;
     return STATUS_OK;

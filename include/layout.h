@@ -66,7 +66,7 @@
 #define TOPO_MENSAGEM_REVELACAO   525.0f   /**< y de "Acertou! -1 de vida" / "Errou!". */
 #define TOPO_DETALHE_REVELACAO    575.0f   /**< y do saldo de esmeraldas (número + ícone). */
 
-/** Botão Continuar/Reiniciar (centralizado, em TOPO_AJUDAS). */
+/** Botão Continuar/Menu (centralizado, em TOPO_AJUDAS). */
 #define LARGURA_CONTINUAR         320.0f
 
 /* ---- 4. Tela de resultado (fim da partida). Os textos são centralizados. ---- */
@@ -114,7 +114,18 @@
 #define LARGURA_BARRA_CARREGANDO  400.0f
 #define ALTURA_BARRA_CARREGANDO    20.0f
 
-/* ---- 8. Faixa de erro (rodapé, todas as telas) ---- */
+/* ---- 8. Créditos (texto em LINHAS_CREDITOS, tela.c) ---- */
+
+#define VELOCIDADE_CREDITOS        60.0f   /**< Pixels por segundo que o texto sobe. */
+#define ESPACO_LINHA_CREDITOS      40.0f   /**< Distância vertical entre duas linhas. */
+#define TAMANHO_TITULO_CREDITOS    36.0f   /**< Linhas com '#': títulos, em amarelo. */
+#define TAMANHO_SUBTITULO_CREDITOS 22.0f   /**< Linhas com '~': rótulos, em cinza. */
+#define TAMANHO_TEXTO_CREDITOS     26.0f   /**< Linhas comuns. */
+#define PAUSA_FINAL_CREDITOS        4.0f   /**< Segundos parada na última linha antes de voltar ao menu. */
+#define TAMANHO_AVISO_CREDITOS     18.0f   /**< "ESPAÇO ou clique para pular", no canto inferior direito. */
+#define MARGEM_AVISO_CREDITOS       8.0f
+
+/* ---- 9. Faixa de erro (rodapé, todas as telas) ---- */
 
 #define ALTURA_BANNER_ERRO         34.0f
 

@@ -124,7 +124,6 @@ const char *utils_mensagem_status(Status status)
     case STATUS_ERRO_PARAMETRO:  return "Parâmetro inválido.";
     case STATUS_ERRO_FORMATO:    return "Arquivo fora do formato esperado.";
     case STATUS_NAO_ENCONTRADO:  return "Pergunta não encontrada.";
-    case STATUS_NAO_IMPLEMENTADO:return "Função ainda não implementada.";
     case STATUS_ERRO_GRAFICO:    return "Não foi possível iniciar a janela gráfica.";
     case STATUS_SALDO_INSUFICIENTE: return "Esmeraldas insuficientes.";
     case STATUS_ASSET_FALLBACK:  return "Assets não foram encontrados (usando substitutos).";

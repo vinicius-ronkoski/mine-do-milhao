@@ -80,7 +80,8 @@ jogo-milhao-minecraft/
 | `botao.h/.c`          | Botões clicáveis com atalho de teclado                            | sim |
 | `dialogo.h/.c`        | Motor das falas: sequência, máquina de escrever e caixa de diálogo | sim |
 | `historia.h/.c`       | Conteúdo da história: falas de cada cena e reações do apresentador | sim |
-| `save.h/.c`           | Save em `data/save.txt`: boss em que continuar, saldo e "eliminar duas" usada | não |
+| `save.h/.c`           | Save automático em `data/save.txt`: cena atual (HISTORIA_2 a 5 e entradas de boss), saldo e "eliminar duas" usada | sim |
+| `creditos.h/.c`       | Texto da tela de créditos (uma linha por item)                    | não |
 | `tela.h/.c`           | Atualização e desenho de cada tela                                | sim |
 | `escala.h/.c`         | Tela cheia (F11) e janela redimensionável: ajusta o quadro 1280x720 à tela, mantendo a pixel art nítida | sim |
 | `jogo.h/.c`           | Janela, laço principal e troca de telas                           | sim |
@@ -106,7 +107,8 @@ nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,
 2. **Bosses** (um por nível de dificuldade) que perdem vida a cada acerto: Creeper, Wither, Warden, Ender Dragon e Herobrine.
 3. **Esmeraldas como moeda:** as esmeraldas acumuladas são o prêmio e também o saldo para comprar a **dica** da pergunta. O preço sobe com o nível (1, 2, 5, 10 e 20 esmeraldas); pode-se comprar uma vez por pergunta, e o que foi gasto é descontado do prêmio final.
 4. **Eliminar duas:** desabilita duas alternativas erradas, uma vez por partida. Também é paga com esmeraldas, pelo dobro do preço da dica (2, 4, 10, 20 e 40), e o botão fica desabilitado sem saldo.
-5. **Polimento:** tela inicial no estilo do menu do Minecraft, animações, músicas e arte feita à mão.
+5. **Save automático:** ao começar a história antes de um boss (HISTORIA_2 a 5) ou a entrada dele (do Wither em diante), o jogo grava a cena, o saldo e se "eliminar duas" foi usada em `data/save.txt`. "Carregar jogo" volta para essa cena e recomeça na 1ª pergunta do boss. Parar e vitória apagam o save; a derrota o mantém.
+6. **Polimento:** tela inicial no estilo do menu do Minecraft, tela de créditos rolando, animações, músicas e arte feita à mão.
 
 
 ## Observações

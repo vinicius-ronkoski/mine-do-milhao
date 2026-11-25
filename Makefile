@@ -106,7 +106,7 @@ endif
 ifeq ($(USE_RAYLIB),1)
 ifeq ($(OS),Windows_NT)
 ifeq ($(findstring x86_64,$(ALVO_GCC)),)
-$(error O gcc instalado gera programas de 32 bits ($(ALVO_GCC)), mas a raylib do projeto e de 64 bits. Instale um gcc de 64 bits (MinGW-w64, ex.: w64devkit) e coloque-o no PATH antes do antigo. Passo a passo em docs/ARQUITETURA.md, secao 9. O modo texto (make sem USE_RAYLIB) continua funcionando com o gcc atual)
+$(error O gcc instalado gera programas de 32 bits ($(ALVO_GCC)), mas a raylib do projeto e de 64 bits. Instale um gcc de 64 bits (MinGW-w64, ex.: w64devkit) e coloque-o no PATH antes do antigo. Confira com: gcc -dumpmachine (deve mostrar x86_64-w64-mingw32). O modo texto (make sem USE_RAYLIB) continua funcionando com o gcc atual)
 endif
 endif
 endif

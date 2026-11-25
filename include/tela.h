@@ -13,7 +13,7 @@
 
 /* ---------- Menu principal ---------- */
 
-/** @brief Ao entrar: música principal e "Carregar jogo" habilitado se há save. Novo jogo/Carregar -> carregamento; Sair -> TELA_SAIR. */
+/** @brief Ao entrar: música principal e "Carregar jogo" habilitado se há save. Novo jogo/Carregar -> carregamento; Créditos -> TELA_CREDITOS; Sair -> TELA_SAIR. */
 void tela_menu_atualizar(Jogo *jogo, float dt);
 
 /** @brief Fundo (IMG_FUNDO_MENU), logo (IMG_TITULO ou texto), os 4 botões e TEXTO_VERSAO. */
@@ -29,7 +29,7 @@ void tela_carregando_desenhar(const Jogo *jogo);
 
 /* ---------- Tela de diálogo ---------- */
 
-/** @brief Avança o diálogo, toca som/música de cada fala nova e, no fim, vai para tela_apos_dialogo. */
+/** @brief Avança o diálogo; em cada fala nova toca som/música e grava o save se a cena dela grava; no fim vai para tela_apos_dialogo. */
 void tela_dialogo_atualizar(Jogo *jogo, float dt);
 
 /** @brief Cenário da fala (ou fundo da fase com o boss) e a caixa de diálogo. */
@@ -40,8 +40,8 @@ void tela_dialogo_desenhar(const Jogo *jogo);
 /**
  * @brief Lê os botões da pergunta (via jogo_botao_acionado):
  *   - alternativa -> partida_responder() e jogo_tocar_reacao() (a revelação vem depois da fala);
- *   - Parar -> partida_parar() e CENA_PARADA; Dica/Eliminar -> compra e jogo_preparar_botoes_pergunta().
- *   Na 1ª pergunta de cada boss toca o som de entrada dele. Erros vão para jogo_registrar_erro().
+ *   - Parar -> partida_parar(), apaga o save e CENA_PARADA; Dica/Eliminar -> compra e jogo_preparar_botoes_pergunta().
+ *   No Herobrine não toca o som de acerto/erro. Erros vão para jogo_registrar_erro().
  */
 void tela_pergunta_atualizar(Jogo *jogo, float dt);
 
@@ -53,7 +53,7 @@ void tela_pergunta_desenhar(const Jogo *jogo);
 /**
  * @brief Som de dano ao entrar; Continuar -> partida_confirmar_revelacao e decide o destino:
  *        erro -> CENA_DERROTA e resultado; vitória -> CENA_HISTORIA_FIM e resultado;
- *        boss caiu -> grava o save, CENA_HISTORIA_2..5 + próximo boss; senão, próxima pergunta.
+ *        boss caiu -> CENA_HISTORIA_2..5 + próximo boss; senão, próxima pergunta.
  */
 void tela_revelacao_atualizar(Jogo *jogo, float dt);
 
@@ -62,7 +62,7 @@ void tela_revelacao_desenhar(const Jogo *jogo);
 
 /* ---------- Tela de resultado ---------- */
 
-/** @brief "Menu" -> carregamento -> menu principal. */
+/** @brief Vitória: "Créditos" -> TELA_CREDITOS. Derrota/parada: "Menu" -> carregamento -> menu principal. */
 void tela_resultado_atualizar(Jogo *jogo, float dt);
 
 /** @brief Título pelo estado final, prêmio (partida_premio_final) e de onde ele veio. */
@@ -84,5 +84,13 @@ void tela_desenhar_barra_vida(Rectangle area, float fracao, Color cor);
 
 /** @brief Faixa vermelha no rodapé com o último erro (jogo_registrar_erro). */
 void tela_desenhar_banner_erro(const Jogo *jogo);
+
+/* ---------- Créditos ---------- */
+
+/** @brief Ao entrar: MUSICA_CREDITOS. Volta ao menu ao fim da rolagem (com uma pausa na última linha) ou com ESPAÇO/ENTER/clique. */
+void tela_creditos_atualizar(Jogo *jogo, float dt);
+
+/** @brief Fundo do menu escurecido, as linhas de creditos_linha (creditos.c) subindo com tempo_na_tela e o aviso de pular. */
+void tela_creditos_desenhar(const Jogo *jogo);
 
 #endif /* TELA_H */

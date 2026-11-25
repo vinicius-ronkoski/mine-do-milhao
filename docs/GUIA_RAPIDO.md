@@ -19,9 +19,10 @@ Regras que valem para tudo:
 | `jogo_tocar_cena(jogo, CENA_X, TELA_Y)` | `jogo.h` | Limpa o diálogo, toca a cena e depois vai para a tela `TELA_Y` |
 | `jogo_anexar_cena(jogo, CENA_X)` | `jogo.h` | Encadeia mais uma cena no diálogo que já está tocando |
 | `jogo_tocar_reacao(jogo)` | `jogo.h` | Fala de acerto/erro depois de responder (já usada na tela de pergunta) |
-| `dialogo_cena_do_boss(boss_id)` | `dialogo.h` | Cena de entrada do boss (`CENA_BOSS_CREEPER + id`) |
+| `historia_cena_do_boss(boss_id)` | `historia.h` | Cena de entrada do boss (`CENA_BOSS_CREEPER + id`) |
+| `historia_cena_antes_do_boss(boss_id)` | `historia.h` | História que antecede o boss (tabela `CHECKPOINTS`, em `historia.c`) |
 
-Dentro do `case` de uma cena, em `dialogo_anexar_cena()` (`dialogo.c`):
+Dentro do `case` de uma cena, em `historia_anexar_cena()` (`historia.c`):
 
 | Atalho | O que faz |
 |---|---|
@@ -36,18 +37,19 @@ Dentro do `case` de uma cena, em `dialogo_anexar_cena()` (`dialogo.c`):
 
 `personagem` é um texto (`NOME_APRESENTADOR` = "Silvio Aldeão"). Ao trocar de personagem, troque o `RETRATO` junto.
 
-Limites: cada fala até 255 caracteres (`TAM_FALA`); um diálogo até 32 falas, **somando as cenas
+Limites: cada fala até 255 caracteres (`TAM_FALA`); um diálogo até 64 falas, **somando as cenas
 encadeadas** (`DIALOGO_MAX_FALAS`, em `config.h`).
 
 ---
 
 ## 2. Criar uma cena nova
 
-1. **`dialogo.h`** — nome novo no enum `CenaId`, antes de `CENA_QUANTIDADE`:
+1. **`historia.h`** — nome novo no enum `CenaId`, antes de `CENA_QUANTIDADE`:
    ```c
    CENA_HISTORIA_6,        /**< O que acontece nesta cena. */
    ```
-2. **`dialogo.c`** — um `case` em `dialogo_anexar_cena()`:
+2. **`historia.c`** — um `case` em `historia_anexar_cena()` e o nome da cena na tabela `NOMES_CENAS`
+   (`[CENA_HISTORIA_6] = "HISTORIA_6"`, usada pelo save):
    ```c
    case CENA_HISTORIA_6:
        CENARIO(IMG_CENARIO_NETHER);
@@ -57,9 +59,19 @@ encadeadas** (`DIALOGO_MAX_FALAS`, em `config.h`).
        FALA(NOME_APRESENTADOR, "Ouviu isso?");
        break;
    ```
-3. **Chamar** no ponto do fluxo onde ela deve tocar (próxima seção).
+3. **Chamar** no ponto do fluxo onde ela deve tocar (próxima seção). Se for a história que antecede
+   um boss, basta trocar a linha desse boss na tabela `CHECKPOINTS` (`historia.c`): a revelação e o save
+   passam a usá-la sozinhos.
 
 Cena sem `case` = faixa de erro "cena inexistente" e nada toca.
+
+### Editar os créditos
+
+O texto fica em `LINHAS_CREDITOS`, no `src/creditos.c`, uma linha por item. Os créditos abrem pelo botão
+do menu e depois da vitória (botão "Créditos (ENTER)" da tela de resultado); a rolagem está na seção 7 do `tela.c`. `#` no começo = título
+(amarelo), `~` = rótulo (cinza, menor), `""` = linha vazia. Linha longa demais não quebra sozinha:
+divida em duas. Só caracteres Latin-1 (sem travessão nem aspas curvas). Velocidade, espaçamento,
+tamanhos e a pausa final ficam na seção 8 do `layout.h`.
 
 ---
 
@@ -67,12 +79,13 @@ Cena sem `case` = faixa de erro "cena inexistente" e nada toca.
 
 | Momento | Arquivo / função | Cenas hoje |
 |---|---|---|
-| Início da partida | `jogo.c`, `jogo_nova_partida()` | `CENA_INTRO` → `CENA_HISTORIA_1` → entrada do Creeper |
+| Novo jogo (menu → carregamento) | `jogo.c`, `jogo_nova_partida()` | `CENA_INTRO` → `CENA_HISTORIA_1` → entrada do Creeper |
+| Carregar jogo (menu → carregamento) | `jogo.c`, `jogo_continuar_save()` | cena salva (→ entrada do boss, se a salva for história) |
 | Depois de responder | `tela.c`, `tela_pergunta_atualizar()` | reação (acerto/erro) |
 | Parar | `tela.c`, `tela_pergunta_atualizar()` | `CENA_PARADA` |
 | Errou | `tela.c`, `tela_revelacao_atualizar()` | `CENA_DERROTA` |
-| Boss caiu | `tela.c`, `tela_revelacao_atualizar()` (`switch` pelo próximo boss) | `CENA_BOSS_DERROTADO` → `CENA_HISTORIA_2..5` → entrada do próximo boss |
-| Venceu | `tela.c`, `tela_revelacao_atualizar()` | `CENA_BOSS_DERROTADO` → `CENA_HISTORIA_FIM` → `CENA_VITORIA` |
+| Boss caiu | `tela.c`, `tela_revelacao_atualizar()` (`historia_cena_antes_do_boss`) | `CENA_HISTORIA_2..5` → entrada do próximo boss |
+| Venceu | `tela.c`, `tela_revelacao_atualizar()` | `CENA_HISTORIA_FIM` |
 
 **Várias cenas seguidas:** mais de um `jogo_anexar_cena` no mesmo lugar, na ordem desejada.
 
@@ -85,8 +98,13 @@ Cena sem `case` = faixa de erro "cena inexistente" e nada toca.
 ```
 Ali é `tocar` (ainda não há diálogo tocando); para encadear mais, `anexar` logo depois.
 
-**Falas de acerto/erro:** tabelas em `dialogo_anexar_reacao()` (`dialogo.c`). Cada texto tem
-exatamente um `%s` (resposta certa ou nome do boss).
+**Falas de acerto/erro:** tabelas em `historia_anexar_reacao()` (`historia.c`). Textos de resposta e de
+boss têm no máximo um `%s` (resposta certa ou nome do boss); os de esmeraldas, um `%d` (saldo). Texto `""`
+pula a fala. **Nunca** escreva outro `%` nesses textos (ex.: "100%"): o texto é usado como formato do
+`snprintf` e um `%` a mais faz o programa ler memória errada.
+
+**Save automático:** as cenas `CENA_HISTORIA_2` a `5` e as entradas de boss do Wither em diante gravam
+`data/save.txt` quando começam (cena, saldo e "eliminar duas" usada). Parar e vitória apagam; a derrota mantém.
 
 ---
 
@@ -127,8 +145,9 @@ Usos:
 - **Numa fala:** `SOM(SOM_TROVAO);` na linha antes da `FALA(...)`.
 - **Em qualquer lugar:** `assets_tocar_som(&jogo->assets, SOM_TROVAO);` (`SOM_NENHUM` não toca nada).
 
-Sons que o jogo já toca sozinho: `clique` (botões e diálogo), `acerto`, `erro`, `dano` (revelação),
-`entrada_<boss>` (1ª pergunta de cada boss). Volume dos efeitos: `VOLUME_EFEITOS` (`config.h`).
+Sons que o jogo já toca sozinho: `clique` (botões e diálogo), `acerto` e `erro` (menos no Herobrine),
+`dano` (revelação) e `boss_derrotado` (golpe final, no lugar do `dano`). Os demais tocam pelas cenas, com
+`SOM(...)`. Volume dos efeitos: `VOLUME_EFEITOS` (`config.h`).
 
 ---
 
@@ -138,8 +157,12 @@ Toca uma música por vez, em loop, e ela **não volta sozinha**: fica até outro
 
 | Música | Arquivo em `assets/sounds/` | Onde começa hoje |
 |---|---|---|
-| `MUSICA_PRINCIPAL` | `musica` | 1ª fala da `CENA_INTRO` (também ao reiniciar) |
-| `MUSICA_CREEPER` ... `MUSICA_HEROBRINE` | `musica_creeper`, `musica_wither`, `musica_warden`, `musica_ender_dragon`, `musica_herobrine` | 1ª fala da cena de entrada de cada boss |
+| `MUSICA_PRINCIPAL` | `musica` | Menu principal e `CENA_HISTORIA_1` |
+| `MUSICA_WITHER`, `MUSICA_WARDEN`, `MUSICA_END`, `MUSICA_HEROBRINE` | `musica_wither`, `musica_warden`, `musica_end`, `musica_herobrine` | Cena de entrada do Wither, Warden, Ender Dragon e Herobrine |
+| `MUSICA_MOOG_CITY`, `MUSICA_EQUINOXE`, `MUSICA_PIGSTEP` | `musica_moog_city`, `musica_equinoxe`, `musica_pigstep` | Usadas nas cenas da história (`MUSICA(...)`) |
+| `MUSICA_CREDITOS` | `musica_creditos` | Tela de créditos (`tela_creditos_atualizar`) |
+
+Lista completa e quais arquivos existem: [`assets/README.md`](../assets/README.md).
 
 - **Trocar numa cena:** `MUSICA(MUSICA_X);` antes da fala em que ela deve começar.
 - **Voltar:** outro `MUSICA(MUSICA_PRINCIPAL);` (ou a do boss) onde quiser.
@@ -156,7 +179,7 @@ Toca uma música por vez, em loop, e ela **não volta sozinha**: fica até outro
 | O quê | Pasta e nome | Tamanho |
 |---|---|---|
 | Frames do boss | `assets/sprites/frames/<boss>_00.png`, `_01`... (até 8) | 64x64, fundo transparente |
-| Fundo da fase | `assets/sprites/fundos/<boss>.png` | 16:9 (pixel art 320x180) |
+| Fundo da fase (`IMG_FUNDO_<BOSS>`, também serve em `CENARIO(...)`) | `assets/sprites/fundos/<boss>.png` | 1280x720 |
 | Fundo padrão das telas | `assets/sprites/fundo_pergunta`, `fundo_dialogo`, `fundo_resultado` | 16:9 |
 
 `<boss>` = `creeper`, `wither`, `warden`, `ender_dragon`, `herobrine`. Note o `_` antes do número
@@ -176,6 +199,5 @@ Mudar o visual = mudar números ali. Tamanhos de boss: múltiplos de 64; de íco
 ```
 make USE_RAYLIB=1      compila com a janela (erros de digitação no enum/tabela aparecem aqui)
 make run USE_RAYLIB=1  joga (opção 8 no menu)
-make teste             testa as regras (não cobre telas nem sons)
 ```
 O terminal lista cada arquivo de `assets/` não encontrado ao abrir o jogo.

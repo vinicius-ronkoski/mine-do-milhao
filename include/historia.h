@@ -61,4 +61,24 @@ Status historia_carregar_cena(Dialogo *dialogo, CenaId cena);
 /** @brief Cena de entrada do boss; CENA_QUANTIDADE se inválido. */
 CenaId historia_cena_do_boss(BossId id);
 
+/**
+ * @brief A cena de história que antecede a luta (Wither <- HISTORIA_2 ...). Usada pela revelação
+ *        (o que tocar quando um boss cai) e por jogo_continuar_save (história + entrada do boss).
+ * @return A cena, ou CENA_QUANTIDADE se o boss não tem checkpoint (Creeper ou inválido).
+ */
+CenaId historia_cena_antes_do_boss(BossId boss);
+
+/**
+ * @brief Boss ao qual pertence uma cena que grava o save: HISTORIA_2 a 5 e a entrada dos bosses
+ *        do Wither em diante (BOSS_WITHER ... BOSS_HEROBRINE).
+ * @return O boss, ou BOSS_QUANTIDADE se a cena não grava o save.
+ */
+BossId historia_boss_da_cena_salva(CenaId cena);
+
+/** @brief Nome da cena no save ("HISTORIA_2", "BOSS_WITHER"...); "" se inválida. */
+const char *historia_nome_cena(CenaId cena);
+
+/** @brief Cena pelo nome (o contrário de historia_nome_cena); CENA_QUANTIDADE se não existe. */
+CenaId historia_cena_pelo_nome(const char *nome);
+
 #endif /* HISTORIA_H */

@@ -41,6 +41,7 @@ typedef struct {
     EstadoBotao estado;               /**< Atualizado por botao_atualizar(). */
     DestaqueBotao destaque;           /**< Certo/errado na revelação. */
     ImagemId icone;                   /**< Ícone após o texto (ex.: IMG_ESMERALDA no preço) ou IMG_NENHUMA. */
+    ImagemId skin;                    /**< Textura do fundo; IMG_BOTAO por padrão (botao_criar). */
 } Botao;
 
 /**

@@ -32,6 +32,7 @@ Status botao_criar(Botao *botao, Rectangle area, const char *rotulo, int tecla_a
     botao->estado = BOTAO_NORMAL;
     botao->destaque = DESTAQUE_NENHUM;
     botao->icone = IMG_NENHUMA;
+    botao->skin = IMG_BOTAO;
     return botao_definir_rotulo(botao, rotulo);
 }
 
@@ -116,6 +117,7 @@ void botao_desenhar(const Botao *botao, const Assets *assets, float tamanho_font
     Color cor_fundo = PALETA_BOTAO;      /* cor do retângulo se a imagem faltar */
     Color tint_imagem = WHITE;           /* cor que multiplica a imagem, se ela existir */
     Color cor_texto = PALETA_TEXTO;
+    ImagemId skin;
     Rectangle area_texto;
 
     if (botao == NULL || !botao->visivel) {
@@ -141,7 +143,12 @@ void botao_desenhar(const Botao *botao, const Assets *assets, float tamanho_font
         tint_imagem = (Color){ 200, 210, 255, 255 };
     }
 
-    assets_desenhar_painel(assets, IMG_BOTAO, botao->area, cor_fundo, tint_imagem);
+    /* Skin própria do botão; se o arquivo faltar, a padrão (e, sem ela, o retângulo do painel) */
+    skin = botao->skin;
+    if (assets_imagem_fallback(assets, skin)) {
+        skin = IMG_BOTAO;
+    }
+    assets_desenhar_painel(assets, skin, botao->area, cor_fundo, tint_imagem);
 
     area_texto.x = botao->area.x + MARGEM_TEXTO_BOTAO;
     area_texto.y = botao->area.y + MARGEM_TEXTO_BOTAO / 2.0f;

@@ -2,13 +2,15 @@
  * @file tela.c
  * @brief Telas do jogo (ver tela.h). Compila só com USE_RAYLIB.
  *
- * Organização: 1) desenhos compartilhados, 2) diálogo, 3) pergunta, 4) revelação, 5) resultado.
+ * Organização: 1) desenhos compartilhados, 2) menu e carregamento, 3) diálogo, 4) pergunta,
+ *              5) revelação, 6) resultado, 7) créditos (texto em creditos.c).
  *
  * Fluxo de uma resposta: pergunta (clique) -> reação do apresentador (diálogo) -> revelação
  * (som de dano e a vida do boss caindo) -> próxima pergunta, boss derrotado, derrota ou vitória.
  */
 #ifdef USE_RAYLIB
 #include "tela.h"
+#include "creditos.h"
 #include "layout.h"
 #include "utils.h"
 
@@ -175,11 +177,11 @@ void tela_menu_atualizar(Jogo *jogo, float dt)
     } else if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_CARREGAR])) {
         jogo->acao_apos_carregar = ACAO_CONTINUAR_SAVE;
         jogo_trocar_tela(jogo, TELA_CARREGANDO);
+    } else if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_CREDITOS])) {
+        jogo_trocar_tela(jogo, TELA_CREDITOS);   /* direto: não há nada para carregar */
     } else if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_SAIR])) {
         jogo_trocar_tela(jogo, TELA_SAIR);
     }
-    /* Créditos: desabilitado (ver criar_botoes_menu em jogo.c) */
-    botao_atualizar(&jogo->botoes[BOTAO_CREDITOS]);
 }
 
 void tela_menu_desenhar(const Jogo *jogo)
@@ -248,6 +250,30 @@ void tela_carregando_desenhar(const Jogo *jogo)
 
 /* ---- 3. Tela de diálogo ---- */
 
+/**
+ * @brief Save automático: quando começa uma cena que grava (historia_boss_da_cena_salva), guarda a
+ *        cena, o saldo e a ajuda usada. Cada cena grava uma vez (jogo->cena_salva).
+ */
+static void gravar_save_da_cena(Jogo *jogo, int cena)
+{
+    Save save;
+    Status status;
+
+    if (cena == FALA_SEM_CENA || cena == jogo->cena_salva
+        || historia_boss_da_cena_salva((CenaId)cena) == BOSS_QUANTIDADE) {
+        return;
+    }
+    save.cena = (CenaId)cena;
+    save.esmeraldas = partida_saldo(&jogo->partida);
+    save.eliminacao_usada = jogo->partida.eliminacao_usada;
+    status = save_gravar(CAMINHO_SAVE, &save);
+    if (status != STATUS_OK) {
+        jogo_registrar_erro(jogo, status, "salvar jogo");
+        return;
+    }
+    jogo->cena_salva = cena;
+}
+
 void tela_dialogo_atualizar(Jogo *jogo, float dt)
 {
     const Fala *fala_nova;
@@ -271,6 +297,7 @@ void tela_dialogo_atualizar(Jogo *jogo, float dt)
     if (fala_nova != NULL) {
         assets_tocar_som(&jogo->assets, fala_nova->som);
         assets_trocar_musica(&jogo->assets, fala_nova->musica);
+        gravar_save_da_cena(jogo, fala_nova->cena);
     }
 }
 
@@ -326,8 +353,13 @@ void tela_pergunta_atualizar(Jogo *jogo, float dt)
         if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_ALTERNATIVA_A + posicao])) {
             status = partida_responder(&jogo->partida, posicao);
             if (status == STATUS_OK) {
-                /* Respondeu: som de acerto/erro e a reação do apresentador; a revelação vem depois */
-                assets_tocar_som(&jogo->assets, jogo->partida.ultima_acertou ? SOM_ACERTO : SOM_ERRO);
+                const Boss *boss = partida_boss_atual(&jogo->partida);
+
+                /* Respondeu: som de acerto/erro (menos no Herobrine) e a reação do apresentador;
+                 * a revelação vem depois */
+                if (boss != NULL && boss->id != BOSS_HEROBRINE) {
+                    assets_tocar_som(&jogo->assets, jogo->partida.ultima_acertou ? SOM_ACERTO : SOM_ERRO);
+                }
                 jogo_tocar_reacao(jogo);
                 return;  /* a tela mudou: não lê os outros botões neste quadro */
             }
@@ -344,6 +376,10 @@ void tela_pergunta_atualizar(Jogo *jogo, float dt)
     if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_PARAR])) {
         status = partida_parar(&jogo->partida);
         if (status == STATUS_OK) {
+            /* Levou o prêmio: a partida acabou e o save não vale mais */
+            if (save_apagar(CAMINHO_SAVE) != STATUS_OK) {
+                jogo_registrar_erro(jogo, STATUS_ERRO_ARQUIVO, "apagar save");
+            }
             jogo_tocar_cena(jogo, CENA_PARADA, TELA_RESULTADO);
         }
     }
@@ -406,9 +442,12 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
         return;
     }
 
-    /* Ao entrar: som de dano se acertou (a barra cai em tela_desenhar_boss) */
+    /* Ao entrar: som de boss derrotado se foi o golpe final, senão de dano se acertou
+     * (a barra cai em tela_desenhar_boss) */
     if (!jogo->efeito_da_tela_tocado) {
-        if (jogo->partida.ultima_acertou) {
+        if (jogo->partida.boss_derrotado_agora) {
+            assets_tocar_som(&jogo->assets, SOM_BOSS_DERROTADO);
+        } else if (jogo->partida.ultima_acertou) {
             assets_tocar_som(&jogo->assets, SOM_DANO_BOSS);
         }
         botao_definir_rotulo(&jogo->botoes[BOTAO_CONTINUAR], "Continuar (ENTER)");
@@ -435,31 +474,13 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
         }
         jogo_tocar_cena(jogo, CENA_HISTORIA_FIM, TELA_RESULTADO);
         break;
-    default:                     /* a partida continua */
+    default:                     /* acertou e a partida continua */
         jogo_preparar_botoes_pergunta(jogo);
         proximo_boss = partida_boss_atual(&jogo->partida);
         if (jogo->partida.boss_derrotado_agora && proximo_boss != NULL) {
             /* Boss caiu: história da transição e entrada do boss do próximo nível.
              * A primeira cena começa o diálogo (tocar); a entrada do boss vem anexada. */
-            CenaId historia = CENA_QUANTIDADE;   /* CENA_QUANTIDADE = sem história */
-            Save save;
-
-            /* Save antes da luta: o próximo boss, o saldo e a ajuda já usada (a derrota não apaga) */
-            save.boss = proximo_boss->id;
-            save.esmeraldas = partida_saldo(&jogo->partida);
-            save.eliminacao_usada = jogo->partida.eliminacao_usada;
-            status = save_gravar(CAMINHO_SAVE, &save);
-            if (status != STATUS_OK) {
-                jogo_registrar_erro(jogo, status, "salvar jogo");
-            }
-
-            switch (proximo_boss->id) {
-            case BOSS_WITHER:       historia = CENA_HISTORIA_2; break;  /* indo para o Nether */
-            case BOSS_WARDEN:       historia = CENA_HISTORIA_3; break;
-            case BOSS_ENDER_DRAGON: historia = CENA_HISTORIA_4; break;  /* indo para o Fim */
-            case BOSS_HEROBRINE:    historia = CENA_HISTORIA_5; break;  /* voltando do Fim */
-            default:                break;
-            }
+            CenaId historia = historia_cena_antes_do_boss(proximo_boss->id);
 
             if (historia != CENA_QUANTIDADE) {
                 jogo_tocar_cena(jogo, historia, TELA_PERGUNTA);
@@ -526,19 +547,26 @@ void tela_revelacao_desenhar(const Jogo *jogo)
 
 void tela_resultado_atualizar(Jogo *jogo, float dt)
 {
+    bool venceu;
+
     (void)dt;
     if (jogo == NULL) {
         return;
     }
+    venceu = jogo->partida.estado == ESTADO_FIM_VITORIA;
     if (!jogo->efeito_da_tela_tocado) {
-        botao_definir_rotulo(&jogo->botoes[BOTAO_CONTINUAR], "Menu (ENTER)");
+        botao_definir_rotulo(&jogo->botoes[BOTAO_CONTINUAR], venceu ? "Créditos (ENTER)" : "Menu (ENTER)");
         jogo->efeito_da_tela_tocado = true;
     }
 
-    /* Volta ao menu principal passando pelo carregamento */
+    /* Vitória: créditos (que depois voltam ao menu). Derrota ou parada: menu, pelo carregamento. */
     if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_CONTINUAR])) {
-        jogo->acao_apos_carregar = ACAO_IR_AO_MENU;
-        jogo_trocar_tela(jogo, TELA_CARREGANDO);
+        if (venceu) {
+            jogo_trocar_tela(jogo, TELA_CREDITOS);
+        } else {
+            jogo->acao_apos_carregar = ACAO_IR_AO_MENU;
+            jogo_trocar_tela(jogo, TELA_CARREGANDO);
+        }
     }
 }
 
@@ -619,6 +647,79 @@ void tela_resultado_desenhar(const Jogo *jogo)
     }
 
     botao_desenhar(&jogo->botoes[BOTAO_CONTINUAR], &jogo->assets, TAMANHO_BOTAO_AJUDA);
+}
+
+/* ---- 7. Créditos ---- */
+
+/** Aviso no rodapé dos créditos (as teclas são as de jogo_jogador_quer_avancar). */
+#define AVISO_CREDITOS "ESPAÇO ou clique para pular"
+
+/** @brief Quanto o texto sobe no total: até a última linha chegar ao centro da tela, onde para. */
+static float subida_total_creditos(void)
+{
+    return (float)ALTURA_JANELA / 2.0f + (float)(creditos_quantidade_linhas() - 1) * ESPACO_LINHA_CREDITOS;
+}
+
+void tela_creditos_atualizar(Jogo *jogo, float dt)
+{
+    (void)dt;
+    if (jogo == NULL) {
+        return;
+    }
+    if (!jogo->efeito_da_tela_tocado) {
+        assets_trocar_musica(&jogo->assets, MUSICA_CREDITOS);   /* o menu volta à principal ao entrar */
+        jogo->efeito_da_tela_tocado = true;
+    }
+    /* Só sai quando o jogador pede. O atraso evita que o clique que abriu os créditos já os feche. */
+    if (jogo->tempo_na_tela >= ATRASO_ENTRADA_TELA && jogo_jogador_quer_avancar()) {
+        assets_tocar_som(&jogo->assets, SOM_CLIQUE);
+        jogo_trocar_tela(jogo, TELA_MENU);
+    }
+}
+
+void tela_creditos_desenhar(const Jogo *jogo)
+{
+    float deslocamento;
+    Vector2 posicao_aviso;
+    int indice;
+
+    if (jogo == NULL) {
+        return;
+    }
+    assets_desenhar_fundo(&jogo->assets, IMG_FUNDO_MENU, BOSS_QUANTIDADE);
+    DrawRectangle(0, 0, LARGURA_JANELA, ALTURA_JANELA, Fade(BLACK, 0.6f));
+
+    /* Quanto o texto já subiu; para na subida total e a frase final fica parada no centro */
+    deslocamento = fminf(VELOCIDADE_CREDITOS * jogo->tempo_na_tela, subida_total_creditos());
+    for (indice = 0; indice < creditos_quantidade_linhas(); indice++) {
+        const char *texto = creditos_linha(indice);
+        /* A 1ª linha nasce logo abaixo da tela e todas sobem juntas */
+        float y = (float)ALTURA_JANELA + (float)indice * ESPACO_LINHA_CREDITOS - deslocamento;
+        float tamanho = TAMANHO_TEXTO_CREDITOS;
+        Color cor = PALETA_TEXTO;
+        Rectangle area;
+
+        if (texto[0] == '\0' || y < -ESPACO_LINHA_CREDITOS || y > (float)ALTURA_JANELA) {
+            continue;   /* linha vazia ou fora da tela */
+        }
+        if (texto[0] == '#') {
+            tamanho = TAMANHO_TITULO_CREDITOS;
+            cor = PALETA_DESTAQUE;
+            texto++;
+        } else if (texto[0] == '~') {
+            tamanho = TAMANHO_SUBTITULO_CREDITOS;
+            cor = PALETA_TEXTO_SUAVE;
+            texto++;
+        }
+        area = (Rectangle){ 0.0f, y, (float)LARGURA_JANELA, ESPACO_LINHA_CREDITOS };
+        assets_desenhar_texto_centralizado(&jogo->assets, texto, area, tamanho, cor);
+    }
+
+    /* Aviso fixo no canto inferior direito (o canto oposto ao da versão no menu) */
+    posicao_aviso.x = (float)LARGURA_JANELA - MARGEM_AVISO_CREDITOS
+                      - assets_largura_texto(&jogo->assets, AVISO_CREDITOS, TAMANHO_AVISO_CREDITOS);
+    posicao_aviso.y = (float)ALTURA_JANELA - MARGEM_AVISO_CREDITOS - TAMANHO_AVISO_CREDITOS;
+    assets_desenhar_texto(&jogo->assets, AVISO_CREDITOS, posicao_aviso, TAMANHO_AVISO_CREDITOS, PALETA_TEXTO_SUAVE);
 }
 
 #endif /* USE_RAYLIB */

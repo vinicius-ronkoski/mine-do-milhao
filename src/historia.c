@@ -8,10 +8,11 @@
 #ifdef USE_RAYLIB
 
 #include <stdio.h>
+#include <string.h>
 #include "historia.h"
 
 /** Nome do apresentador nas falas. */
-#define NOME_APRESENTADOR "Sílvio Aldeão"
+#define NOME_APRESENTADOR "Silvio Aldeão"
 
 /* ---- 1. Falas de cada cena  ---- */
 
@@ -53,6 +54,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
                 fala_criada->fundo = cenario;                                              \
                 fala_criada->som = som_proximo;                                            \
                 fala_criada->musica = musica_proxima;                                      \
+                fala_criada->cena = (int)cena;   /* para o save saber em que cena está */  \
                 som_proximo = SOM_NENHUM;        /* som e música valem só para esta fala */ \
                 musica_proxima = MUSICA_MANTER;                                            \
             }                                                                              \
@@ -108,16 +110,19 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
     case CENA_BOSS_CREEPER:
         break;
     case CENA_BOSS_WITHER:
+        MUSICA(MUSICA_SILENCIO);
         MUSICA(MUSICA_WITHER);
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Prepare-se, ele é muito mais forte que o creeper!");
         break;
     case CENA_BOSS_WARDEN:
+        MUSICA(MUSICA_SILENCIO);
         MUSICA(MUSICA_WARDEN);
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
         FALA(NOME_APRESENTADOR, "...shh, não deixe ele te ouvir!");
         break;
     case CENA_BOSS_ENDER_DRAGON:
+        MUSICA(MUSICA_SILENCIO);
         MUSICA(MUSICA_END);
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Até agora foi tudo fácil demais...");
@@ -129,17 +134,18 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "Deveriam me pagar mais por fazer essas piadas horríveis");
         break;
     case CENA_BOSS_HEROBRINE:
+        MUSICA(MUSICA_SILENCIO);
         MUSICA(MUSICA_HEROBRINE);
         RETRATO(IMG_ICONE_HEROBRINE);
         FALA("\"Você\"", "O que estou fazendo aqui?");
         break;
     case CENA_DERROTA:
-        RETRATO(IMG_ICONE_ALDEAO);
-        FALA(NOME_APRESENTADOR, "Droga! O(A) Jogador(a)! Ele caiu! O que farei agora?");
+        MUSICA(MUSICA_SILENCIO);
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
         FALA(NOME_APRESENTADOR, "Ei cara, levante, precisamos de você!");
         break;
     case CENA_PARADA:
+        MUSICA(MUSICA_SILENCIO);
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Você não vai desistir né?");
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
@@ -155,6 +161,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
      *     FALA(NOME_APRESENTADOR, "...");                             */
     case CENA_HISTORIA_1:
         // Comissao técnica
+        MUSICA(MUSICA_SILENCIO);
         RETRATO(IMG_NENHUMA);
         CENARIO(IMG_H1_CENA_1);
         FALA("Comissão Técnica", "EI, VOCÊ NÃO PODE ENTRAR AQUI!");
@@ -173,6 +180,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         break;
     case CENA_HISTORIA_2:
         // Inicio Cena Historia 1
+        MUSICA(MUSICA_SILENCIO);
         CENARIO(IMG_FUNDO_PALCO);
 
 
@@ -247,6 +255,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
 
         // Já no nether
         CENARIO(IMG_H2_CENA_6);
+        MUSICA(MUSICA_PIGSTEP);
         FALA(NOME_APRESENTADOR, "Que calor!");
         FALA(NOME_APRESENTADOR, "Bem agora que estamos no Nether, você sabe o que fazer.");
         FALA(NOME_APRESENTADOR, "...");
@@ -272,6 +281,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         break;
     case CENA_HISTORIA_3:
         // Inicio Historia parte 3
+        MUSICA(MUSICA_SILENCIO);
         CENARIO(IMG_H2_CENA_9);
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Ufa, conseguimos vencer ele, mesmo com perguntas bem mais difíceis!");
@@ -312,6 +322,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         break;
     case CENA_HISTORIA_4:
         // Inicio parte 4 - Historia
+        MUSICA(MUSICA_SILENCIO);
         CENARIO(IMG_H3_CENA_5);
         SOM(SOM_ALDEAO);
         RETRATO(IMG_ICONE_ALDEAO);
@@ -321,6 +332,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
 
         // Apresentador aponta sala do fim do corredor
         CENARIO(IMG_H4_CENA_1);
+        SOM(SOM_VINE_BOOM);
         FALA(NOME_APRESENTADOR, "Caso não tenha visto, olhe a literal seta mágica que eu fiz com poderes de apresentador.");
         FALA(NOME_APRESENTADOR, "Vamos lá!");
 
@@ -335,7 +347,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
             "Não é como se eu estivesse com preguiça de andar alguns blocos para trás");
 
         RETRATO(IMG_ICONE_DESCONHECIDO_1);
-        FALA("???", "Cuidado com o te aguarda. A curiosidade sempre mata o gato.");
+        FALA("???", "Cuidado com o que te aguarda. A curiosidade sempre mata o gato.");
 
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
         FALA(NOME_APRESENTADOR, "Q-quem está falando isso? Foi você Jogador(a)?");
@@ -371,6 +383,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "CUIDADO!");
         break;
     case CENA_HISTORIA_5:
+        MUSICA(MUSICA_SILENCIO);
         CENARIO(IMG_FUNDO_FIM);
         RETRATO(IMG_NENHUMA);
         FALA(
@@ -394,13 +407,17 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(" ", "Mapa esse que, oculto pelos pensamentos da estrela, na determinação de sua jornada encontrou todas as respostas.");
         FALA(" ", "E mesmo sem poder interpretar o próprio achado, descobriu o responsável da indescoberta aventura...");
         FALA(" ", "...que nunca acontecera devido aos anseios e temores de quem estava no controle do leme.");
-
-        CENARIO(IMG_H5_CENA_2);
+        
         MUSICA(MUSICA_SILENCIO);
+        CENARIO(IMG_FUNDO_PRETO);
+        RETRATO(IMG_NENHUMA);
+        FALA("?", "\"Ei... acorde!\"");
+        
+        CENARIO(IMG_H5_CENA_2);
+        RETRATO(IMG_ICONE_ALDEAO);
+        FALA(NOME_APRESENTADOR, "Você está bem?");
 
         // Villager e Player acordando
-        RETRATO(IMG_ICONE_ALDEAO);
-        FALA(NOME_APRESENTADOR, "Ei... você está bem?");
         FALA(NOME_APRESENTADOR, "Eu tive um sonho...");
         FALA(NOME_APRESENTADOR, "peculiar.");
         FALA(NOME_APRESENTADOR, "O que aconteceu com seus olhos?");
@@ -413,8 +430,21 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         break;
     case CENA_HISTORIA_FIM:
         // Fim da historia
-        RETRATO(IMG_ICONE_ALDEAO);
+        CENARIO(IMG_FUNDO_HEROBRINE);
+
+        RETRATO(IMG_ICONE_HEROBRINE);
+        FALA("\"Você\"", "...");
+        
         MUSICA(MUSICA_SILENCIO);
+        RETRATO(IMG_ICONE_STEVE);
+        FALA("Você", "...");
+
+        CENARIO(IMG_FUNDO_PRETO);
+
+        RETRATO(IMG_NENHUMA);
+        FALA("Você", "Tudo isso valeu a pena?");
+
+        RETRATO(IMG_ICONE_ALDEAO);
         CENARIO(IMG_H5_CENA_3);
 
         FALA(NOME_APRESENTADOR, "...");
@@ -498,6 +528,7 @@ Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "O verdadeiro Mine do Milhão são os amigos que fazemos pelo caminho");
 
         SOM(SOM_ALDEAO);
+        MUSICA(MUSICA_PRINCIPAL);
         FALA(NOME_APRESENTADOR, "Muito obrigado, muito obrigado! E Boa noite!");
         break;
     default:
@@ -742,6 +773,91 @@ CenaId historia_cena_do_boss(BossId id)
         return CENA_QUANTIDADE;
     }
     return (CenaId)(CENA_BOSS_CREEPER + (int)id);
+}
+
+/* ---- 4. Checkpoints e nomes das cenas (usados pela revelação e pelo save) ---- */
+
+/** Cena que antecede cada boss. Para mudar a história antes de um boss, troque só aqui. */
+static const struct {
+    CenaId cena;
+    BossId boss;
+} CHECKPOINTS[] = {
+    { CENA_HISTORIA_2, BOSS_WITHER },        /* indo para o Nether */
+    { CENA_HISTORIA_3, BOSS_WARDEN },
+    { CENA_HISTORIA_4, BOSS_ENDER_DRAGON },  /* indo para o End */
+    { CENA_HISTORIA_5, BOSS_HEROBRINE }      /* voltando do End */
+};
+
+#define QUANTIDADE_CHECKPOINTS ((int)(sizeof(CHECKPOINTS) / sizeof(CHECKPOINTS[0])))
+
+CenaId historia_cena_antes_do_boss(BossId boss)
+{
+    int indice;
+
+    for (indice = 0; indice < QUANTIDADE_CHECKPOINTS; indice++) {
+        if (CHECKPOINTS[indice].boss == boss) {
+            return CHECKPOINTS[indice].cena;
+        }
+    }
+    return CENA_QUANTIDADE;
+}
+
+BossId historia_boss_da_cena_salva(CenaId cena)
+{
+    int boss;
+
+    /* Gravam o save: a história antes de cada boss e a entrada dos bosses que têm essa história
+     * (do Wither em diante; o começo do jogo, até o Creeper, não grava) */
+    for (boss = 0; boss < BOSS_QUANTIDADE; boss++) {
+        CenaId historia = historia_cena_antes_do_boss((BossId)boss);
+
+        if (historia != CENA_QUANTIDADE
+            && (cena == historia || cena == historia_cena_do_boss((BossId)boss))) {
+            return (BossId)boss;
+        }
+    }
+    return BOSS_QUANTIDADE;
+}
+
+/** Nome de cada cena no save. Com [CENA_X] = "...", a ordem do enum pode mudar sem quebrar saves. */
+static const char *const NOMES_CENAS[CENA_QUANTIDADE] = {
+    [CENA_INTRO]             = "INTRO",
+    [CENA_BOSS_CREEPER]      = "BOSS_CREEPER",
+    [CENA_BOSS_WITHER]       = "BOSS_WITHER",
+    [CENA_BOSS_WARDEN]       = "BOSS_WARDEN",
+    [CENA_BOSS_ENDER_DRAGON] = "BOSS_ENDER_DRAGON",
+    [CENA_BOSS_HEROBRINE]    = "BOSS_HEROBRINE",
+    [CENA_DERROTA]           = "DERROTA",
+    [CENA_PARADA]            = "PARADA",
+    [CENA_HISTORIA_1]        = "HISTORIA_1",
+    [CENA_HISTORIA_2]        = "HISTORIA_2",
+    [CENA_HISTORIA_3]        = "HISTORIA_3",
+    [CENA_HISTORIA_4]        = "HISTORIA_4",
+    [CENA_HISTORIA_5]        = "HISTORIA_5",
+    [CENA_HISTORIA_FIM]      = "HISTORIA_FIM"
+};
+
+const char *historia_nome_cena(CenaId cena)
+{
+    if ((int)cena < 0 || cena >= CENA_QUANTIDADE || NOMES_CENAS[cena] == NULL) {
+        return "";
+    }
+    return NOMES_CENAS[cena];
+}
+
+CenaId historia_cena_pelo_nome(const char *nome)
+{
+    int cena;
+
+    if (nome == NULL) {
+        return CENA_QUANTIDADE;
+    }
+    for (cena = 0; cena < CENA_QUANTIDADE; cena++) {
+        if (NOMES_CENAS[cena] != NULL && strcmp(NOMES_CENAS[cena], nome) == 0) {
+            return (CenaId)cena;
+        }
+    }
+    return CENA_QUANTIDADE;
 }
 
 #endif /* USE_RAYLIB */

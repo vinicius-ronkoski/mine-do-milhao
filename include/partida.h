@@ -137,10 +137,10 @@ int partida_premio_final(const Partida *partida);
 int partida_primeira_rodada_do_nivel(int nivel);
 
 /**
- * @brief Partida nova começando no boss `boss` (carregar save): sorteia como partida_iniciar, deixa
- *        os bosses anteriores derrotados, recalcula prêmio e marco garantido e ajusta o gasto para
- *        o saldo ser `saldo`. Se falhar, `partida` não muda.
- * @param saldo            Esmeraldas disponíveis (0 até o prêmio da rodada anterior ao boss).
+ * @brief Partida começando na 1ª pergunta do boss `boss` (carregar save): sorteia como partida_iniciar,
+ *        deixa os bosses anteriores derrotados, recalcula prêmio e marco garantido e ajusta o gasto
+ *        para o saldo ser `saldo`. Se falhar, `partida` não muda.
+ * @param saldo            Esmeraldas disponíveis (0 até o prêmio acumulado antes do boss).
  * @param eliminacao_usada Se "eliminar duas" já foi gasta.
  * @return STATUS_OK, STATUS_ERRO_PARAMETRO (boss ou saldo fora da faixa) ou os erros de partida_iniciar.
  */

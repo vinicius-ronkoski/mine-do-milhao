@@ -41,6 +41,7 @@ typedef enum {
     TELA_PERGUNTA,      /**< Pergunta, alternativas, ajudas e Parar. */
     TELA_REVELACAO,     /**< Resultado da resposta e dano no boss. */
     TELA_RESULTADO,     /**< Prêmio final. */
+    TELA_CREDITOS,      /**< Créditos rolando (pelo menu ou após a vitória). */
     TELA_SAIR           /**< Encerra o laço (volta ao menu de texto). */
 } TelaJogo;
 
@@ -48,7 +49,7 @@ typedef enum {
 typedef enum {
     ACAO_IR_AO_MENU = 0,  /**< Volta ao menu principal. */
     ACAO_NOVA_PARTIDA,    /**< jogo_nova_partida (começa na CENA_INTRO). */
-    ACAO_CONTINUAR_SAVE   /**< jogo_continuar_save (começa na entrada do boss salvo). */
+    ACAO_CONTINUAR_SAVE   /**< jogo_continuar_save (continua na cena salva). */
 } AcaoCarregamento;
 
 /**
@@ -66,7 +67,7 @@ typedef enum {
     BOTAO_CONTINUAR,          /**< Revelação e resultado (ENTER). */
     BOTAO_JOGAR,              /**< Menu: "Novo jogo" (ENTER). */
     BOTAO_CARREGAR,           /**< Menu: "Carregar jogo" (habilitado só com save válido). */
-    BOTAO_CREDITOS,           /**< Menu: "Créditos" (desabilitado até existir a tela). */
+    BOTAO_CREDITOS,           /**< Menu: "Créditos" (abre TELA_CREDITOS). */
     BOTAO_SAIR,               /**< Menu: "Sair do jogo" (volta ao menu de texto). */
     BOTAO_QUANTIDADE          /**< Quantidade de botões (não é um botão). */
 } BotaoId;
@@ -86,9 +87,10 @@ typedef struct {
     TelaJogo tela;                        /**< Tela ativa. */
     TelaJogo tela_apos_dialogo;           /**< Para onde ir quando o diálogo acabar. */
     AcaoCarregamento acao_apos_carregar;  /**< O que fazer quando o carregamento terminar. */
+    int cena_salva;                       /**< Última cena gravada no save (FALA_SEM_CENA = nenhuma nesta partida). */
     float tempo_na_tela;                  /**< Segundos na tela atual. */
     float tempo_total;                    /**< Segundos desde o início (animação dos bosses). */
-    bool efeito_da_tela_tocado;           /**< Som de entrada da tela já tocado. */
+    bool efeito_da_tela_tocado;           /**< Efeito de entrada da tela (som, rótulo, save) já feito. */
     int cursor_atual;                     /**< MOUSE_CURSOR_* em uso. */
     Status ultimo_erro;                   /**< Erro não fatal mostrado no banner. */
     int ultima_variante_reacao;           /**< Para não repetir a reação seguida (-1 = nenhuma). */
@@ -111,12 +113,12 @@ Status jogo_iniciar(Jogo *jogo, const Banco *banco);
 /** @brief Libera os assets e devolve o cursor normal. */
 void jogo_encerrar(Jogo *jogo);
 
-/** @brief partida_iniciar, prepara os botões e toca intro + HISTORIA_1 + entrada do 1º boss (também no Reiniciar). */
+/** @brief partida_iniciar, prepara os botões e toca intro + HISTORIA_1 + entrada do 1º boss ("Novo jogo", via carregamento). */
 Status jogo_nova_partida(Jogo *jogo);
 
 /**
- * @brief Continua do save (botão "Carregar jogo"): save_ler, partida_iniciar_no_boss, botões e a
- *        cena de entrada do boss salvo.
+ * @brief Continua do save (botão "Carregar jogo"): save_ler, partida_iniciar_no_boss do boss da
+ *        cena salva, e toca a cena salva (mais a entrada do boss, se for história).
  * @return STATUS_OK ou o erro de save_ler/partida_iniciar_no_boss (a tela não muda).
  */
 Status jogo_continuar_save(Jogo *jogo);

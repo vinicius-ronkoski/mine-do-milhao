@@ -48,7 +48,7 @@
 /** Pasta da opção "Exportar CSV". */
 #define CAMINHO_EXPORTADOS "data/exportados/"
 
-/** Save do jogo (texto: boss, esmeraldas e "eliminar duas" usada; ver save.h). Fora do Git. */
+/** Save do jogo (texto: cena atual, esmeraldas e "eliminar duas" usada; ver save.h). Fora do Git. */
 #define CAMINHO_SAVE "data/save.txt"
 
 /** @name Regras da partida (partida.c) */
@@ -85,7 +85,7 @@
 #define ALTURA_JANELA    720
 #define FPS_ALVO         60
 #define TITULO_JANELA    "Mine do Milhão"
-#define TEXTO_VERSAO     "Mine do Milhão 0.1b"   /**< Canto inferior esquerdo do menu. */
+#define TEXTO_VERSAO     "Mine do Milhão 1.0r"   /**< Canto inferior esquerdo do menu. */
 /**@}*/
 
 /** @name Áudio (0.0 = mudo, 1.0 = volume original do arquivo) */
@@ -98,7 +98,6 @@
 /**@{*/
 #define CAMINHO_SPRITES  "assets/sprites/"
 #define CAMINHO_FRAMES   "assets/sprites/frames/"
-#define CAMINHO_FUNDOS   "assets/sprites/fundos/"   /* fundo de cada fase: <boss>.png */
 #define CAMINHO_SONS     "assets/sounds/"
 #define CAMINHO_FONTES   "assets/fonts/"
 #define ARQUIVO_FONTE    CAMINHO_FONTES "minecraft"  /* .ttf ou .otf */
@@ -119,7 +118,6 @@ typedef enum {
     STATUS_ERRO_PARAMETRO,      /**< Argumento inválido (NULL, índice fora etc.). */
     STATUS_ERRO_FORMATO,        /**< Conteúdo do arquivo fora do formato esperado. */
     STATUS_NAO_ENCONTRADO,      /**< Não existe (ex.: perguntas insuficientes num nível). */
-    STATUS_NAO_IMPLEMENTADO,    /**< Função ainda é um esqueleto (TODO). */
     STATUS_ERRO_GRAFICO,        /**< Janela/OpenGL não pôde ser criada. */
     STATUS_SALDO_INSUFICIENTE,  /**< Esmeraldas insuficientes para comprar uma ajuda. */
     STATUS_ASSET_FALLBACK      /**< Não é erro: algum asset faltou e foi substituído. */

@@ -8,7 +8,6 @@ milhao.exe
 
 # Dados gerados em tempo de execução (o CSV inicial vai para o Git)
 data/perguntas.dat
-data/ranking.dat
 data/exportados/*
 !data/exportados/.gitkeep
 
