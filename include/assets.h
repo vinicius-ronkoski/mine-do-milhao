@@ -44,8 +44,10 @@ typedef enum {
     IMG_BOTAO,                        /**< Skin única dos botões; o estado só muda a cor (fallback: retângulo). */
     IMG_CAIXA_DIALOGO,                /**< Caixa de fala (fallback: painel cinza). */
     IMG_ESMERALDA,                    /**< Ícone da esmeralda (HUD e preços das ajudas). */
+    IMG_TITULO,                       /**< Logo do menu (fallback: TITULO_JANELA em texto). */
 
     // Fundos
+    IMG_FUNDO_MENU,                   /**< Fundo do menu e da tela de carregamento. */
     IMG_FUNDO_PERGUNTA,               /**< Fundo da tela de perguntas (1280x720). */
     IMG_FUNDO_DIALOGO,                /**< Fundo das cenas de diálogo. */
     IMG_FUNDO_PALCO,                  /**< Imagem do palco (Minecraft) */

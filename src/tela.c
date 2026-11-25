@@ -142,7 +142,94 @@ void tela_desenhar_boss(const Jogo *jogo, Rectangle area)
     assets_desenhar_texto_centralizado(&jogo->assets, texto, area_texto, 20.0f, PALETA_TEXTO);
 }
 
-/* ---- 2. Tela de diálogo ---- */
+/* ---- 2. Menu principal e carregamento ---- */
+
+void tela_menu_atualizar(Jogo *jogo, float dt)
+{
+    (void)dt;
+    if (jogo == NULL) {
+        return;
+    }
+    if (!jogo->efeito_da_tela_tocado) {
+        assets_trocar_musica(&jogo->assets, MUSICA_PRINCIPAL);
+        jogo->efeito_da_tela_tocado = true;
+    }
+
+    if (jogo_botao_acionado(jogo, &jogo->botao_jogar)) {
+        jogo->tela_apos_carregar = TELA_DIALOGO;   /* partida nova, começando pela CENA_INTRO */
+        jogo_trocar_tela(jogo, TELA_CARREGANDO);
+    } else if (jogo_botao_acionado(jogo, &jogo->botao_sair)) {
+        jogo_trocar_tela(jogo, TELA_SAIR);
+    }
+    /* Carregar jogo e Créditos: desabilitados (ver criar_botoes_menu em jogo.c) */
+    botao_atualizar(&jogo->botao_carregar);
+    botao_atualizar(&jogo->botao_creditos);
+}
+
+void tela_menu_desenhar(const Jogo *jogo)
+{
+    Vector2 posicao_versao = { MARGEM_VERSAO_MENU,
+                               (float)ALTURA_JANELA - MARGEM_VERSAO_MENU - TAMANHO_VERSAO_MENU };
+
+    if (jogo == NULL) {
+        return;
+    }
+    assets_desenhar_fundo(&jogo->assets, IMG_FUNDO_MENU, BOSS_QUANTIDADE);
+
+    /* Logo; sem o titulo.png, o nome do jogo em texto */
+    if (assets_imagem_fallback(&jogo->assets, IMG_TITULO)) {
+        assets_desenhar_texto_centralizado(&jogo->assets, TITULO_JANELA, AREA_TITULO_MENU,
+                                           TAMANHO_TITULO_MENU, PALETA_DESTAQUE);
+    } else {
+        assets_desenhar_imagem(&jogo->assets, IMG_TITULO, AREA_TITULO_MENU, WHITE);
+    }
+
+    botao_desenhar(&jogo->botao_jogar, &jogo->assets, TAMANHO_BOTAO);
+    botao_desenhar(&jogo->botao_carregar, &jogo->assets, TAMANHO_BOTAO);
+    botao_desenhar(&jogo->botao_creditos, &jogo->assets, TAMANHO_BOTAO);
+    botao_desenhar(&jogo->botao_sair, &jogo->assets, TAMANHO_BOTAO);
+
+    assets_desenhar_texto(&jogo->assets, TEXTO_VERSAO, posicao_versao, TAMANHO_VERSAO_MENU, PALETA_TEXTO);
+}
+
+void tela_carregando_atualizar(Jogo *jogo, float dt)
+{
+    Status status;
+
+    (void)dt;
+    if (jogo == NULL || jogo->tempo_na_tela < DURACAO_CARREGANDO) {
+        return;
+    }
+    if (jogo->tela_apos_carregar == TELA_MENU) {
+        jogo_trocar_tela(jogo, TELA_MENU);
+        return;
+    }
+
+    /* Partida nova: sorteio, botões e CENA_INTRO (jogo_nova_partida troca para TELA_DIALOGO) */
+    status = jogo_nova_partida(jogo);
+    if (status != STATUS_OK) {
+        jogo_registrar_erro(jogo, status, "nova partida");
+        jogo_trocar_tela(jogo, TELA_MENU);
+    }
+}
+
+void tela_carregando_desenhar(const Jogo *jogo)
+{
+    Rectangle area_texto = { 0.0f, TOPO_TEXTO_CARREGANDO, (float)LARGURA_JANELA, 50.0f };
+    Rectangle area_barra = { ((float)LARGURA_JANELA - LARGURA_BARRA_CARREGANDO) / 2.0f, TOPO_BARRA_CARREGANDO,
+                             LARGURA_BARRA_CARREGANDO, ALTURA_BARRA_CARREGANDO };
+
+    if (jogo == NULL) {
+        return;
+    }
+    assets_desenhar_fundo(&jogo->assets, IMG_FUNDO_MENU, BOSS_QUANTIDADE);
+    DrawRectangle(0, 0, LARGURA_JANELA, ALTURA_JANELA, Fade(BLACK, 0.5f));
+    assets_desenhar_texto_centralizado(&jogo->assets, "Carregando...", area_texto,
+                                       TAMANHO_TEXTO_CARREGANDO, PALETA_TEXTO);
+    tela_desenhar_barra_vida(area_barra, jogo->tempo_na_tela / DURACAO_CARREGANDO, PALETA_ESMERALDA);
+}
+
+/* ---- 3. Tela de diálogo ---- */
 
 void tela_dialogo_atualizar(Jogo *jogo, float dt)
 {
@@ -204,7 +291,7 @@ void tela_dialogo_desenhar(const Jogo *jogo)
     dialogo_desenhar(&jogo->dialogo, &jogo->assets);
 }
 
-/* ---- 3. Tela de pergunta ---- */
+/* ---- 4. Tela de pergunta ---- */
 /* Esquerda: enunciado (e a dica comprada), alternativas A-D e ajudas. */
 /* Direita: esmeraldas (canto superior), boss e barra de vida. */
 
@@ -294,7 +381,7 @@ void tela_pergunta_desenhar(const Jogo *jogo)
     tela_desenhar_boss(jogo, AREA_BOSS);
 }
 
-/* ---- 4. Tela de revelação (depois da reação do apresentador) ---- */
+/* ---- 5. Tela de revelação (depois da reação do apresentador) ---- */
 /* Sem pergunta nem alternativas: só o boss, a vida e o resultado. */
 
 void tela_revelacao_atualizar(Jogo *jogo, float dt)
@@ -410,27 +497,23 @@ void tela_revelacao_desenhar(const Jogo *jogo)
     botao_desenhar(&jogo->botao_continuar, &jogo->assets, TAMANHO_BOTAO_AJUDA);
 }
 
-/* ---- 5. Tela de resultado (fim da partida: derrota, parada ou vitória) ---- */
+/* ---- 6. Tela de resultado (fim da partida: derrota, parada ou vitória) ---- */
 
 void tela_resultado_atualizar(Jogo *jogo, float dt)
 {
-    Status status;
-
     (void)dt;
     if (jogo == NULL) {
         return;
     }
     if (!jogo->efeito_da_tela_tocado) {
-        botao_definir_rotulo(&jogo->botao_continuar, "Reiniciar (ENTER)");
+        botao_definir_rotulo(&jogo->botao_continuar, "Menu (ENTER)");
         jogo->efeito_da_tela_tocado = true;
     }
 
-    /* Reiniciar: partida nova desde a introdução */
+    /* Volta ao menu principal passando pelo carregamento */
     if (jogo_botao_acionado(jogo, &jogo->botao_continuar)) {
-        status = jogo_nova_partida(jogo);
-        if (status != STATUS_OK) {
-            jogo_registrar_erro(jogo, status, "reiniciar");
-        }
+        jogo->tela_apos_carregar = TELA_MENU;
+        jogo_trocar_tela(jogo, TELA_CARREGANDO);
     }
 }
 

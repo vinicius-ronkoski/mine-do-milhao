@@ -4,7 +4,8 @@
  *
  * Fluxo: menu de texto (opção Jogar) -> jogo_executar -> a cada quadro jogo_atualizar
  * (escala, tela_X_atualizar -> partida.h) e jogo_desenhar (tela_X_desenhar).
- * Telas: DIALOGO -> PERGUNTA -> (reação) -> REVELACAO -> ... -> RESULTADO. ESC volta ao menu; F11 = tela cheia.
+ * Telas: MENU -> CARREGANDO -> DIALOGO -> PERGUNTA -> (reação) -> REVELACAO -> ... -> RESULTADO
+ *        -> CARREGANDO -> MENU. ESC volta ao menu de texto; F11 = tela cheia.
  * O Jogo guarda todo o estado (sem globais). Só compila com USE_RAYLIB=1.
  */
 #ifndef JOGO_H
@@ -24,12 +25,17 @@
 /** Segundos que o banner de erro fica visível. */
 #define DURACAO_BANNER_ERRO 5.0f
 
+/** Segundos da tela de carregamento (placeholder: só uma barra enchendo). */
+#define DURACAO_CARREGANDO 1.2f
+
 /** Segundos em que uma tela nova ignora cliques (o clique anterior não "vaza"). */
 #define ATRASO_ENTRADA_TELA 0.20f
 
 /** Telas do jogo. */
 typedef enum {
-    TELA_DIALOGO = 0,   /**< Falas (história, reação, entrada de boss). */
+    TELA_MENU = 0,      /**< Menu principal (tela inicial). */
+    TELA_CARREGANDO,    /**< Intermediária: vai para tela_apos_carregar. */
+    TELA_DIALOGO,       /**< Falas (história, reação, entrada de boss). */
     TELA_PERGUNTA,      /**< Pergunta, alternativas, ajudas e Parar. */
     TELA_REVELACAO,     /**< Resultado da resposta e dano no boss. */
     TELA_RESULTADO,     /**< Prêmio final. */
@@ -48,9 +54,14 @@ typedef struct {
     Botao botao_dica;                     /**< Tecla H. */
     Botao botao_eliminar;                 /**< Tecla E. */
     Botao botao_continuar;                /**< Revelação e resultado (ENTER). */
+    Botao botao_jogar;                    /**< Menu: "Novo jogo" (ENTER). */
+    Botao botao_carregar;                 /**< Menu: "Carregar jogo" (desabilitado até existir o save). */
+    Botao botao_creditos;                 /**< Menu: "Créditos" (desabilitado até existir a tela). */
+    Botao botao_sair;                     /**< Menu: "Sair do jogo" (volta ao menu de texto). */
 
     TelaJogo tela;                        /**< Tela ativa. */
     TelaJogo tela_apos_dialogo;           /**< Para onde ir quando o diálogo acabar. */
+    TelaJogo tela_apos_carregar;          /**< TELA_MENU, ou TELA_DIALOGO = começar partida nova. */
     float tempo_na_tela;                  /**< Segundos na tela atual. */
     float tempo_total;                    /**< Segundos desde o início (animação dos bosses). */
     bool efeito_da_tela_tocado;           /**< Som de entrada da tela já tocado. */
@@ -68,7 +79,7 @@ typedef struct {
 Status jogo_executar(const Banco *banco);
 
 /**
- * @brief Depois da janela: assets_carregar, botões, música e jogo_nova_partida.
+ * @brief Depois da janela: assets_carregar, botões e o menu principal.
  * @return STATUS_OK, STATUS_ASSET_FALLBACK (jogável) ou erro fatal.
  */
 Status jogo_iniciar(Jogo *jogo, const Banco *banco);

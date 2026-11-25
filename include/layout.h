@@ -91,7 +91,30 @@
 #define FONTE_TEXTO_DIALOGO        24.0f
 #define FONTE_AVISO_DIALOGO        18.0f   /**< "ESPAÇO ou clique para continuar". */
 
-/* ---- 6. Faixa de erro (rodapé, todas as telas) ---- */
+/* ---- 6. Menu principal (no estilo do menu clássico do Minecraft) ---- */
+
+/** Logo no tamanho do titulo.png (918x100), centralizado; o texto de fallback usa TAMANHO_TITULO_MENU. */
+#define AREA_TITULO_MENU          (Rectangle){ 181.0f, 110.0f, 918.0f, 100.0f }
+#define TAMANHO_TITULO_MENU        64.0f
+
+#define LARGURA_BOTAO_MENU        530.0f   /**< Botões largos; a linha de baixo divide esta largura em dois. */
+#define ALTURA_BOTAO_MENU          50.0f
+#define TOPO_BOTOES_MENU          308.0f   /**< y de "Novo jogo"; "Carregar jogo" vem PASSO_BOTOES_MENU abaixo. */
+#define PASSO_BOTOES_MENU          64.0f   /**< Distância entre as linhas (a 3ª linha fica vazia). */
+#define TOPO_LINHA_INFERIOR_MENU  531.0f   /**< y de "Créditos" e "Sair do jogo". */
+
+#define MARGEM_VERSAO_MENU          8.0f   /**< TEXTO_VERSAO no canto inferior esquerdo. */
+#define TAMANHO_VERSAO_MENU        22.0f
+
+/* ---- 7. Carregamento ---- */
+
+#define TOPO_TEXTO_CARREGANDO     300.0f
+#define TAMANHO_TEXTO_CARREGANDO   34.0f
+#define TOPO_BARRA_CARREGANDO     370.0f
+#define LARGURA_BARRA_CARREGANDO  400.0f
+#define ALTURA_BARRA_CARREGANDO    20.0f
+
+/* ---- 8. Faixa de erro (rodapé, todas as telas) ---- */
 
 #define ALTURA_BANNER_ERRO         34.0f
 

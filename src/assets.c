@@ -71,8 +71,10 @@ static const char *nome_arquivo_imagem(ImagemId id)
         "botao",                    /* IMG_BOTAO                  */
         "caixa_dialogo",            /* IMG_CAIXA_DIALOGO          */
         "esmeralda",                /* IMG_ESMERALDA              */
+        "titulo",                   /* IMG_TITULO                 */
 
         /* Fundos */
+        "fundo_menu",               /* IMG_FUNDO_MENU             */
         "fundo_pergunta",           /* IMG_FUNDO_PERGUNTA         */
         "fundo_dialogo",            /* IMG_FUNDO_DIALOGO          */
         "palco",                    /* IMG_FUNDO_PALCO            */

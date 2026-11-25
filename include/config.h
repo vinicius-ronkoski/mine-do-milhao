@@ -82,6 +82,7 @@
 #define ALTURA_JANELA    720
 #define FPS_ALVO         60
 #define TITULO_JANELA    "Mine do Milhão"
+#define TEXTO_VERSAO     "Mine do Milhão 0.1b"   /**< Canto inferior esquerdo do menu. */
 /**@}*/
 
 /** @name Áudio (0.0 = mudo, 1.0 = volume original do arquivo) */

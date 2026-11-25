@@ -11,6 +11,22 @@
 #include "raylib.h"
 #include "jogo.h"
 
+/* ---------- Menu principal ---------- */
+
+/** @brief Toca a música principal ao entrar; Novo jogo -> carregamento e jogo_nova_partida; Sair -> TELA_SAIR. */
+void tela_menu_atualizar(Jogo *jogo, float dt);
+
+/** @brief Fundo (IMG_FUNDO_MENU), logo (IMG_TITULO ou texto), os 4 botões e TEXTO_VERSAO. */
+void tela_menu_desenhar(const Jogo *jogo);
+
+/* ---------- Carregamento (placeholder) ---------- */
+
+/** @brief Após DURACAO_CARREGANDO vai para tela_apos_carregar (TELA_DIALOGO = jogo_nova_partida). */
+void tela_carregando_atualizar(Jogo *jogo, float dt);
+
+/** @brief Fundo do menu escurecido, "Carregando..." e uma barra enchendo. */
+void tela_carregando_desenhar(const Jogo *jogo);
+
 /* ---------- Tela de diálogo ---------- */
 
 /** @brief Avança o diálogo, toca som/música de cada fala nova e, no fim, vai para tela_apos_dialogo. */
@@ -46,7 +62,7 @@ void tela_revelacao_desenhar(const Jogo *jogo);
 
 /* ---------- Tela de resultado ---------- */
 
-/** @brief Reiniciar -> jogo_nova_partida; ESC volta ao menu de texto. */
+/** @brief "Menu" -> carregamento -> menu principal. */
 void tela_resultado_atualizar(Jogo *jogo, float dt);
 
 /** @brief Título pelo estado final, prêmio (partida_premio_final) e de onde ele veio. */

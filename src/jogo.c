@@ -42,6 +42,39 @@ static Rectangle area_da_ajuda(int indice)
     return area;
 }
 
+/**
+ * @brief Botões do menu principal, como no menu do Minecraft: duas linhas largas centralizadas,
+ *        a 3ª linha vazia e, embaixo, Créditos e Sair lado a lado na mesma largura.
+ */
+static Status criar_botoes_menu(Jogo *jogo)
+{
+    float esquerda = ((float)LARGURA_JANELA - LARGURA_BOTAO_MENU) / 2.0f;
+    float largura_metade = (LARGURA_BOTAO_MENU - ESPACO_ENTRE_BOTOES) / 2.0f;
+    Rectangle area_jogar = { esquerda, TOPO_BOTOES_MENU, LARGURA_BOTAO_MENU, ALTURA_BOTAO_MENU };
+    Rectangle area_carregar = { esquerda, TOPO_BOTOES_MENU + PASSO_BOTOES_MENU,
+                                LARGURA_BOTAO_MENU, ALTURA_BOTAO_MENU };
+    Rectangle area_creditos = { esquerda, TOPO_LINHA_INFERIOR_MENU, largura_metade, ALTURA_BOTAO_MENU };
+    Rectangle area_sair = { esquerda + largura_metade + ESPACO_ENTRE_BOTOES, TOPO_LINHA_INFERIOR_MENU,
+                            largura_metade, ALTURA_BOTAO_MENU };
+    Status status;
+
+    status = botao_criar(&jogo->botao_jogar, area_jogar, "Novo jogo", KEY_ENTER);
+    if (status == STATUS_OK) {
+        status = botao_criar(&jogo->botao_carregar, area_carregar, "Carregar jogo", KEY_NULL);
+    }
+    if (status == STATUS_OK) {
+        status = botao_criar(&jogo->botao_creditos, area_creditos, "Créditos", KEY_NULL);
+    }
+    if (status == STATUS_OK) {
+        status = botao_criar(&jogo->botao_sair, area_sair, "Sair do jogo", KEY_NULL);
+    }
+
+    /* Ainda sem save e sem tela de créditos: aparecem apagados (habilite quando existirem) */
+    jogo->botao_carregar.habilitado = false;
+    jogo->botao_creditos.habilitado = false;
+    return status;
+}
+
 /** @brief Cria todos os botões nas posições do layout. */
 static Status criar_botoes(Jogo *jogo)
 {
@@ -69,6 +102,9 @@ static Status criar_botoes(Jogo *jogo)
 
         status = botao_criar(&jogo->botao_continuar, area_continuar, "Continuar (ENTER)", KEY_ENTER);
     }
+    if (status == STATUS_OK) {
+        status = criar_botoes_menu(jogo);
+    }
     return status;
 }
 
@@ -84,6 +120,10 @@ static void para_cada_botao(Jogo *jogo, void (*funcao)(Botao *botao))
     funcao(&jogo->botao_dica);
     funcao(&jogo->botao_eliminar);
     funcao(&jogo->botao_continuar);
+    funcao(&jogo->botao_jogar);
+    funcao(&jogo->botao_carregar);
+    funcao(&jogo->botao_creditos);
+    funcao(&jogo->botao_sair);
 }
 
 /** @brief Solta um botão (estado normal): usado ao trocar de tela. */
@@ -103,7 +143,8 @@ static bool algum_botao_sob_mouse(const Jogo *jogo)
         }
     }
     return botao_sob_mouse(&jogo->botao_parar) || botao_sob_mouse(&jogo->botao_dica)
-        || botao_sob_mouse(&jogo->botao_eliminar) || botao_sob_mouse(&jogo->botao_continuar);
+        || botao_sob_mouse(&jogo->botao_eliminar) || botao_sob_mouse(&jogo->botao_continuar)
+        || botao_sob_mouse(&jogo->botao_jogar) || botao_sob_mouse(&jogo->botao_sair);
 }
 
 /** @brief Define o cursor UMA vez por quadro, e só chama a raylib quando ele muda. */
@@ -194,10 +235,8 @@ Status jogo_iniciar(Jogo *jogo, const Banco *banco)
         return status;
     }
 
-    status = jogo_nova_partida(jogo);
-    if (status != STATUS_OK) {
-        return status;
-    }
+    /* O jogo abre no menu; a partida só é sorteada em "Novo jogo" (tela de carregamento) */
+    jogo_trocar_tela(jogo, TELA_MENU);
     return status_assets;
 }
 
@@ -270,6 +309,8 @@ void jogo_atualizar(Jogo *jogo, float dt)
     }
 
     switch (jogo->tela) {
+    case TELA_MENU:       tela_menu_atualizar(jogo, dt);       break;
+    case TELA_CARREGANDO: tela_carregando_atualizar(jogo, dt); break;
     case TELA_DIALOGO:   tela_dialogo_atualizar(jogo, dt);   break;
     case TELA_PERGUNTA:  tela_pergunta_atualizar(jogo, dt);  break;
     case TELA_REVELACAO: tela_revelacao_atualizar(jogo, dt); break;
@@ -289,6 +330,8 @@ void jogo_desenhar(const Jogo *jogo)
     /* Fundo só na área do jogo (1280x720 virtuais); as faixas pretas fora dela vêm de escala.c */
     DrawRectangle(0, 0, LARGURA_JANELA, ALTURA_JANELA, PALETA_FUNDO);
     switch (jogo->tela) {
+    case TELA_MENU:       tela_menu_desenhar(jogo);       break;
+    case TELA_CARREGANDO: tela_carregando_desenhar(jogo); break;
     case TELA_DIALOGO:   tela_dialogo_desenhar(jogo);   break;
     case TELA_PERGUNTA:  tela_pergunta_desenhar(jogo);  break;
     case TELA_REVELACAO: tela_revelacao_desenhar(jogo); break;
