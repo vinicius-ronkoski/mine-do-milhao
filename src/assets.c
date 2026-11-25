@@ -243,8 +243,10 @@ static bool achar_arquivo(const char *base, const char *const extensoes[], size_
     size_t indice;
 
     for (indice = 0; indice < quantidade; indice++) {
-        snprintf(caminho, capacidade, "%s%s", base, extensoes[indice]);
-        if (FileExists(caminho)) {
+        int escritos = snprintf(caminho, capacidade, "%s%s", base, extensoes[indice]);
+
+        /* Caminho cortado (maior que o buffer) apontaria para outro arquivo: pula */
+        if (escritos >= 0 && (size_t)escritos < capacidade && FileExists(caminho)) {
             return true;
         }
     }

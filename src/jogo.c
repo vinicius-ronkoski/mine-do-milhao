@@ -58,20 +58,20 @@ static Status criar_botoes_menu(Jogo *jogo)
                             largura_metade, ALTURA_BOTAO_MENU };
     Status status;
 
-    status = botao_criar(&jogo->botao_jogar, area_jogar, "Novo jogo", KEY_ENTER);
+    status = botao_criar(&jogo->botoes[BOTAO_JOGAR], area_jogar, "Novo jogo", KEY_ENTER);
     if (status == STATUS_OK) {
-        status = botao_criar(&jogo->botao_carregar, area_carregar, "Carregar jogo", KEY_NULL);
+        status = botao_criar(&jogo->botoes[BOTAO_CARREGAR], area_carregar, "Carregar jogo", KEY_NULL);
     }
     if (status == STATUS_OK) {
-        status = botao_criar(&jogo->botao_creditos, area_creditos, "Créditos", KEY_NULL);
+        status = botao_criar(&jogo->botoes[BOTAO_CREDITOS], area_creditos, "Créditos", KEY_NULL);
     }
     if (status == STATUS_OK) {
-        status = botao_criar(&jogo->botao_sair, area_sair, "Sair do jogo", KEY_NULL);
+        status = botao_criar(&jogo->botoes[BOTAO_SAIR], area_sair, "Sair do jogo", KEY_NULL);
     }
 
     /* Ainda sem save e sem tela de créditos: aparecem apagados (habilite quando existirem) */
-    jogo->botao_carregar.habilitado = false;
-    jogo->botao_creditos.habilitado = false;
+    jogo->botoes[BOTAO_CARREGAR].habilitado = false;
+    jogo->botoes[BOTAO_CREDITOS].habilitado = false;
     return status;
 }
 
@@ -83,24 +83,24 @@ static Status criar_botoes(Jogo *jogo)
     int posicao;
 
     for (posicao = 0; posicao < NUM_ALTERNATIVAS && status == STATUS_OK; posicao++) {
-        status = botao_criar(&jogo->alternativas[posicao], area_da_alternativa(posicao), "",
+        status = botao_criar(&jogo->botoes[BOTAO_ALTERNATIVA_A + posicao], area_da_alternativa(posicao), "",
                              teclas_alternativas[posicao]);
     }
     if (status == STATUS_OK) {
-        status = botao_criar(&jogo->botao_parar, area_da_ajuda(0), "Parar (P)", KEY_P);
+        status = botao_criar(&jogo->botoes[BOTAO_PARAR], area_da_ajuda(0), "Parar (P)", KEY_P);
     }
     if (status == STATUS_OK) {
-        status = botao_criar(&jogo->botao_dica, area_da_ajuda(1), "Dica (H)", KEY_H);
+        status = botao_criar(&jogo->botoes[BOTAO_DICA], area_da_ajuda(1), "Dica (H)", KEY_H);
     }
     if (status == STATUS_OK) {
-        status = botao_criar(&jogo->botao_eliminar, area_da_ajuda(2), "Eliminar 2 (E)", KEY_E);
+        status = botao_criar(&jogo->botoes[BOTAO_ELIMINAR], area_da_ajuda(2), "Eliminar 2 (E)", KEY_E);
     }
     if (status == STATUS_OK) {
         /* Continuar fica centralizado na janela (revelação e resultado não mostram as ajudas) */
         Rectangle area_continuar = { ((float)LARGURA_JANELA - LARGURA_CONTINUAR) / 2.0f, TOPO_AJUDAS,
                                      LARGURA_CONTINUAR, ALTURA_AJUDA };
 
-        status = botao_criar(&jogo->botao_continuar, area_continuar, "Continuar (ENTER)", KEY_ENTER);
+        status = botao_criar(&jogo->botoes[BOTAO_CONTINUAR], area_continuar, "Continuar (ENTER)", KEY_ENTER);
     }
     if (status == STATUS_OK) {
         status = criar_botoes_menu(jogo);
@@ -108,43 +108,27 @@ static Status criar_botoes(Jogo *jogo)
     return status;
 }
 
-/** @brief Aplica `funcao` a todos os botões do jogo (evita repetir a lista de botões). */
-static void para_cada_botao(Jogo *jogo, void (*funcao)(Botao *botao))
+/** @brief Solta todos os botões (estado normal): usado ao trocar de tela. */
+static void soltar_botoes(Jogo *jogo)
 {
-    int posicao;
+    int id;
 
-    for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
-        funcao(&jogo->alternativas[posicao]);
+    for (id = 0; id < BOTAO_QUANTIDADE; id++) {
+        jogo->botoes[id].estado = BOTAO_NORMAL;
     }
-    funcao(&jogo->botao_parar);
-    funcao(&jogo->botao_dica);
-    funcao(&jogo->botao_eliminar);
-    funcao(&jogo->botao_continuar);
-    funcao(&jogo->botao_jogar);
-    funcao(&jogo->botao_carregar);
-    funcao(&jogo->botao_creditos);
-    funcao(&jogo->botao_sair);
 }
 
-/** @brief Solta um botão (estado normal): usado ao trocar de tela. */
-static void soltar_botao(Botao *botao)
-{
-    botao->estado = BOTAO_NORMAL;
-}
-
-/** @brief true se algum botão está com o mouse em cima. */
+/** @brief true se o mouse está sobre algum botão (só os da tela ativa são atualizados). */
 static bool algum_botao_sob_mouse(const Jogo *jogo)
 {
-    int posicao;
+    int id;
 
-    for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
-        if (botao_sob_mouse(&jogo->alternativas[posicao])) {
+    for (id = 0; id < BOTAO_QUANTIDADE; id++) {
+        if (botao_sob_mouse(&jogo->botoes[id])) {
             return true;
         }
     }
-    return botao_sob_mouse(&jogo->botao_parar) || botao_sob_mouse(&jogo->botao_dica)
-        || botao_sob_mouse(&jogo->botao_eliminar) || botao_sob_mouse(&jogo->botao_continuar)
-        || botao_sob_mouse(&jogo->botao_jogar) || botao_sob_mouse(&jogo->botao_sair);
+    return false;
 }
 
 /** @brief Define o cursor UMA vez por quadro, e só chama a raylib quando ele muda. */
@@ -354,7 +338,7 @@ void jogo_trocar_tela(Jogo *jogo, TelaJogo nova_tela)
     jogo->tela = nova_tela;
     jogo->tempo_na_tela = 0.0f;
     jogo->efeito_da_tela_tocado = false;
-    para_cada_botao(jogo, soltar_botao);
+    soltar_botoes(jogo);
 }
 
 Status jogo_tocar_cena(Jogo *jogo, CenaId cena, TelaJogo depois)
@@ -449,7 +433,7 @@ Status jogo_preparar_botoes_pergunta(Jogo *jogo)
     }
 
     for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
-        Botao *botao = &jogo->alternativas[posicao];
+        Botao *botao = &jogo->botoes[BOTAO_ALTERNATIVA_A + posicao];
 
         snprintf(rotulo, sizeof(rotulo), "%c) %s", 'A' + posicao,
                  sorteio_texto_alternativa(pergunta, posicao));
@@ -462,24 +446,24 @@ Status jogo_preparar_botoes_pergunta(Jogo *jogo)
         botao->destaque = DESTAQUE_NENHUM;
     }
 
-    jogo->botao_parar.habilitado = true;
+    jogo->botoes[BOTAO_PARAR].habilitado = true;
 
     /* Dica paga: o rótulo mostra o preço da rodada; desabilitada sem saldo ou já comprada */
     snprintf(rotulo, sizeof(rotulo), "Dica (H)  %d", partida_custo_dica(&jogo->partida));
-    status = botao_definir_rotulo(&jogo->botao_dica, rotulo);
+    status = botao_definir_rotulo(&jogo->botoes[BOTAO_DICA], rotulo);
     if (status != STATUS_OK) {
         return status;
     }
-    jogo->botao_dica.icone = IMG_ESMERALDA;  /* o preço aparece como número + ícone */
-    jogo->botao_dica.habilitado = partida_pode_comprar_dica(&jogo->partida);
+    jogo->botoes[BOTAO_DICA].icone = IMG_ESMERALDA;  /* o preço aparece como número + ícone */
+    jogo->botoes[BOTAO_DICA].habilitado = partida_pode_comprar_dica(&jogo->partida);
     /* Eliminar duas também é pago: mesmo esquema da dica */
     snprintf(rotulo, sizeof(rotulo), "Eliminar (E)  %d", partida_custo_eliminar(&jogo->partida));
-    status = botao_definir_rotulo(&jogo->botao_eliminar, rotulo);
+    status = botao_definir_rotulo(&jogo->botoes[BOTAO_ELIMINAR], rotulo);
     if (status != STATUS_OK) {
         return status;
     }
-    jogo->botao_eliminar.icone = IMG_ESMERALDA;
-    jogo->botao_eliminar.habilitado = partida_pode_eliminar(&jogo->partida);
+    jogo->botoes[BOTAO_ELIMINAR].icone = IMG_ESMERALDA;
+    jogo->botoes[BOTAO_ELIMINAR].habilitado = partida_pode_eliminar(&jogo->partida);
     return STATUS_OK;
 }
 

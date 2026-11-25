@@ -42,6 +42,29 @@ typedef enum {
     TELA_SAIR           /**< Encerra o laço (volta ao menu de texto). */
 } TelaJogo;
 
+/**
+ * Botões do jogo, guardados em Jogo.botoes[] (botão novo: id aqui, antes de BOTAO_QUANTIDADE,
+ * e botao_criar em criar_botoes). As alternativas ficam juntas: BOTAO_ALTERNATIVA_A + posição.
+ */
+typedef enum {
+    BOTAO_ALTERNATIVA_A = 0,  /**< Alternativas A-D (teclas A-D). */
+    BOTAO_ALTERNATIVA_B,
+    BOTAO_ALTERNATIVA_C,
+    BOTAO_ALTERNATIVA_D,
+    BOTAO_PARAR,              /**< Tecla P. */
+    BOTAO_DICA,               /**< Tecla H. */
+    BOTAO_ELIMINAR,           /**< Tecla E. */
+    BOTAO_CONTINUAR,          /**< Revelação e resultado (ENTER). */
+    BOTAO_JOGAR,              /**< Menu: "Novo jogo" (ENTER). */
+    BOTAO_CARREGAR,           /**< Menu: "Carregar jogo" (desabilitado até existir o save). */
+    BOTAO_CREDITOS,           /**< Menu: "Créditos" (desabilitado até existir a tela). */
+    BOTAO_SAIR,               /**< Menu: "Sair do jogo" (volta ao menu de texto). */
+    BOTAO_QUANTIDADE          /**< Quantidade de botões (não é um botão). */
+} BotaoId;
+
+/* Erro de compilação se as alternativas não couberem entre BOTAO_ALTERNATIVA_A e BOTAO_PARAR. */
+typedef char jogo_verifica_alternativas[(BOTAO_PARAR - BOTAO_ALTERNATIVA_A == NUM_ALTERNATIVAS) ? 1 : -1];
+
 /** Estado completo da parte gráfica (vive em jogo_executar). */
 typedef struct {
     const Banco *banco;                   /**< Só leitura durante o jogo. */
@@ -49,15 +72,7 @@ typedef struct {
     Partida partida;                      /**< Regras e estado (partida.h). */
     Dialogo dialogo;                      /**< Falas em reprodução. */
 
-    Botao alternativas[NUM_ALTERNATIVAS]; /**< A-D (teclas A-D). */
-    Botao botao_parar;                    /**< Tecla P. */
-    Botao botao_dica;                     /**< Tecla H. */
-    Botao botao_eliminar;                 /**< Tecla E. */
-    Botao botao_continuar;                /**< Revelação e resultado (ENTER). */
-    Botao botao_jogar;                    /**< Menu: "Novo jogo" (ENTER). */
-    Botao botao_carregar;                 /**< Menu: "Carregar jogo" (desabilitado até existir o save). */
-    Botao botao_creditos;                 /**< Menu: "Créditos" (desabilitado até existir a tela). */
-    Botao botao_sair;                     /**< Menu: "Sair do jogo" (volta ao menu de texto). */
+    Botao botoes[BOTAO_QUANTIDADE];       /**< Todos os botões, indexados por BotaoId. */
 
     TelaJogo tela;                        /**< Tela ativa. */
     TelaJogo tela_apos_dialogo;           /**< Para onde ir quando o diálogo acabar. */

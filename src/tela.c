@@ -22,6 +22,16 @@
 
 /* ---- 1. Desenhos compartilhados ---- */
 
+/** @brief Desenha os botões de `primeiro` a `ultimo` (ids consecutivos em BotaoId). */
+static void desenhar_botoes(const Jogo *jogo, BotaoId primeiro, BotaoId ultimo, float tamanho_fonte)
+{
+    int id;
+
+    for (id = (int)primeiro; id <= (int)ultimo; id++) {
+        botao_desenhar(&jogo->botoes[id], &jogo->assets, tamanho_fonte);
+    }
+}
+
 BossId tela_boss_da_fase(const Jogo *jogo)
 {
     const Boss *boss;
@@ -155,15 +165,15 @@ void tela_menu_atualizar(Jogo *jogo, float dt)
         jogo->efeito_da_tela_tocado = true;
     }
 
-    if (jogo_botao_acionado(jogo, &jogo->botao_jogar)) {
+    if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_JOGAR])) {
         jogo->tela_apos_carregar = TELA_DIALOGO;   /* partida nova, começando pela CENA_INTRO */
         jogo_trocar_tela(jogo, TELA_CARREGANDO);
-    } else if (jogo_botao_acionado(jogo, &jogo->botao_sair)) {
+    } else if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_SAIR])) {
         jogo_trocar_tela(jogo, TELA_SAIR);
     }
     /* Carregar jogo e Créditos: desabilitados (ver criar_botoes_menu em jogo.c) */
-    botao_atualizar(&jogo->botao_carregar);
-    botao_atualizar(&jogo->botao_creditos);
+    botao_atualizar(&jogo->botoes[BOTAO_CARREGAR]);
+    botao_atualizar(&jogo->botoes[BOTAO_CREDITOS]);
 }
 
 void tela_menu_desenhar(const Jogo *jogo)
@@ -184,10 +194,7 @@ void tela_menu_desenhar(const Jogo *jogo)
         assets_desenhar_imagem(&jogo->assets, IMG_TITULO, AREA_TITULO_MENU, WHITE);
     }
 
-    botao_desenhar(&jogo->botao_jogar, &jogo->assets, TAMANHO_BOTAO);
-    botao_desenhar(&jogo->botao_carregar, &jogo->assets, TAMANHO_BOTAO);
-    botao_desenhar(&jogo->botao_creditos, &jogo->assets, TAMANHO_BOTAO);
-    botao_desenhar(&jogo->botao_sair, &jogo->assets, TAMANHO_BOTAO);
+    desenhar_botoes(jogo, BOTAO_JOGAR, BOTAO_SAIR, TAMANHO_BOTAO);
 
     assets_desenhar_texto(&jogo->assets, TEXTO_VERSAO, posicao_versao, TAMANHO_VERSAO_MENU, PALETA_TEXTO);
 }
@@ -306,7 +313,7 @@ void tela_pergunta_atualizar(Jogo *jogo, float dt)
     }
 
     for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
-        if (jogo_botao_acionado(jogo, &jogo->alternativas[posicao])) {
+        if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_ALTERNATIVA_A + posicao])) {
             status = partida_responder(&jogo->partida, posicao);
             if (status == STATUS_OK) {
                 /* Respondeu: som de acerto/erro e a reação do apresentador; a revelação vem depois */
@@ -316,15 +323,15 @@ void tela_pergunta_atualizar(Jogo *jogo, float dt)
             }
         }
     }
-    if (jogo_botao_acionado(jogo, &jogo->botao_dica)) {
+    if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_DICA])) {
         status = partida_comprar_dica(&jogo->partida);
         jogo_preparar_botoes_pergunta(jogo);
     }
-    if (jogo_botao_acionado(jogo, &jogo->botao_eliminar)) {
+    if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_ELIMINAR])) {
         status = partida_eliminar_duas(&jogo->partida);
         jogo_preparar_botoes_pergunta(jogo);
     }
-    if (jogo_botao_acionado(jogo, &jogo->botao_parar)) {
+    if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_PARAR])) {
         status = partida_parar(&jogo->partida);
         if (status == STATUS_OK) {
             jogo_tocar_cena(jogo, CENA_PARADA, TELA_RESULTADO);
@@ -342,7 +349,6 @@ void tela_pergunta_desenhar(const Jogo *jogo)
     Rectangle enunciado = AREA_ENUNCIADO;
     Rectangle texto_enunciado = { enunciado.x + 20.0f, enunciado.y + 16.0f,
                                   enunciado.width - 40.0f, enunciado.height - 32.0f };
-    int posicao;
 
     if (jogo == NULL) {
         return;
@@ -369,12 +375,8 @@ void tela_pergunta_desenhar(const Jogo *jogo)
         assets_desenhar_texto_ajustado(&jogo->assets, pergunta->origem->enunciado, texto_enunciado,
                                        TAMANHO_ENUNCIADO, 18.0f, PALETA_TEXTO);
     }
-    for (posicao = 0; posicao < NUM_ALTERNATIVAS; posicao++) {
-        botao_desenhar(&jogo->alternativas[posicao], &jogo->assets, TAMANHO_BOTAO);
-    }
-    botao_desenhar(&jogo->botao_parar, &jogo->assets, TAMANHO_BOTAO_AJUDA);
-    botao_desenhar(&jogo->botao_dica, &jogo->assets, TAMANHO_BOTAO_AJUDA);
-    botao_desenhar(&jogo->botao_eliminar, &jogo->assets, TAMANHO_BOTAO_AJUDA);
+    desenhar_botoes(jogo, BOTAO_ALTERNATIVA_A, BOTAO_ALTERNATIVA_D, TAMANHO_BOTAO);
+    desenhar_botoes(jogo, BOTAO_PARAR, BOTAO_ELIMINAR, TAMANHO_BOTAO_AJUDA);
 
     /* Coluna da direita */
     tela_desenhar_hud(jogo);
@@ -399,11 +401,11 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
         if (jogo->partida.ultima_acertou) {
             assets_tocar_som(&jogo->assets, SOM_DANO_BOSS);
         }
-        botao_definir_rotulo(&jogo->botao_continuar, "Continuar (ENTER)");
+        botao_definir_rotulo(&jogo->botoes[BOTAO_CONTINUAR], "Continuar (ENTER)");
         jogo->efeito_da_tela_tocado = true;
     }
 
-    if (!jogo_botao_acionado(jogo, &jogo->botao_continuar)) {
+    if (!jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_CONTINUAR])) {
         return;
     }
     status = partida_confirmar_revelacao(&jogo->partida);
@@ -494,7 +496,7 @@ void tela_revelacao_desenhar(const Jogo *jogo)
         assets_desenhar_texto_centralizado(&jogo->assets, "Errou! Nenhum dano.", linha1, 40.0f, PALETA_ERRO);
     }
 
-    botao_desenhar(&jogo->botao_continuar, &jogo->assets, TAMANHO_BOTAO_AJUDA);
+    botao_desenhar(&jogo->botoes[BOTAO_CONTINUAR], &jogo->assets, TAMANHO_BOTAO_AJUDA);
 }
 
 /* ---- 6. Tela de resultado (fim da partida: derrota, parada ou vitória) ---- */
@@ -506,12 +508,12 @@ void tela_resultado_atualizar(Jogo *jogo, float dt)
         return;
     }
     if (!jogo->efeito_da_tela_tocado) {
-        botao_definir_rotulo(&jogo->botao_continuar, "Menu (ENTER)");
+        botao_definir_rotulo(&jogo->botoes[BOTAO_CONTINUAR], "Menu (ENTER)");
         jogo->efeito_da_tela_tocado = true;
     }
 
     /* Volta ao menu principal passando pelo carregamento */
-    if (jogo_botao_acionado(jogo, &jogo->botao_continuar)) {
+    if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_CONTINUAR])) {
         jogo->tela_apos_carregar = TELA_MENU;
         jogo_trocar_tela(jogo, TELA_CARREGANDO);
     }
@@ -593,7 +595,7 @@ void tela_resultado_desenhar(const Jogo *jogo)
         assets_desenhar_texto_centralizado(&jogo->assets, texto, linha_detalhe2, 22.0f, PALETA_TEXTO_SUAVE);
     }
 
-    botao_desenhar(&jogo->botao_continuar, &jogo->assets, TAMANHO_BOTAO_AJUDA);
+    botao_desenhar(&jogo->botoes[BOTAO_CONTINUAR], &jogo->assets, TAMANHO_BOTAO_AJUDA);
 }
 
 #endif /* USE_RAYLIB */
