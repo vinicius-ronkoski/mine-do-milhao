@@ -1,26 +1,8 @@
 /**
  * @file tela.h
- * @brief Entrada (atualizar) e desenho (desenhar) de cada tela + desenhos compartilhados.
+ * @brief Cada tela do jogo: tela_X_atualizar lê botões e chama partida.h; tela_X_desenhar só desenha.
  *
- * Padrão de toda tela:
- *   tela_X_atualizar(Jogo*, dt) -> lê botões/teclas e chama funções de partida.h
- *   tela_X_desenhar(const Jogo*) -> SÓ desenha (nunca altera a partida)
- *
- * Ferramentas disponíveis para as telas:
- *   - texto:  assets_desenhar_texto / _centralizado / _quebrado / _ajustado (assets.h)
- *   - imagem: assets_desenhar_fundo (fundo da fase), assets_desenhar_imagem, assets_desenhar_painel,
- *             assets_desenhar_boss (assets.h)
- *   - fase:   tela_boss_da_fase(jogo) diz qual boss está em jogo (para fundo, cores, sprite)
- *   - som:    assets_tocar_som (assets.h); o clique dos botões já é tocado por jogo_botao_acionado
- *   - botões: jogo_botao_acionado (jogo.h) para ler, botao_desenhar (botao.h) para desenhar;
- *             estão em jogo->alternativas, jogo->botao_parar, botao_dica, botao_eliminar, botao_continuar
- *   - regras: partida_responder, partida_parar, partida_comprar_dica, partida_eliminar_duas,
- *             partida_confirmar_revelacao, partida_premio_final... (partida.h)
- *   - fluxo:  jogo_trocar_tela, jogo_tocar_cena, jogo_anexar_cena, jogo_preparar_botoes_pergunta
- *
- * Posições e tamanhos de todas as telas (e dos botões criados em jogo.c): include/layout.h,
- * que também tem um mapa da tela de pergunta.
- *
+ * Chamadas pelo switch de jogo_atualizar/jogo_desenhar (jogo.c). Posições em layout.h.
  * Só compila com USE_RAYLIB=1.
  */
 #ifndef TELA_H
@@ -31,10 +13,10 @@
 
 /* ---------- Tela de diálogo ---------- */
 
-/** @brief Avança o diálogo com ESPAÇO/ENTER/clique; ao terminar vai para jogo->tela_apos_dialogo. */
+/** @brief Avança o diálogo, toca som/música de cada fala nova e, no fim, vai para tela_apos_dialogo. */
 void tela_dialogo_atualizar(Jogo *jogo, float dt);
 
-/** @brief Fundo IMG_FUNDO_DIALOGO, boss da rodada ao centro e a caixa de diálogo. */
+/** @brief Cenário da fala (ou fundo da fase com o boss) e a caixa de diálogo. */
 void tela_dialogo_desenhar(const Jogo *jogo);
 
 /* ---------- Tela de pergunta ---------- */
@@ -47,63 +29,44 @@ void tela_dialogo_desenhar(const Jogo *jogo);
  */
 void tela_pergunta_atualizar(Jogo *jogo, float dt);
 
-/**
- * @brief Fundo da fase; à esquerda o enunciado (com a dica comprada numa faixa embaixo dele),
- *        as alternativas e as ajudas (preço = número + ícone da esmeralda); à direita o HUD
- *        e o boss com nome e barra de vida.
- */
+/** @brief Esquerda: enunciado (e dica), alternativas e ajudas; direita: HUD e boss. */
 void tela_pergunta_desenhar(const Jogo *jogo);
 
 /* ---------- Tela de revelação ---------- */
 
 /**
- * @brief Vem depois da reação do apresentador (jogo_tocar_reacao). Ao entrar, toca SOM_DANO_BOSS
- *        ("dano") se acertou. Continuar -> partida_confirmar_revelacao() e então:
- *   - errou (ESTADO_FIM_ERRO) -> CENA_DERROTA (agradecimento) e TELA_RESULTADO;
- *   - venceu (ESTADO_FIM_VITORIA) -> CENA_HISTORIA_FIM e TELA_RESULTADO;
- *   - boss caiu (boss_derrotado_agora) -> CENA_HISTORIA_2..5 + entrada do próximo boss e TELA_PERGUNTA;
- *   - senão -> TELA_PERGUNTA.
+ * @brief Som de dano ao entrar; Continuar -> partida_confirmar_revelacao e decide o destino:
+ *        erro -> CENA_DERROTA e resultado; vitória -> CENA_HISTORIA_FIM e resultado;
+ *        boss caiu -> CENA_HISTORIA_2..5 + próximo boss; senão, próxima pergunta.
  */
 void tela_revelacao_atualizar(Jogo *jogo, float dt);
 
-/** @brief Sem pergunta nem alternativas: boss no centro (a barra desce e ele pisca se tomou dano),
- *         "Acertou! -1 de vida" / "<boss> derrotado!" / "Errou! Nenhum dano." e o botão Continuar. */
+/** @brief Boss no centro (animação de dano), mensagem do resultado, saldo e Continuar. */
 void tela_revelacao_desenhar(const Jogo *jogo);
 
 /* ---------- Tela de resultado ---------- */
 
-/** @brief Botão "Reiniciar (ENTER)" -> jogo_nova_partida() (volta à introdução); ESC volta ao menu. */
+/** @brief Reiniciar -> jogo_nova_partida; ESC volta ao menu de texto. */
 void tela_resultado_atualizar(Jogo *jogo, float dt);
 
-/** @brief Título por estado (Fim de jogo / Você parou / Vitória!), retrato e agradecimento do apresentador,
- *         prêmio final (partida_premio_final) e de onde ele veio (marco de segurança, dicas descontadas). */
+/** @brief Título pelo estado final, prêmio (partida_premio_final) e de onde ele veio. */
 void tela_resultado_desenhar(const Jogo *jogo);
 
 /* ---------- Desenhos compartilhados ---------- */
 
-/**
- * @brief Boss da fase atual (o da rodada em jogo), para escolher fundo, cores e sprite.
- *
- * Uso típico, que troca o cenário sozinho a cada boss:
- *   assets_desenhar_fundo(&jogo->assets, IMG_FUNDO_PERGUNTA, tela_boss_da_fase(jogo));
- *
- * @return BossId da rodada; BOSS_QUANTIDADE se não há partida válida (o fundo usa então o padrão).
- */
+/** @brief Boss da rodada atual (fundo da fase em assets_desenhar_fundo); BOSS_QUANTIDADE se não há. */
 BossId tela_boss_da_fase(const Jogo *jogo);
 
-/** @brief Saldo de esmeraldas (canto superior direito), "Pergunta N/15" e o nome do nível. */
+/** @brief Saldo de esmeraldas, "Pergunta N/15" e nível. */
 void tela_desenhar_hud(const Jogo *jogo);
 
-/**
- * @brief Boss da rodada dentro de `area`: nome em cima, sprite quadrado (lado = largura
- *        da área), barra de vida e "Vida x/y" embaixo. A altura usada é largura + 40 + 15 + 24 + 30.
- */
+/** @brief Nome, sprite (quadrado da largura de `area`), barra e "Vida x/y" do boss da rodada. */
 void tela_desenhar_boss(const Jogo *jogo, Rectangle area);
 
-/** @brief Barra horizontal de vida: fundo, preenchimento proporcional a `fracao` (0 a 1), borda. */
+/** @brief Barra de vida preenchida em `fracao` (0 a 1). */
 void tela_desenhar_barra_vida(Rectangle area, float fracao, Color cor);
 
-/** @brief Faixa vermelha no rodapé com utils_mensagem_status(jogo->ultimo_erro). */
+/** @brief Faixa vermelha no rodapé com o último erro (jogo_registrar_erro). */
 void tela_desenhar_banner_erro(const Jogo *jogo);
 
 #endif /* TELA_H */

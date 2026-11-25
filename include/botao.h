@@ -1,13 +1,9 @@
 /**
  * @file botao.h
- * @brief Botões clicáveis (mouse) com atalho de teclado, skin por imagem e fallback sem imagem.
+ * @brief Botões clicáveis com atalho de teclado, skin IMG_BOTAO (cor muda pelo estado) e fallback.
  *
- * Decisão: botão PRÓPRIO em vez de raygui. Motivo: precisa de skin por PNG, atalho A-D,
- * destaque de certo/errado e fallback; raygui desenharia com estilo e fonte próprios.
- *
- * Uma única imagem (IMG_BOTAO) serve para todos os estados: o estado só muda a cor.
- * O botão NÃO mexe no cursor do mouse; quem decide é jogo_atualizar(), uma vez por quadro.
- *
+ * Criados em jogo.c (criar_botoes), lidos pelas telas via jogo_botao_acionado e desenhados com
+ * botao_desenhar. Próprio em vez de raygui para ter skin PNG, atalhos A-D e destaque certo/errado.
  * Só compila com USE_RAYLIB=1.
  */
 #ifndef BOTAO_H
@@ -17,7 +13,7 @@
 #include "config.h"
 #include "assets.h"
 
-/** Estado do botão no quadro atual (calculado por botao_atualizar). */
+/** Estado do botão no quadro atual (botao_atualizar). */
 typedef enum {
     BOTAO_NORMAL = 0,      /**< Mouse longe. */
     BOTAO_HOVER,           /**< Mouse em cima. */
@@ -25,7 +21,7 @@ typedef enum {
     BOTAO_DESABILITADO     /**< habilitado == false. */
 } EstadoBotao;
 
-/** Destaque usado na revelação da resposta (tem prioridade sobre o estado). */
+/** Destaque da revelação (vale mais que o estado). */
 typedef enum {
     DESTAQUE_NENHUM = 0,   /**< Cores normais. */
     DESTAQUE_CORRETO,      /**< Verde: era a resposta certa. */
@@ -44,8 +40,7 @@ typedef struct {
     bool visivel;                     /**< false: não desenha nem reage. */
     EstadoBotao estado;               /**< Atualizado por botao_atualizar(). */
     DestaqueBotao destaque;           /**< Certo/errado na revelação. */
-    ImagemId icone;                   /**< Ícone desenhado depois do texto (ex.: IMG_ESMERALDA ao lado
-                                           do preço), ou IMG_NENHUMA. Com ícone o rótulo fica numa linha. */
+    ImagemId icone;                   /**< Ícone após o texto (ex.: IMG_ESMERALDA no preço) ou IMG_NENHUMA. */
 } Botao;
 
 /**
@@ -58,22 +53,16 @@ Status botao_criar(Botao *botao, Rectangle area, const char *rotulo, int tecla_a
 Status botao_definir_rotulo(Botao *botao, const char *rotulo);
 
 /**
- * @brief Atualiza o estado e detecta o acionamento. Chame 1x por quadro para cada botão da tela ativa.
- *
- * Acionado = soltou o botão esquerdo do mouse em cima dele, OU apertou a tecla de atalho.
- * Botão invisível ou desabilitado nunca é acionado.
- *
- * @return true se foi acionado neste quadro.
+ * @brief Atualiza o estado; 1x por quadro por botão (as telas usam jogo_botao_acionado).
+ * @return true se acionado: soltou o mouse em cima ou apertou o atalho (nunca se invisível/desabilitado).
  */
 bool botao_atualizar(Botao *botao);
 
-/** @brief true se o mouse está em cima (estado HOVER ou PRESSIONADO): usado para o cursor de "mãozinha". */
+/** @brief true se o mouse está em cima (cursor de "mãozinha" em jogo_atualizar). */
 bool botao_sob_mouse(const Botao *botao);
 
 /**
- * @brief Desenha o botão: skin IMG_BOTAO (ou retângulo, se faltar) na cor do estado/destaque,
- *        com o rótulo diminuindo a fonte até caber. Se houver `icone`, texto e ícone ficam
- *        lado a lado, centralizados, numa linha só.
+ * @brief Desenha skin e rótulo na cor do estado/destaque, reduzindo a fonte até caber.
  * @param tamanho_fonte Tamanho máximo do texto.
  */
 void botao_desenhar(const Botao *botao, const Assets *assets, float tamanho_fonte);

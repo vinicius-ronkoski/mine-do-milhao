@@ -2,8 +2,8 @@
  * @file banco.h
  * @brief Banco de perguntas: vetor dinâmico com cadastro completo (CRUD).
  *
- * O vetor cresce e diminui em tempo de execução (malloc/realloc/free).
- * Os índices usados nas funções começam em 0.
+ * Preenchido por arquivo.h, editado pelo menu (menu.c) e lido pelo jogo (sorteio.h).
+ * Índices começam em 0.
  */
 
 #ifndef BANCO_H
@@ -14,101 +14,61 @@
 #include "pergunta.h"
 
 /**
- * @struct Banco
- * @brief Coleção dinâmica de perguntas (vetor que cresce e encolhe).
+ * @brief Vetor de perguntas que cresce e encolhe (malloc/realloc/free).
  *
- * Invariantes:
- * - quantidade <= capacidade;
- * - itens é NULL se, e somente se, capacidade == 0;
- * - as posições 0 a quantidade-1 contêm perguntas válidas.
- *
- * @warning Não grave o Banco inteiro com fwrite(): itens é um ponteiro.
- *          Grave quantidade e depois o bloco apontado por itens.
+ * Invariantes: quantidade <= capacidade; itens == NULL se e só se capacidade == 0.
+ * @warning Não grave o Banco com fwrite(): itens é ponteiro (ver dat_salvar).
  */
 typedef struct {
     /** Vetor alocado dinamicamente (NULL se vazio). */
     Pergunta *itens;
-    /** Quantas perguntas estão em uso. */
+    /** Perguntas em uso. */
     size_t quantidade;
-    /** Quantas perguntas cabem sem realocar. */
+    /** Perguntas que cabem sem realocar. */
     size_t capacidade;
 } Banco;
 
-/**
- * @brief Deixa o banco vazio e pronto para uso.
- *
- * @param banco Banco a inicializar.
- */
+/** @brief Deixa o banco vazio e pronto para uso. */
 void banco_iniciar(Banco *banco);
 
-/**
- * @brief Libera a memória do vetor e zera o banco.
- *
- * @param banco Banco a liberar (pode já estar vazio).
- */
+/** @brief Libera o vetor e zera o banco (pode já estar vazio). */
 void banco_liberar(Banco *banco);
 
-/**
- * @brief Obtém uma pergunta pelo índice.
- *
- * @param banco  Banco consultado.
- * @param indice Posição da pergunta (0 a quantidade-1).
- * @return Ponteiro para a pergunta, ou NULL se o índice for inválido.
- */
+/** @brief Pergunta da posição `indice`, ou NULL se o índice for inválido. */
 const Pergunta *banco_obter(const Banco *banco, size_t indice);
 
 /**
- * @brief Insere uma cópia da pergunta no final do banco.
- *
- * Deve aumentar a capacidade com realloc quando o vetor estiver cheio.
- *
- * @param banco    Banco que recebe a pergunta.
- * @param pergunta Pergunta a copiar (deve ser válida).
- * @return STATUS_OK, STATUS_ERRO_PARAMETRO ou STATUS_ERRO_MEMORIA.
+ * @brief Copia a pergunta para o fim do banco (dobra a capacidade quando cheio).
+ * @return STATUS_OK, STATUS_ERRO_PARAMETRO (inválida, ver pergunta_validar) ou STATUS_ERRO_MEMORIA.
  */
 Status banco_inserir(Banco *banco, const Pergunta *pergunta);
 
 /**
- * @brief Substitui a pergunta de uma posição.
- *
- * @param banco    Banco alterado.
- * @param indice   Posição a substituir.
- * @param pergunta Novos dados (devem ser válidos).
+ * @brief Substitui a pergunta da posição `indice`.
  * @return STATUS_OK ou STATUS_ERRO_PARAMETRO.
  */
 Status banco_alterar(Banco *banco, size_t indice, const Pergunta *pergunta);
 
 /**
- * @brief Remove a pergunta de uma posição, deslocando as seguintes.
- *
- * Pode reduzir a capacidade com realloc quando sobrar muito espaço.
- *
- * @param banco  Banco alterado.
- * @param indice Posição a remover.
+ * @brief Remove a pergunta da posição `indice`, deslocando as seguintes (encolhe se sobrar espaço).
  * @return STATUS_OK ou STATUS_ERRO_PARAMETRO.
  */
 Status banco_remover(Banco *banco, size_t indice);
 
 /**
- * @brief Procura perguntas cujo enunciado contém um trecho (sem diferenciar maiúsculas).
- *
- * @param banco          Banco consultado.
- * @param trecho         Texto procurado.
- * @param indices        Vetor de saída com as posições encontradas.
- * @param max_indices    Tamanho do vetor de saída (use banco->quantidade).
- * @return Quantidade de perguntas encontradas.
+ * @brief Posições das perguntas cujo enunciado contém `trecho` (sem diferenciar maiúsculas, com acentos).
+ * @param indices     Vetor de saída.
+ * @param max_indices Tamanho de `indices` (use banco->quantidade).
+ * @return Quantidade encontrada.
  */
 size_t banco_buscar_texto(const Banco *banco, const char *trecho,
                           size_t *indices, size_t max_indices);
 
 /**
- * @brief Coleta as posições das perguntas de um nível de dificuldade.
- *
- * @param banco       Banco consultado.
- * @param nivel       Nível de 1 a 5.
- * @param indices     Vetor de saída com as posições encontradas.
- * @param max_indices Tamanho do vetor de saída (use banco->quantidade).
- * @return Quantidade de perguntas do nível.
+ * @brief Posições das perguntas do nível `nivel` (navegação do menu e sorteio da partida).
+ * @param indices     Vetor de saída.
+ * @param max_indices Tamanho de `indices` (use banco->quantidade).
+ * @return Quantidade encontrada.
  */
 size_t banco_filtrar_nivel(const Banco *banco, int nivel,
                            size_t *indices, size_t max_indices);

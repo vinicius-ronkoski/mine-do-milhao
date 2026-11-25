@@ -1,6 +1,6 @@
 /**
  * @file utils.h
- * @brief Funções auxiliares de terminal: leitura segura, cores e beep.
+ * @brief Auxiliares de terminal (menu de texto): leitura segura, cores ANSI, beep e mensagens de Status.
  */
 
 #ifndef UTILS_H
@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "config.h"
 
-/** @name Cores ANSI (o terminal precisa suportar sequências de escape). */
+/** @name Cores ANSI */
 /**@{*/
 #define COR_RESET    "\033[0m"
 #define COR_VERMELHO "\033[1;31m"
@@ -20,67 +20,37 @@
 /**@}*/
 
 /**
- * @brief Descarta o que sobrou da linha digitada no teclado (stdin), até o ENTER ou o fim da entrada.
- *
- * Use só quando SE SABE que sobrou texto na linha (ex.: o fgets leu uma linha maior que o buffer,
- * como faz utils_ler_linha). Chamada com a linha já consumida, ela fica esperando o usuário
- * digitar outra linha inteira.
+ * @brief Descarta o resto da linha digitada até o ENTER (ou EOF).
+ *        Só use quando sobrou texto (como em utils_ler_linha); senão espera uma linha nova.
  */
 void utils_limpar_buffer(void);
 
-/**
- * @brief Prepara o terminal (no Windows, ativa UTF-8 para acentos).
- */
+/** @brief Prepara o terminal (no Windows, UTF-8 para os acentos). Chamada por main. */
 void utils_configurar_terminal(void);
 
-/**
- * @brief Limpa a tela do terminal.
- */
+/** @brief Limpa a tela do terminal. */
 void utils_limpar_tela(void);
 
-/**
- * @brief Emite um beep sonoro no terminal.
- */
+/** @brief Beep no terminal (entradas inválidas). */
 void utils_beep(void);
 
-/**
- * @brief Espera o usuário pressionar ENTER.
- */
+/** @brief Espera o usuário pressionar ENTER. */
 void utils_pausar(void);
 
 /**
- * @brief Lê uma linha de texto com segurança (sem estourar o buffer).
- *
- * Remove o '\n' final e descarta o excedente se a linha for maior que o buffer.
- *
- * @param prompt   Texto exibido antes da leitura (pode ser NULL).
- * @param destino  Buffer que recebe o texto.
- * @param tamanho  Tamanho do buffer em bytes.
- * @return STATUS_OK se leu uma linha; STATUS_ERRO_ARQUIVO se a entrada terminou (EOF);
- *         STATUS_ERRO_PARAMETRO se destino for NULL ou tamanho 0.
+ * @brief Lê uma linha sem estourar `destino`: tira o '\n' e descarta o excedente.
+ * @param prompt Texto exibido antes (pode ser NULL).
+ * @return STATUS_OK; STATUS_ERRO_ARQUIVO (EOF); STATUS_ERRO_PARAMETRO (destino NULL ou tamanho 0).
  */
 Status utils_ler_linha(const char *prompt, char *destino, size_t tamanho);
 
 /**
- * @brief Lê um inteiro dentro de um intervalo, repetindo até ser válido.
- *
- * Mostra mensagem de erro e beep a cada entrada inválida.
- *
- * @param prompt  Texto exibido antes da leitura.
- * @param minimo  Menor valor aceito.
- * @param maximo  Maior valor aceito.
- * @param valor   Recebe o número lido.
- * @return STATUS_OK se leu um valor válido; STATUS_ERRO_ARQUIVO se a entrada terminou (EOF);
- *         STATUS_ERRO_PARAMETRO se valor for NULL.
+ * @brief Lê um inteiro em [minimo, maximo], repetindo com erro e beep até ser válido.
+ * @return STATUS_OK; STATUS_ERRO_ARQUIVO (EOF); STATUS_ERRO_PARAMETRO (valor NULL).
  */
 Status utils_ler_int(const char *prompt, int minimo, int maximo, int *valor);
 
-/**
- * @brief Traduz um Status para uma mensagem legível.
- *
- * @param status Código de retorno.
- * @return Texto constante em português (nunca NULL).
- */
+/** @brief Texto em português de um Status (nunca NULL); usado no menu e no banner de erro do jogo. */
 const char *utils_mensagem_status(Status status);
 
 #endif /* UTILS_H */

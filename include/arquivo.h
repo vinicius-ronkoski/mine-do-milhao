@@ -1,18 +1,12 @@
 /**
  * @file arquivo.h
- * @brief Persistência: leitura do CSV inicial, arquivo binário e exportação CSV.
+ * @brief Persistência das perguntas: CSV inicial, binário (.dat) e exportação CSV.
  *
- * Formato do CSV (primeira linha é o cabeçalho e deve ser ignorada):
- * @code
- * nivel,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,correta,dica
- * 1,"Qual mob explode?",Zumbi,Creeper,Esqueleto,Aranha,B,"Ele chia antes."
- * @endcode
- * enunciado e alternativas SEMPRE devem possuir aspas
- *
- * Formato do binário (.dat): um size_t com a quantidade de perguntas, seguido do
- * bloco de structs Pergunta gravado com fwrite(). O .dat não vai para o Git:
- * cada computador gera o seu na primeira execução (o tamanho de size_t e o
- * alinhamento da struct podem mudar entre compiladores de 32 e 64 bits).
+ * Fluxo: main -> dados_carregar() (lê o .dat; na 1ª execução lê o CSV e cria o .dat)
+ *        -> menu -> dados_salvar() ao sair.
+ * CSV: cabeçalho CSV_CABECALHO; enunciado, alternativas e dica SEMPRE entre aspas.
+ * .dat: um size_t com a quantidade + o bloco de structs Pergunta (fwrite). Fica fora do Git,
+ * pois size_t e o alinhamento da struct mudam entre compiladores de 32 e 64 bits.
  */
 
 #ifndef ARQUIVO_H
@@ -22,60 +16,39 @@
 #include "banco.h"
 
 /**
- * @brief Carrega os dados no início do programa.
- *
- * Se CAMINHO_DAT existir, lê dele. Caso contrário (primeira execução),
- * lê CAMINHO_CSV e já cria o .dat para as próximas execuções. Falha
- * ao criar o binário gera apenas um aviso, sem impedir o carregamento.
- *
- * @param banco Banco (vazio) que receberá as perguntas.
- * @return STATUS_OK ou um código de erro.
+ * @brief Carrega o banco no início: CAMINHO_DAT se existir; senão csv_carregar() e cria o .dat.
+ * @param banco Banco vazio que recebe as perguntas.
+ * @return STATUS_OK ou código de erro (falha só ao criar o .dat é apenas um aviso).
  */
 Status dados_carregar(Banco *banco);
 
 /**
- * @brief Salva todos os dados no binário ao sair do programa.
- *
- * Atenção: não sobrescrever o binário se o carregamento inicial falhou,
- * senão as perguntas antigas se perdem.
- *
- * @param banco Banco a gravar.
- * @return STATUS_OK ou um código de erro.
+ * @brief Grava o banco em CAMINHO_DAT ao sair (dat_salvar). Não chamar se o carregamento falhou.
+ * @return STATUS_OK ou código de erro.
  */
 Status dados_salvar(const Banco *banco);
 
 /**
- * @brief Lê perguntas de um CSV e as insere no banco.
- *
- * @param caminho Caminho do arquivo .csv.
- * @param banco   Banco que recebe as perguntas.
+ * @brief Lê um CSV e insere cada pergunta válida no banco (para na primeira linha inválida).
  * @return STATUS_OK, STATUS_ERRO_ARQUIVO ou STATUS_ERRO_FORMATO.
  */
 Status csv_carregar(const char *caminho, Banco *banco);
 
 /**
- * @brief Exporta o banco atual para um arquivo CSV.
- *
- * @param caminho Caminho do arquivo a criar (ex.: CAMINHO_EXPORTADOS "perguntas.csv").
- * @param banco   Banco exportado.
+ * @brief Exporta o banco para um CSV no mesmo formato do inicial (opção "Exportar" do menu).
+ * @param caminho Arquivo a criar (ex.: CAMINHO_EXPORTADOS "perguntas.csv").
  * @return STATUS_OK ou STATUS_ERRO_ARQUIVO.
  */
 Status csv_exportar(const char *caminho, const Banco *banco);
 
 /**
- * @brief Lê o banco inteiro do arquivo binário.
- *
- * @param caminho Caminho do .dat.
- * @param banco   Banco que recebe as perguntas.
+ * @brief Lê o .dat inteiro; só substitui o banco se o arquivo estiver íntegro.
  * @return STATUS_OK, STATUS_ERRO_ARQUIVO ou STATUS_ERRO_FORMATO.
  */
 Status dat_carregar(const char *caminho, Banco *banco);
 
 /**
- * @brief Grava o banco inteiro no arquivo binário.
- *
- * @param caminho Caminho do .dat.
- * @param banco   Banco a gravar.
+ * @brief Grava o banco no .dat (via arquivo temporário: o .dat antigo só é trocado se der certo).
  * @return STATUS_OK ou STATUS_ERRO_ARQUIVO.
  */
 Status dat_salvar(const char *caminho, const Banco *banco);
