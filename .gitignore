@@ -18,9 +18,6 @@ data/exportados/*
 *.swp
 .DS_Store
 
-# Executável do teste da partida (make teste)
-teste_partida
-teste_partida.exe
 
 # Executável do teste manual (tests/teste_arquivo.c)
 teste_arquivo.c

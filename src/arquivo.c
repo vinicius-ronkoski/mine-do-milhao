@@ -40,12 +40,12 @@ Status dados_carregar(Banco *banco)
 {
     FILE *arquivo;
     Status status;
-    
+
     // Confere erro de parametro
     if (banco == NULL) {
         return STATUS_ERRO_PARAMETRO;
     }
-    
+
     // Se o .dat já existe, ele é a fonte dos dados (o fopen aqui só testa se existe)
     arquivo = fopen(CAMINHO_DAT, "rb");
     if (arquivo != NULL) {
@@ -53,7 +53,7 @@ Status dados_carregar(Banco *banco)
             return STATUS_ERRO_ARQUIVO;
         }
         return dat_carregar(CAMINHO_DAT, banco);
-    } 
+    }
 
     /* Primeira execução: ainda não existe o .dat, então lê o CSV */
     status = csv_carregar(CAMINHO_CSV, banco);
@@ -88,7 +88,7 @@ Status csv_carregar(const char *caminho, Banco *banco)
     if (caminho == NULL || banco == NULL) {
         return STATUS_ERRO_PARAMETRO;
     }
-    
+
     // Abre o arquivo
     arquivo = fopen(caminho, "r");
     if (arquivo == NULL) {
@@ -147,13 +147,13 @@ Status csv_carregar(const char *caminho, Banco *banco)
         // Printa mensagem de erro
         if (status != STATUS_OK) {
             fprintf(
-                stderr, "%s, linha %d: %s\n", 
+                stderr, "%s, linha %d: %s\n",
                 caminho, numero_linha, utils_mensagem_status(status)
             );
         }
 
     }
-    
+
     // Fecha o arquivo
     if (fclose(arquivo) != 0) {
         return STATUS_ERRO_ARQUIVO;

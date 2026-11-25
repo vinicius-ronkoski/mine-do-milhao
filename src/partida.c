@@ -197,9 +197,7 @@ Status partida_confirmar_revelacao(Partida *partida)
     return STATUS_OK;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Ajudas                                                                    */
-/* ------------------------------------------------------------------------- */
+/* ---- Ajudas ---- */
 
 int partida_saldo(const Partida *partida)
 {

@@ -16,9 +16,7 @@
 /** Espaço entre o texto e o ícone. */
 #define ESPACO_TEXTO_ICONE 6.0f
 
-/* ------------------------------------------------------------------------- */
-/* Criação                                                                   */
-/* ------------------------------------------------------------------------- */
+/* ---- Criação ---- */
 
 Status botao_criar(Botao *botao, Rectangle area, const char *rotulo, int tecla_atalho)
 {
@@ -46,9 +44,7 @@ Status botao_definir_rotulo(Botao *botao, const char *rotulo)
     return STATUS_OK;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Entrada                                                                   */
-/* ------------------------------------------------------------------------- */
+/* ---- Entrada ---- */
 
 bool botao_atualizar(Botao *botao)
 {
@@ -83,9 +79,7 @@ bool botao_sob_mouse(const Botao *botao)
         && (botao->estado == BOTAO_HOVER || botao->estado == BOTAO_PRESSIONADO);
 }
 
-/* ------------------------------------------------------------------------- */
-/* Desenho                                                                   */
-/* ------------------------------------------------------------------------- */
+/* ---- Desenho ---- */
 
 /**
  * @brief Rótulo + ícone numa linha, centralizados em `area`. Diminui a fonte (até FONTE_MINIMA_BOTAO)

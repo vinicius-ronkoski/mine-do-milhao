@@ -62,13 +62,13 @@ typedef enum {
     IMG_PAINEL_ENUNCIADO = 0,         /**< Moldura atrás do enunciado (fallback: painel cinza). */
     IMG_BOTAO,                        /**< Skin única dos botões; o estado só muda a cor (fallback: retângulo). */
     IMG_CAIXA_DIALOGO,                /**< Caixa de fala (fallback: painel cinza). */
-    IMG_ESMERALDA,                    /**< Ícone da esmeralda (HUD e escada de prêmios). */
+    IMG_ESMERALDA,                    /**< Ícone da esmeralda (HUD e preços das ajudas). */
 
     // Fundos
     IMG_FUNDO_PERGUNTA,               /**< Fundo da tela de perguntas (1280x720). */
     IMG_FUNDO_DIALOGO,                /**< Fundo das cenas de diálogo. */
     IMG_FUNDO_PALCO,                  /**< Imagem do palco (Minecraft) */
-    IMG_FUNDO_PORTAL,                 /**< Imagem do portal do Nether */  
+    IMG_FUNDO_PORTAL,                 /**< Imagem do portal do Nether */
     IMG_FUNDO_FIM,                    /**< Imagem de fundo do fim */
     IMG_FUNDO_AUDITORIO,              /**< Imagem do auditório (Minecraft)*/
     IMG_FUNDO_PRETO,                  /**< Fundo Preto */
@@ -80,7 +80,7 @@ typedef enum {
     IMG_ICONE_ALDEAO,                 /**< Icone Villager*/
     IMG_ICONE_ALDEAO_ASSUSTADO,       /**< Icone Villager asustado*/
     IMG_ICONE_DESCONHECIDO_1,         /**< Icone desconhecido (Herobrine) */
-    IMG_ICONE_DESCONHECIDO_2,         /**< Icone desconhecido (Sem interrogação) */ 
+    IMG_ICONE_DESCONHECIDO_2,         /**< Icone desconhecido (Sem interrogação) */
     IMG_ICONE_CREEPER,                /**< Icone Creeper */
     IMG_ICONE_WITHER,                 /**< Icone Wither */
     IMG_ICONE_WARDEN,                 /**< Icone Warden (Herobrine) */
@@ -90,7 +90,7 @@ typedef enum {
 
     // Historia 1
     IMG_H1_CENA_1,                     /*< Frame 1 do Creeper auditorio */
-    IMG_H1_CENA_2,                     /*< Frame 2 do Creeper auditorio */ 
+    IMG_H1_CENA_2,                     /*< Frame 2 do Creeper auditorio */
     IMG_H1_CENA_3,                     /*< Apresentador olha para o Creeper */
     // Cena Creeper
 
@@ -111,7 +111,7 @@ typedef enum {
     IMG_H3_CENA_2,                     /*< Voltam, dentro de caverna, Villager olha para o portal */
     IMG_H3_CENA_3,                     /*< Villager olha para o jogador na caverna */
     IMG_H3_CENA_4,                     /*< Sensor de Sculk ativa, chamando o warden */
-    IMG_H3_CENA_5,                     /*< Mesmo fundo do warden */ 
+    IMG_H3_CENA_5,                     /*< Mesmo fundo do warden */
 
     // Historia 4
     IMG_H4_CENA_1,                     /*< Villager aponta para saída com sua seta mágica */
@@ -161,10 +161,10 @@ typedef enum {
     SOM_ALDEAO,           /**< Som de aldeão */
     SOM_SCULK,            /**< Som de Sculk */
     SOM_ENDER_DRAGON_VOO, /**< Som do Ender Dragon Voando */
-    SOM_ENDER_DRAGON_IDLE,/**< Som do ender dragon */ 
-    SOM_FLINT_AND_STEEL,  /**< Som do Minecraft Movie */   
+    SOM_ENDER_DRAGON_IDLE,/**< Som do ender dragon */
+    SOM_FLINT_AND_STEEL,  /**< Som do Minecraft Movie */
     SOM_THE_NETHER,       /**< Som do Minecraft Movie */
-    SOM_RECEBA,           /**< Receba (Luva de Pedreiro) */    
+    SOM_RECEBA,           /**< Receba (Luva de Pedreiro) */
     SOM_QUANTIDADE        /**< Quantidade de sons (não é um som). */
 } SomId;
 

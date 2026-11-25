@@ -20,9 +20,7 @@
 /** Duração da animação de dano na revelação: a barra desce e o boss treme/pisca em vermelho. */
 #define DURACAO_DANO 0.6f
 
-/* ========================================================================= */
-/* 1. Desenhos compartilhados                                                */
-/* ========================================================================= */
+/* ---- 1. Desenhos compartilhados ---- */
 
 BossId tela_boss_da_fase(const Jogo *jogo)
 {
@@ -33,7 +31,7 @@ BossId tela_boss_da_fase(const Jogo *jogo)
         return BOSS_QUANTIDADE;
     }
 
-    // Recebe o Boss Atual e retorna o ID 
+    // Recebe o Boss Atual e retorna o ID
     boss = partida_boss_atual(&jogo->partida);
     return boss != NULL ? boss->id : BOSS_QUANTIDADE;
 }
@@ -144,15 +142,7 @@ void tela_desenhar_boss(const Jogo *jogo, Rectangle area)
     assets_desenhar_texto_centralizado(&jogo->assets, texto, area_texto, 20.0f, PALETA_TEXTO);
 }
 
-void tela_desenhar_escada_premios(const Jogo *jogo, Rectangle area)
-{
-    /* TODO (equipe): ver tela.h. */
-    (void)jogo; (void)area;
-}
-
-/* ========================================================================= */
-/* 2. Tela de diálogo (pronta)                                               */
-/* ========================================================================= */
+/* ---- 2. Tela de diálogo ---- */
 
 void tela_dialogo_atualizar(Jogo *jogo, float dt)
 {
@@ -214,11 +204,9 @@ void tela_dialogo_desenhar(const Jogo *jogo)
     dialogo_desenhar(&jogo->dialogo, &jogo->assets);
 }
 
-/* ========================================================================= */
-/* 3. Tela de pergunta (pronta)                                              */
-/*    Esquerda: enunciado, alternativas A-D uma embaixo da outra, ajudas.    */
-/*    Direita: esmeraldas (canto superior), boss, barra de vida e dica.      */
-/* ========================================================================= */
+/* ---- 3. Tela de pergunta ---- */
+/* Esquerda: enunciado (e a dica comprada), alternativas A-D e ajudas. */
+/* Direita: esmeraldas (canto superior), boss e barra de vida. */
 
 void tela_pergunta_atualizar(Jogo *jogo, float dt)
 {
@@ -306,10 +294,8 @@ void tela_pergunta_desenhar(const Jogo *jogo)
     tela_desenhar_boss(jogo, AREA_BOSS);
 }
 
-/* ========================================================================= */
-/* 4. Tela de revelação (depois da reação do apresentador)                   */
-/*    Sem pergunta nem alternativas: só o boss, a vida e o resultado.        */
-/* ========================================================================= */
+/* ---- 4. Tela de revelação (depois da reação do apresentador) ---- */
+/* Sem pergunta nem alternativas: só o boss, a vida e o resultado. */
 
 void tela_revelacao_atualizar(Jogo *jogo, float dt)
 {
@@ -424,9 +410,7 @@ void tela_revelacao_desenhar(const Jogo *jogo)
     botao_desenhar(&jogo->botao_continuar, &jogo->assets, TAMANHO_BOTAO_AJUDA);
 }
 
-/* ========================================================================= */
-/* 5. Tela de resultado (fim da partida: derrota, parada ou vitória)         */
-/* ========================================================================= */
+/* ---- 5. Tela de resultado (fim da partida: derrota, parada ou vitória) ---- */
 
 void tela_resultado_atualizar(Jogo *jogo, float dt)
 {
@@ -469,25 +453,25 @@ void tela_resultado_desenhar(const Jogo *jogo)
         return;
     }
     partida = &jogo->partida;
-    
+
     switch (partida->estado) {
-    case ESTADO_FIM_VITORIA: 
+    case ESTADO_FIM_VITORIA:
         titulo = "Vitória!";
         icone = IMG_ICONE_ALDEAO;
         mensagem_resultado = "\"O Villager hipotético sente orgulho!\"";
         fundo = IMG_FUNDO_VITORIA;
         break;
-            
-    case ESTADO_FIM_PARADA:  
+
+    case ESTADO_FIM_PARADA:
         titulo = "Você parou";
-        icone = IMG_ICONE_ALDEAO_ASSUSTADO;    
+        icone = IMG_ICONE_ALDEAO_ASSUSTADO;
         mensagem_resultado = "Vai me deixar lutar sozinho?";
         fundo = IMG_FUNDO_RESULTADO;
         break;
 
-    default:                 
+    default:
         titulo = "Fim de jogo";
-        icone = IMG_ICONE_DESCONHECIDO_2;   
+        icone = IMG_ICONE_DESCONHECIDO_2;
         mensagem_resultado = "A maior virtude humana é a determinação.";
         fundo = IMG_FUNDO_DERROTA;
         break;
@@ -495,12 +479,12 @@ void tela_resultado_desenhar(const Jogo *jogo)
 
     /* Mensagem Resultado */
     assets_desenhar_fundo(&jogo->assets, fundo, BOSS_QUANTIDADE);
-    assets_desenhar_texto_centralizado(&jogo->assets, mensagem_resultado, linha_obrigado, 28.0f, PALETA_TEXTO); 
+    assets_desenhar_texto_centralizado(&jogo->assets, mensagem_resultado, linha_obrigado, 28.0f, PALETA_TEXTO);
 
     assets_desenhar_imagem(&jogo->assets, icone, retrato, WHITE);
     assets_desenhar_texto_centralizado(&jogo->assets, titulo, janela_titulo, 56.0f, PALETA_DESTAQUE);
 
-    
+
 
     /* Prêmio final (já com marco de segurança e dicas descontadas) */
     snprintf(texto, sizeof(texto), "Você leva %d esmeralda%s", partida_premio_final(partida),

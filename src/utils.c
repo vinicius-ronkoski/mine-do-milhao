@@ -75,7 +75,7 @@ Status utils_ler_linha(const char *prompt, char *destino, size_t tamanho)
         /* Linha maior que o buffer: descarta o resto até o fim da linha. */
         utils_limpar_buffer();
     }
-    
+
     return STATUS_OK;
 }
 
@@ -105,7 +105,7 @@ Status utils_ler_int(const char *prompt, int minimo, int maximo, int *valor)
         } else {
             utils_beep();
             printf(
-                COR_VERMELHO "Entrada inválida! Digite um número de %d a %d.\n" COR_RESET, 
+                COR_VERMELHO "Entrada inválida! Digite um número de %d a %d.\n" COR_RESET,
                 minimo, maximo
             );
             status = STATUS_ERRO_PARAMETRO;   /* entrada inválida: pede de novo */

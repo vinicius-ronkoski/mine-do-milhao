@@ -1,19 +1,12 @@
 /**
  * @file escala.h
- * @brief Tela cheia e janela redimensionável sem refazer o layout.
+ * @brief Tela cheia (F11) e janela redimensionável sem refazer o layout.
  *
- * O jogo inteiro é desenhado em coordenadas VIRTUAIS de LARGURA_JANELA x ALTURA_JANELA
- * (1280x720, ver layout.h). Este módulo calcula, a cada quadro, como esse quadro virtual cabe
- * na janela real (que pode ser 1920x1080 em tela cheia, ou qualquer tamanho se o jogador
- * redimensionar):
- *   - zoom = o maior fator que cabe sem distorcer (mantém 16:9);
- *   - o que sobra vira faixas pretas (letterbox), centralizando a imagem;
- *   - o mouse é convertido de volta para coordenadas virtuais (SetMouseOffset/SetMouseScale),
- *     então os botões continuam funcionando sem nenhuma mudança.
- *
- * O desenho usa uma Camera2D com esse zoom, em vez de desenhar numa textura de 1280x720 e
- * esticá-la: assim cada imagem é desenhada direto na resolução da tela e a pixel art pode ser
- * alinhada a pixels inteiros (escala_alinhar_pixel_art), sem perder nitidez.
+ * O jogo é desenhado em coordenadas virtuais de 1280x720 (layout.h). A cada quadro, este módulo
+ * calcula o zoom que faz esse quadro caber na janela real sem distorcer (faixas pretas se não
+ * for 16:9), aplica-o com uma Camera2D e converte o mouse de volta para 1280x720.
+ * Desenhar direto na resolução da tela (e não numa textura esticada) permite manter a pixel art
+ * em escala inteira (escala_alinhar_pixel_art).
  *
  * Só compila com USE_RAYLIB=1.
  */
@@ -24,56 +17,41 @@
 #include "raylib.h"
 #include "config.h"
 
-/** Menor tamanho da janela quando o jogador a redimensiona (metade do tamanho virtual). */
+/** Menor tamanho da janela redimensionada (metade do virtual). */
 #define LARGURA_MINIMA_JANELA (LARGURA_JANELA / 2)
 #define ALTURA_MINIMA_JANELA  (ALTURA_JANELA / 2)
 
 /** Como o quadro virtual (1280x720) está posicionado na janela real. */
 typedef struct {
-    Camera2D camera;      /**< zoom e deslocamento usados entre escala_comecar_desenho e escala_terminar_desenho. */
-    Rectangle area_tela;  /**< Onde o quadro virtual aparece na janela, em pixels reais (fora dele = faixas pretas). */
+    Camera2D camera;      /**< Zoom e deslocamento aplicados ao desenho. */
+    Rectangle area_tela;  /**< Onde o quadro 1280x720 aparece na janela, em pixels reais. */
 } Escala;
 
 /**
- * @brief Recalcula zoom, faixas pretas e a conversão do mouse para o tamanho atual da janela.
- *
- * Chame uma vez por quadro, ANTES de ler botões (o mouse convertido é usado por botao_atualizar).
- *
- * @param escala       Escala a atualizar.
- * @param largura_tela Largura real da janela (GetScreenWidth()).
- * @param altura_tela  Altura real da janela (GetScreenHeight()).
+ * @brief Recalcula zoom, faixas pretas e a conversão do mouse. Chame 1x por quadro, antes dos botões.
+ * @param largura_tela GetScreenWidth().
+ * @param altura_tela  GetScreenHeight().
  */
 void escala_atualizar(Escala *escala, int largura_tela, int altura_tela);
 
-/**
- * @brief Começa o desenho em coordenadas virtuais: limpa a janela de preto, recorta a área do
- *        jogo (nada vaza para as faixas pretas) e ativa a câmera com o zoom.
- *        Chame logo depois de BeginDrawing().
- */
+/** @brief Depois de BeginDrawing(): limpa de preto, recorta a área do jogo e ativa a câmera. */
 void escala_comecar_desenho(const Escala *escala);
 
-/** @brief Termina o desenho virtual (desativa câmera e recorte). Chame antes de EndDrawing(). */
+/** @brief Antes de EndDrawing(): desativa câmera e recorte. */
 void escala_terminar_desenho(void);
 
 /**
- * @brief Ajusta um retângulo virtual para que suas bordas caiam em pixels INTEIROS da tela.
- *
- * Sem isso, com zoom 1,5 um retângulo em x = 793 começaria no pixel 1189,5 e as colunas de
- * uma imagem ficariam com larguras diferentes. Use para qualquer imagem nítida.
+ * @brief Ajusta um retângulo virtual para que as bordas caiam em pixels inteiros da tela
+ *        (com zoom 1,5, x = 793 cairia no pixel 1189,5).
  */
 Rectangle escala_alinhar_aos_pixels(const Escala *escala, Rectangle destino);
 
 /**
- * @brief Maior retângulo dentro de `destino` em que cada pixel da arte vira um bloco INTEIRO
- *        de pixels da tela (2x2, 3x3, 9x9...), centralizado e já alinhado aos pixels.
- *
- * Garante pixel art nítida em qualquer resolução: na janela 1280x720 um boss 64x64 em 384 px
- * fica 6x; em tela cheia 1920x1080, 9x. Numa resolução "quebrada" o boss fica um pouco menor,
- * mas nunca com pixels de tamanhos diferentes. Se a arte não cabe nem em 1x, apenas encaixa
- * mantendo a proporção.
- *
- * @param largura_arte Largura da imagem original em pixels (ex.: 64).
- * @param altura_arte  Altura da imagem original em pixels.
+ * @brief Maior retângulo dentro de `destino` em que cada pixel da arte vira um bloco inteiro de
+ *        pixels da tela, centralizado (boss 64x64 em 384: 6x na janela, 9x em 1920x1080).
+ *        Se a arte não cabe nem em 1x, só encaixa mantendo a proporção.
+ * @param largura_arte Largura da imagem em pixels (ex.: 64).
+ * @param altura_arte  Altura da imagem em pixels.
  */
 Rectangle escala_alinhar_pixel_art(const Escala *escala, Rectangle destino,
                                    int largura_arte, int altura_arte);

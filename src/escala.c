@@ -9,9 +9,7 @@
 #include <stddef.h>
 #include "escala.h"
 
-/* ========================================================================= */
-/* Conversão virtual <-> tela                                                */
-/* ========================================================================= */
+/* ---- Conversão virtual <-> tela ---- */
 
 /** @brief Coordenada virtual -> pixel da tela (mesma conta que a Camera2D faz). */
 static float virtual_para_tela(float valor, float zoom, float deslocamento)
@@ -25,9 +23,7 @@ static float tela_para_virtual(float valor, float zoom, float deslocamento)
     return (valor - deslocamento) / zoom;
 }
 
-/* ========================================================================= */
-/* Funções públicas                                                          */
-/* ========================================================================= */
+/* ---- Funções públicas ---- */
 
 void escala_atualizar(Escala *escala, int largura_tela, int altura_tela)
 {
@@ -56,8 +52,7 @@ void escala_atualizar(Escala *escala, int largura_tela, int altura_tela)
     escala->camera.rotation = 0.0f;
     escala->camera.zoom = zoom;
 
-    /* Mouse: a raylib devolve (posição_real + offset) * scale -> coordenada virtual.
-     * Assim botao_atualizar compara o mouse com as áreas do layout.h sem saber da escala. */
+    /* Mouse: a raylib devolve (posição_real + offset) * scale, ou seja, já em 1280x720 */
     SetMouseOffset((int)-escala->area_tela.x, (int)-escala->area_tela.y);
     SetMouseScale(1.0f / zoom, 1.0f / zoom);
 }

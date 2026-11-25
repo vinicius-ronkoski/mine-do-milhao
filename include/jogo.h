@@ -35,7 +35,7 @@
 /** Segundos em que uma tela recém-aberta ignora cliques (evita o clique da tela anterior "vazar"). */
 #define ATRASO_ENTRADA_TELA 0.20f
 
-/** Telas do jogo base (menu gráfico e minigame ficam fora desta etapa). */
+/** Telas do jogo. */
 typedef enum {
     TELA_DIALOGO = 0,   /**< Cena de diálogo (intro, entrada de boss, final). */
     TELA_PERGUNTA,      /**< Pergunta + alternativas + ajudas + botão PARAR. */

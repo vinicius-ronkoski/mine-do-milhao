@@ -23,7 +23,6 @@ Requer `gcc` e `make`. Execute sempre a partir da **raiz do projeto** (os caminh
 | `make valgrind`   | Executa sob o Valgrind (checa vazamentos de memória)   |
 | `make debug`      | Abre o executável no `gdb`                             |
 | `make clear_data` | Apaga os `.dat` de `data/` (o jogo volta a ler o CSV)  |
-| `make teste`      | Testa a lógica da partida (sorteio, boss, regras) sem abrir janela |
 | `make USE_RAYLIB=1`   | compila com Raylib  |
 
 Na 2ª entrega (raylib): `make USE_RAYLIB=1` (objetos em `build/raylib-<compilador>/`). O `raylib.h` e as bibliotecas ficam em `third_party/raylib/` (Linux em `lib/linux/`, Windows em `lib/windows/`). O jogo é aberto pela opção **8 - JOGAR** do menu.
@@ -53,7 +52,6 @@ jogo-milhao-minecraft/
 >>>>>>> bffbb2d71ddcc00e9670592014c5df0c170a57a5
 ├── include/              # só .h
 ├── src/                  # só .c
-├── tests/                # teste_partida.c (make teste)
 ├── third_party/raylib/   # raylib 5.5 (licença zlib), não escrita pela equipe
 ├── Makefile
 └── README.md

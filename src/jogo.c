@@ -15,9 +15,7 @@
 #include "sorteio.h"
 #include "utils.h"
 
-/* ========================================================================= */
-/* 1. Funções internas                                                       */
-/* ========================================================================= */
+/* ---- 1. Funções internas ---- */
 
 /** @brief Retângulo da alternativa `posicao`: uma embaixo da outra (A, B, C, D). */
 static Rectangle area_da_alternativa(int posicao)
@@ -119,9 +117,7 @@ static void atualizar_cursor(Jogo *jogo)
     }
 }
 
-/* ========================================================================= */
-/* 2. Ciclo de vida                                                          */
-/* ========================================================================= */
+/* ---- 2. Ciclo de vida ---- */
 
 Status jogo_executar(const Banco *banco)
 {
@@ -139,7 +135,6 @@ Status jogo_executar(const Banco *banco)
         return status_inicio;
     }
 
-    /* Janela */
     SetTraceLogLevel(LOG_WARNING);  /* só avisos e erros da raylib no terminal */
     /* FLAG_WINDOW_RESIZABLE: o jogador pode redimensionar a janela; F11 alterna a tela cheia.
      * O layout continua em 1280x720 e escala.c ajusta tudo ao tamanho real. */
@@ -198,7 +193,7 @@ Status jogo_iniciar(Jogo *jogo, const Banco *banco)
     if (status != STATUS_OK) {
         return status;
     }
-    
+
     status = jogo_nova_partida(jogo);
     if (status != STATUS_OK) {
         return status;
@@ -237,7 +232,6 @@ Status jogo_nova_partida(Jogo *jogo)
         return status;
     }
 
-    /* Introdução + entrada do primeiro boss, depois a primeira pergunta */
     /* Introdução -> história antes do 1º boss -> entrada do 1º boss -> pergunta */
     jogo_tocar_cena(jogo, CENA_INTRO, TELA_PERGUNTA);
     jogo_anexar_cena(jogo, CENA_HISTORIA_1);
@@ -245,9 +239,7 @@ Status jogo_nova_partida(Jogo *jogo)
     return STATUS_OK;
 }
 
-/* ========================================================================= */
-/* 3. Laço por quadro                                                        */
-/* ========================================================================= */
+/* ---- 3. Laço por quadro ---- */
 
 void jogo_atualizar(Jogo *jogo, float dt)
 {
@@ -309,9 +301,7 @@ void jogo_desenhar(const Jogo *jogo)
     }
 }
 
-/* ========================================================================= */
-/* 4. Telas, cenas e botões                                                  */
-/* ========================================================================= */
+/* ---- 4. Telas, cenas e botões ---- */
 
 void jogo_trocar_tela(Jogo *jogo, TelaJogo nova_tela)
 {

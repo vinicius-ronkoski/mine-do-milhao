@@ -18,9 +18,7 @@
 #include <math.h>
 #include "assets.h"
 
-/* ========================================================================= */
-/* 1. Constantes                                                             */
-/* ========================================================================= */
+/* ---- 1. Constantes ---- */
 
 /** Maior caminho de arquivo montado aqui (pasta + nome). */
 #define TAM_CAMINHO_ASSET 160
@@ -44,7 +42,7 @@
  *  Os fundos têm 854 px ou mais; retratos e ícones, no máximo 600 px. */
 #define LARGURA_MINIMA_SUAVIZADA 800
 
-/** 0 = fundos nítidos (POINT); 1 = fundos suavizados (BILINEAR, padrão). Troque aqui para comparar. */
+/** 1 = fundos suavizados (BILINEAR); 0 = nítidos (POINT). */
 #define SUAVIZAR_FUNDOS 1
 
 /** Maior ampliação usada para reler a fonte (4x = 128 px: monitores 4K e acima reaproveitam este atlas). */
@@ -66,7 +64,7 @@
  */
 static const char *nome_arquivo_imagem(ImagemId id)
 {
-    
+
     static const char *const nomes[IMG_QUANTIDADE] = {
         /* Objetos */
         "painel_enunciado",         /* IMG_PAINEL_ENUNCIADO       */
@@ -79,7 +77,7 @@ static const char *nome_arquivo_imagem(ImagemId id)
         "fundo_dialogo",            /* IMG_FUNDO_DIALOGO          */
         "palco",                    /* IMG_FUNDO_PALCO            */
         "fundo_portal",             /* IMG_FUNDO_PORTAL           */
-        "fundo_fim",                /* IMG_FUNDO_FIM              */    
+        "fundo_fim",                /* IMG_FUNDO_FIM              */
         "auditorio",                /* IMG_FUNDO_AUDITORIO        */
         "fundo_preto",              /* IMG_FUNDO_PRETO            */
         "fundo_vitoria",            /* IMG_FUNDO_VITORIA          */
@@ -107,20 +105,20 @@ static const char *nome_arquivo_imagem(ImagemId id)
         "h2_06", "h2_07", "h2_08",  /* IMG_H1_CENA_7...9          */
 
         /* História 3 */
-        "h3_00", "h3_01", "h3_02",  /* IMG_H3_CENA_1...3          */               
+        "h3_00", "h3_01", "h3_02",  /* IMG_H3_CENA_1...3          */
         "h3_03", "h3_04",           /* IMG_H3_CENA_4...5          */
 
         /* História 4 */
         "h4_00", "h4_01", "h4_02",  /* IMG_H4_CENA_1...3          */
-        "h4_03", "h4_04",           /* IMG_H4_CENA_4...5          */                
+        "h4_03", "h4_04",           /* IMG_H4_CENA_4...5          */
 
         /* História 5 */
-        "h5_00", "h5_01", "h5_02",  /* IMG_H5_CENA_1...3          */             
+        "h5_00", "h5_01", "h5_02",  /* IMG_H5_CENA_1...3          */
 
         /* História 6 (final) */
-        "h6_00", "h6_01", "h6_02",  /* IMG_H6_CENA_1...3          */             
-        "h6_03", "h6_04", "h6_05",  /* IMG_H6_CENA_4...6          */               
-        "h6_06", "h6_07", "h6_08",  /* IMG_H6_CENA_7...9          */               
+        "h6_00", "h6_01", "h6_02",  /* IMG_H6_CENA_1...3          */
+        "h6_03", "h6_04", "h6_05",  /* IMG_H6_CENA_4...6          */
+        "h6_06", "h6_07", "h6_08",  /* IMG_H6_CENA_7...9          */
         "h6_09"                     /* IMG_H6_CENA_10             */
     };
 
@@ -213,9 +211,7 @@ static Color cor_tema_boss(BossId id)
     return cores[id];
 }
 
-/* ========================================================================= */
-/* 2. Funções auxiliares internas                                            */
-/* ========================================================================= */
+/* ---- 2. Funções auxiliares internas ---- */
 
 /**
  * @brief Registra no terminal que um asset caiu no fallback e conta.
@@ -311,10 +307,7 @@ static bool carregar_textura_de_arquivo(const char *caminho, Texture2D *destino)
         return false;
     }
 
-    /* Filtro de ampliação/redução. Padrão: POINT (nítido) em TODAS as imagens, inclusive os
-     * fundos: em tela cheia as bordas dos blocos continuam duras (com escala 1,5 alguns pixels
-     * do fundo saem 1 px maiores). Com SUAVIZAR_FUNDOS = 1, as imagens grandes (fundos e cenas)
-     * passam a BILINEAR: sem serrilhado, mas mais borradas. A pixel art pequena é sempre POINT. */
+    /* Fundos grandes podem ser suavizados (SUAVIZAR_FUNDOS); pixel art pequena fica sempre POINT (nítida) */
     if (SUAVIZAR_FUNDOS && destino->width >= LARGURA_MINIMA_SUAVIZADA) {
         SetTextureFilter(*destino, TEXTURE_FILTER_BILINEAR);
     }
@@ -500,9 +493,8 @@ void assets_ajustar_fonte(Assets *assets, float zoom)
         return;   /* mesmo zoom: nada a fazer (a fonte só é relida quando a janela muda de tamanho) */
     }
 
-    /* Atlas no tamanho em que o texto aparece na tela: em 1920x1080 (zoom 1,5) a fonte de 32 px
-     * vira 48 px, e um texto de tamanho 32 é desenhado 1:1, sem ampliar a textura. As medidas do
-     * texto não mudam: DrawTextEx calcula tudo pelo tamanho pedido, não pelo tamanho do atlas. */
+    /* Atlas no tamanho real da tela (32 px x 1,5 = 48 px em 1920x1080): o texto não é ampliado.
+     * As medidas não mudam, pois DrawTextEx usa o tamanho pedido, não o do atlas. */
     tamanho = (int)roundf((float)TAM_FONTE_BASE * zoom);
     if (!ler_fonte(tamanho, &nova)) {
         return;   /* mantém a fonte atual */
@@ -518,9 +510,7 @@ static float espacamento_letras(float tamanho)
     return tamanho / 10.0f;
 }
 
-/* ========================================================================= */
-/* 3. Carga e liberação                                                      */
-/* ========================================================================= */
+/* ---- 3. Carga e liberação ---- */
 
 Status assets_carregar(Assets *assets)
 {
@@ -642,9 +632,7 @@ void assets_descarregar(Assets *assets)
     memset(assets, 0, sizeof(*assets));
 }
 
-/* ========================================================================= */
-/* 4. Desenho de imagens                                                     */
-/* ========================================================================= */
+/* ---- 4. Desenho de imagens ---- */
 
 bool assets_imagem_fallback(const Assets *assets, ImagemId id)
 {
@@ -753,9 +741,7 @@ void assets_desenhar_boss(const Assets *assets, BossId id, float tempo, Rectangl
     desenhar_textura_encaixada(&assets->escala, animacao->quadros[quadro_atual], destino, tint);
 }
 
-/* ========================================================================= */
-/* 5. Som e música                                                           */
-/* ========================================================================= */
+/* ---- 5. Som e música ---- */
 
 void assets_tocar_som(const Assets *assets, SomId id)
 {
@@ -800,9 +786,7 @@ void assets_atualizar_musica(const Assets *assets)
     UpdateMusicStream(assets->musicas[assets->musica_atual]);
 }
 
-/* ========================================================================= */
-/* 6. Texto                                                                  */
-/* ========================================================================= */
+/* ---- 6. Texto ---- */
 
 int assets_contar_letras(const char *texto)
 {
@@ -821,7 +805,7 @@ int assets_contar_letras(const char *texto)
         * strlen por exemplo só lê em bytes o tamanho total (quando por exemplo, 'é' é 2 bytes)
         * então para 'é':
         * strlen -> 2 bytes (2 char)
-        * este trecho -> 1 caracter 
+        * este trecho -> 1 caracter
         */
         GetCodepointNext(texto, &bytes_da_letra);
         texto += bytes_da_letra;

@@ -29,7 +29,7 @@
 #include "raylib.h"
 #include "jogo.h"
 
-/* ---------- Tela de diálogo (IMPLEMENTADA) ---------- */
+/* ---------- Tela de diálogo ---------- */
 
 /** @brief Avança o diálogo com ESPAÇO/ENTER/clique; ao terminar vai para jogo->tela_apos_dialogo. */
 void tela_dialogo_atualizar(Jogo *jogo, float dt);
@@ -37,19 +37,13 @@ void tela_dialogo_atualizar(Jogo *jogo, float dt);
 /** @brief Fundo IMG_FUNDO_DIALOGO, boss da rodada ao centro e a caixa de diálogo. */
 void tela_dialogo_desenhar(const Jogo *jogo);
 
-/* ---------- Tela de pergunta (IMPLEMENTADA) ---------- */
+/* ---------- Tela de pergunta ---------- */
 
 /**
- * @brief Lê os botões da pergunta (todo botão via jogo_botao_acionado, que já toca o clique e
- *        ignora cliques nos primeiros ATRASO_ENTRADA_TELA segundos):
- *   1. Para cada alternativa: se jogo_botao_acionado(jogo, &jogo->alternativas[posicao])
- *      -> partida_responder(posicao) e jogo_trocar_tela(TELA_REVELACAO).
- *   2. botao_parar -> partida_parar(); jogo_tocar_cena(CENA_PARADA, TELA_RESULTADO).
- *   3. botao_dica -> partida_comprar_dica(); jogo_preparar_botoes_pergunta() (desabilita o botão).
- *      O botão já vem desabilitado sem saldo (partida_pode_comprar_dica) e mostra o preço.
- *   4. botao_eliminar -> partida_eliminar_duas(); jogo_preparar_botoes_pergunta()
- *      (também pago: desabilitado sem saldo por partida_pode_eliminar, mostra o preço).
- *   5. Status diferente de STATUS_OK -> jogo_registrar_erro().
+ * @brief Lê os botões da pergunta (via jogo_botao_acionado):
+ *   - alternativa -> partida_responder() e jogo_tocar_reacao() (a revelação vem depois da fala);
+ *   - Parar -> partida_parar() e CENA_PARADA; Dica/Eliminar -> compra e jogo_preparar_botoes_pergunta().
+ *   Na 1ª pergunta de cada boss toca o som de entrada dele. Erros vão para jogo_registrar_erro().
  */
 void tela_pergunta_atualizar(Jogo *jogo, float dt);
 
@@ -60,7 +54,7 @@ void tela_pergunta_atualizar(Jogo *jogo, float dt);
  */
 void tela_pergunta_desenhar(const Jogo *jogo);
 
-/* ---------- Tela de revelação (IMPLEMENTADA) ---------- */
+/* ---------- Tela de revelação ---------- */
 
 /**
  * @brief Vem depois da reação do apresentador (jogo_tocar_reacao). Ao entrar, toca SOM_DANO_BOSS
@@ -76,7 +70,7 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt);
  *         "Acertou! -1 de vida" / "<boss> derrotado!" / "Errou! Nenhum dano." e o botão Continuar. */
 void tela_revelacao_desenhar(const Jogo *jogo);
 
-/* ---------- Tela de resultado (IMPLEMENTADA) ---------- */
+/* ---------- Tela de resultado ---------- */
 
 /** @brief Botão "Reiniciar (ENTER)" -> jogo_nova_partida() (volta à introdução); ESC volta ao menu. */
 void tela_resultado_atualizar(Jogo *jogo, float dt);
@@ -88,7 +82,7 @@ void tela_resultado_desenhar(const Jogo *jogo);
 /* ---------- Desenhos compartilhados ---------- */
 
 /**
- * @brief (IMPLEMENTADA) Boss da fase atual (o da rodada em jogo), para escolher fundo, cores e sprite.
+ * @brief Boss da fase atual (o da rodada em jogo), para escolher fundo, cores e sprite.
  *
  * Uso típico, que troca o cenário sozinho a cada boss:
  *   assets_desenhar_fundo(&jogo->assets, IMG_FUNDO_PERGUNTA, tela_boss_da_fase(jogo));
@@ -97,22 +91,19 @@ void tela_resultado_desenhar(const Jogo *jogo);
  */
 BossId tela_boss_da_fase(const Jogo *jogo);
 
-/** @brief (IMPLEMENTADA) Saldo de esmeraldas (canto superior direito), "Pergunta N/15" e o nome do nível. */
+/** @brief Saldo de esmeraldas (canto superior direito), "Pergunta N/15" e o nome do nível. */
 void tela_desenhar_hud(const Jogo *jogo);
 
 /**
- * @brief (IMPLEMENTADA) Boss da rodada dentro de `area`: nome em cima, sprite quadrado (lado = largura
+ * @brief Boss da rodada dentro de `area`: nome em cima, sprite quadrado (lado = largura
  *        da área), barra de vida e "Vida x/y" embaixo. A altura usada é largura + 40 + 15 + 24 + 30.
  */
 void tela_desenhar_boss(const Jogo *jogo, Rectangle area);
 
-/** @brief (IMPLEMENTADA) Barra horizontal de vida: fundo, preenchimento proporcional a `fracao` (0 a 1), borda. */
+/** @brief Barra horizontal de vida: fundo, preenchimento proporcional a `fracao` (0 a 1), borda. */
 void tela_desenhar_barra_vida(Rectangle area, float fracao, Color cor);
 
-/** @brief (A IMPLEMENTAR) As 15 rodadas com prêmios (partida_premio_da_rodada), marcando a atual e os marcos. */
-void tela_desenhar_escada_premios(const Jogo *jogo, Rectangle area);
-
-/** @brief (IMPLEMENTADA) Faixa vermelha no rodapé com utils_mensagem_status(jogo->ultimo_erro). */
+/** @brief Faixa vermelha no rodapé com utils_mensagem_status(jogo->ultimo_erro). */
 void tela_desenhar_banner_erro(const Jogo *jogo);
 
 #endif /* TELA_H */

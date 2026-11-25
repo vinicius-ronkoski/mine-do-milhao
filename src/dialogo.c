@@ -16,9 +16,7 @@
 /** Número grande de letras: usado para "completar" a fala de uma vez. */
 #define LETRAS_FALA_COMPLETA 100000
 
-/* ========================================================================= */
-/* 1. Falas de cada cena — TEXTO PROVISÓRIO: personalize à vontade           */
-/* ========================================================================= */
+/* ---- 1. Falas de cada cena ---- */
 
 Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
 {
@@ -77,7 +75,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(NOME_APRESENTADOR, "Muito obrigado, muito obrigado! Hmm!");
         FALA(
-            NOME_APRESENTADOR, 
+            NOME_APRESENTADOR,
             "Boa noite senhoras e senhores! Boa noite moças e rapazes! Boa noite meninas e meninos!"
         );
         FALA(NOME_APRESENTADOR, "Auditório, boa noite!");
@@ -179,13 +177,13 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
     case CENA_HISTORIA_2:
         // Inicio Cena Historia 1
         CENARIO(IMG_FUNDO_PALCO);
-        
+
 
         RETRATO(IMG_ICONE_ALDEAO_ASSUSTADO);
         FALA(NOME_APRESENTADOR, "Ainda bem que nada aconteceu, obrigado por nos salvar!");
         RETRATO(IMG_ICONE_ALDEAO);
         FALA(
-            NOME_APRESENTADOR, 
+            NOME_APRESENTADOR,
             "Bem, pelo o que eu entendi, quando você responde uma pergunta que eu faço "
             "você consegue atacar os inimigos e causar dano!"
         );
@@ -193,12 +191,12 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
 
         CENARIO(IMG_H2_CENA_1);
         FALA(NOME_APRESENTADOR, "O que é isso? Parece que o Creeper deixou um livro...");
-        
+
         // Leitura do livro
         CENARIO(IMG_H2_CENA_2);
         RETRATO(IMG_NENHUMA);
         FALA(" ", "\"O chamado o chama em meio a chamas de um chamado sem fim.\"");
-        FALA(" ", 
+        FALA(" ",
             "\"Aquele que se opõe aos céus e dos ossos carbonizados nasce em meio as chamas.\""
             "                                                                            -H."
         );
@@ -212,14 +210,14 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
 
         MUSICA(MUSICA_SILENCIO);
         FALA(NOME_APRESENTADOR, "Chamas, ossos carbonizados, oposição aos céus... É óbvio que é");
-        
+
         SOM(SOM_THE_NETHER);
         FALA(NOME_APRESENTADOR, "O NETHER");
 
         // O chamado
         RETRATO(IMG_NENHUMA);
         FALA("Você", "Mas, como iremos para");
-        
+
         SOM(SOM_THE_NETHER);
         FALA("Você", "O NETHER");
 
@@ -323,22 +321,22 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "Hmm...");
         FALA(NOME_APRESENTADOR, "Parabéns... eu acho.");
         FALA(NOME_APRESENTADOR, "Bem enquanto você lutava com suas respostas, eu reparei num quarto no final da sala.");
-        
+
         // Apresentador aponta sala do fim do corredor
         CENARIO(IMG_H4_CENA_1);
         FALA(NOME_APRESENTADOR, "Caso não tenha visto, olhe a literal seta mágica que eu fiz com poderes de apresentador.");
         FALA(NOME_APRESENTADOR, "Vamos lá!");
-        
+
         // Perto do portal
         CENARIO(IMG_H4_CENA_2);
-        FALA(NOME_APRESENTADOR, 
+        FALA(NOME_APRESENTADOR,
             "Olha só! Um portal do fim convenientemente colocada como recurso para cortar roteiro! Que incrível!");
         FALA(NOME_APRESENTADOR, "Deve ser coisa da MEG");
         FALA(NOME_APRESENTADOR, "Ah! Se nós poderiamos voltar pelo portal do nether? Claro!");
-        FALA(NOME_APRESENTADOR, 
-            "Mas será mais divertido! " 
+        FALA(NOME_APRESENTADOR,
+            "Mas será mais divertido! "
             "Não é como se eu estivesse com preguiça de andar alguns blocos para trás");
-        
+
         RETRATO(IMG_ICONE_DESCONHECIDO_1);
         FALA("???", "Cuidado com o te aguarda. A curiosidade sempre mata o gato.");
 
@@ -356,7 +354,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         RETRATO(IMG_NENHUMA);
         CENARIO(IMG_H4_CENA_3);
         FALA(" ", "*Você avista uma fenda em meio de uma tempestade*");
-        
+
         RETRATO(IMG_ICONE_ALDEAO);
         CENARIO(IMG_H4_CENA_4);
         FALA(NOME_APRESENTADOR, "Olha só, até ganhei roupas novas! Que lugar maravilhoso!");
@@ -379,7 +377,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         CENARIO(IMG_FUNDO_FIM);
         RETRATO(IMG_NENHUMA);
         FALA(
-            " ", 
+            " ",
             "*Você derrotou o Dragão do fim. Um grande portal se abre no centro da ilha.*"
         );
 
@@ -409,7 +407,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "Eu tive um sonho...");
         FALA(NOME_APRESENTADOR, "peculiar.");
         FALA(NOME_APRESENTADOR, "O que aconteceu com seus olhos?");
-        
+
         RETRATO(IMG_ICONE_STEVE);
         FALA("Você", "Meus...");
 
@@ -424,7 +422,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
 
         FALA(NOME_APRESENTADOR, "...");
         FALA(NOME_APRESENTADOR, "...");
-        
+
         RETRATO(IMG_ICONE_STEVE);
         FALA("Você", "O-o que aconteceu?");
 
@@ -439,9 +437,9 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         FALA(NOME_APRESENTADOR, "...");
         FALA(NOME_APRESENTADOR, "Você caiu, com olhos brancos e começou a se debater.");
         FALA(NOME_APRESENTADOR, "Estava dizendo sobre esmeraldas, do porquê ter buscado os prêmios");
-        FALA(NOME_APRESENTADOR, 
+        FALA(NOME_APRESENTADOR,
             "Eu não sei o que te motivou a chegar aqui, mas não deveria se culpar por conquistar algo");
-        
+
         // Villager hipotético
         CENARIO(IMG_H6_CENA_2);
         FALA(NOME_APRESENTADOR, "Você poderia ter parado na primeira pergunta, ignorando a aventura.");
@@ -453,8 +451,8 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         CENARIO(IMG_H6_CENA_4);
         FALA(NOME_APRESENTADOR, "Você.");
         FALA(NOME_APRESENTADOR, "E só você teve a coragem de enfrentar");
-        FALA(NOME_APRESENTADOR, 
-            "Uma entidade explosiva, um espirito voador de três cabeças, um gigante feito de almas," 
+        FALA(NOME_APRESENTADOR,
+            "Uma entidade explosiva, um espirito voador de três cabeças, um gigante feito de almas,"
             "e um Dragão gigante");
         FALA(NOME_APRESENTADOR, "Mas, se não tivesse a coragem de vencer a si mesmo, jamais teria chegado tão longe.");
         FALA(NOME_APRESENTADOR, "Vamos voltar para casa, meu amigo.");
@@ -471,7 +469,7 @@ Status dialogo_anexar_cena(Dialogo *dialogo, CenaId cena)
         SOM(SOM_PLATEIA);
         FALA(NOME_APRESENTADOR, "Muito obrigado, muito obrigado! Hmm!");
         FALA(
-            NOME_APRESENTADOR, 
+            NOME_APRESENTADOR,
             "Boa noite senhoras e senhores! Boa noite moças e rapazes! Boa noite meninas e meninos!"
         );
         FALA(NOME_APRESENTADOR, "Auditório, boa noite!");
@@ -546,7 +544,7 @@ static Status anexar_fala_formatada(Dialogo *dialogo, const char *formato, const
 Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *resposta_certa,
                              BossId boss_id, int esmeraldas, int variante)
 {
-    /* 
+    /*
      * - Cada texto pode ter NO MÁXIMO um %s (ou um %d, na tabela das esmeraldas). Sem nenhum também funciona.
      * - Para mostrar o símbolo de porcentagem, escreva %%.
      * - "" = essa fala não aparece.
@@ -571,28 +569,28 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
      * UMA LINHA POR BOSS, NA ORDEM DO ENUM BossId (boss.h). */
     static const char *const acerto_boss[BOSS_QUANTIDADE][REACOES_POR_RESULTADO] = {
         /* BOSS_CREEPER      */
-        { 
-            "Parece que suas respostas dão dano, continue!", 
+        {
+            "Parece que suas respostas dão dano, continue!",
 
-            "Um acerto, um golpe? Não é hora de parar!", 
+            "Um acerto, um golpe? Não é hora de parar!",
 
-            "Você dá dano quando acerta! Como eu sei? Logo respondo", 
+            "Você dá dano quando acerta! Como eu sei? Logo respondo",
 
             "Que incrível! É como se acertar machucasse o %s"
         },
         /* BOSS_WITHER       */
-        { 
-            "Que medo! Ele é muito forte! Continue acertando", 
+        {
+            "Que medo! Ele é muito forte! Continue acertando",
 
             "Que chamado nos chama em meio às chamas o que... "
-            "Olha só para esse espírito de três cabeças", 
+            "Olha só para esse espírito de três cabeças",
 
             "Ma oê, quem quer dinheiro (me ajude)",
 
-            "Que calor! Como queria estar no palco com meu ar condicionado..." 
-        },   
+            "Que calor! Como queria estar no palco com meu ar condicionado..."
+        },
         /* BOSS_WARDEN*/
-        { 
+        {
             "Acertou, mas fique em silêncio, ele nos ouve...",
 
             "Shii... não faça tanto barulho!",
@@ -601,42 +599,42 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
 
             "...",
         },
-        /* BOSS_ENDER_DRAGON */          
-        { 
+        /* BOSS_ENDER_DRAGON */
+        {
             "Sei que está lidando com um dragão, mas gostou das roupas novas?",
 
             "O bafo dele é roxo! Eu nem sei o cheiro de roxo!",
 
             "E se fizermos o \"dragãozinho de papel\"?",
 
-            "Se roubarmos o ovo dele, quantas esmeraldas dá?" 
+            "Se roubarmos o ovo dele, quantas esmeraldas dá?"
         },
         /* BOSS_HEROBRINE   */
-        { "", "", "", "" }    
+        { "", "", "", "" }
     };
     static const char *const erro_boss[BOSS_QUANTIDADE][REACOES_POR_RESULTADO] = {
         /* BOSS_CREEPER      */
-        { 
-            "Fujam! Ele vai explodir!", 
+        {
+            "Fujam! Ele vai explodir!",
 
-            "Tragam um gato! Repito, tragam um gato!", 
+            "Tragam um gato! Repito, tragam um gato!",
 
-            "Perdeu logo nas perguntas fáceis?! Que decepção!", 
+            "Perdeu logo nas perguntas fáceis?! Que decepção!",
 
             "Cadê a segurança?"
         },
         /* BOSS_WITHER       */
-        { 
-            "Por que eu fui invocar isso?", 
+        {
+            "Por que eu fui invocar isso?",
 
-            "De fato ele se opõe aos céus!", 
+            "De fato ele se opõe aos céus!",
 
             "Alô? Produção? Conseguem me buscar no Nether eu estou nas coordenadas...",
 
-            "Eu não quero morrer aqui!" 
-        },   
+            "Eu não quero morrer aqui!"
+        },
         /* BOSS_WARDEN*/
-        { 
+        {
             "VOCÊ NÃO PODE ERRAR ASSIM!",
 
             "AGORA VOU FAZER TODO BARULHO POSSÍVEL! VÊ SE ACERTA NAS PRÓXIMAS",
@@ -645,20 +643,20 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
 
             "...putz",
         },
-        /* BOSS_ENDER_DRAGON */          
-        { 
+        /* BOSS_ENDER_DRAGON */
+        {
             "Vou lá roubar o ovo dele! Depois ligo para a produção vir me buscar",
 
             "Não tem como eu te reviver? Nem com aquelas magias dos pillagers?",
 
             "Seremos cozidos pelo bafo roxo...",
 
-            "Por favor dragão do fim! Tenha misericórdia!" 
+            "Por favor dragão do fim! Tenha misericórdia!"
         },
         /* BOSS_HEROBRINE   */
-        { "", "", "", "" }    
+        { "", "", "", "" }
     };
-    
+
 
     /* 3ª fala, só no acerto: saldo de esmeraldas (%d = saldo atual). */
     static const char *const acerto_esmeraldas[REACOES_POR_RESULTADO] = {
@@ -728,9 +726,7 @@ Status dialogo_anexar_reacao(Dialogo *dialogo, bool acertou, const char *respost
     return status;
 }
 
-/* ========================================================================= */
-/* 2. Controle do diálogo                                                    */
-/* ========================================================================= */
+/* ---- 2. Controle do diálogo ---- */
 
 void dialogo_limpar(Dialogo *dialogo)
 {
@@ -845,9 +841,7 @@ bool dialogo_atualizar(Dialogo *dialogo, float dt, bool jogador_avancou)
     return dialogo->terminou;
 }
 
-/* ========================================================================= */
-/* 3. Desenho                                                                */
-/* ========================================================================= */
+/* ---- 3. Desenho ---- */
 
 void dialogo_desenhar(const Dialogo *dialogo, const Assets *assets)
 {

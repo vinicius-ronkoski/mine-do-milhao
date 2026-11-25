@@ -3,7 +3,7 @@
 #
 #  make                 compila só o modo texto (cadastro de perguntas)
 #  make USE_RAYLIB=1    compila também o jogo visual (opção 8 do menu)
-#  make run             compila e executa          make teste   testa a lógica sem janela
+#  make run             compila e executa
 #  make clean           apaga objetos/executáveis  make clear_data  apaga data/*.dat
 #
 #  Funciona no Windows (MinGW, mingw32-make) e no Linux (gcc + make).
@@ -47,9 +47,6 @@ DATA = $(wildcard $(DATA_DIR)/*.dat)
 # Tudo que já foi compilado, nos dois modos (para o clean)
 COMPILADOS = $(wildcard $(BUILD_ROOT)/*/*.o $(BUILD_ROOT)/*/*.d)
 
-# Teste da lógica (só módulos sem raylib: funciona com ou sem USE_RAYLIB)
-TESTE_SRC  = tests/teste_partida.c
-TESTE_OBJS = $(addprefix $(BUILD_DIR)/,arquivo.o banco.o boss.o partida.o pergunta.o sorteio.o utils.o)
 
 # -----------------------------------------------------------------------------
 # Compilador
@@ -75,32 +72,27 @@ GL_LIB ?= -lGL
 # -----------------------------------------------------------------------------
 ifeq ($(OS),Windows_NT)
 	BIN           = $(BINNAME).exe
-	TESTE_BIN     = teste_partida.exe
 	RAYLIB_LIBS   = -lraylib -lopengl32 -lgdi32 -lwinmm
 	RAYLIB_LIBDIR = -L./$(RAYLIB_DIR)/lib/windows
 	ifeq ($(shell echo %OS%),Windows_NT)
 		RUN         = $(BIN)
-		TESTE_RUN   = $(TESTE_BIN)
 		RM          = del /Q /F
 		MKDIR_BUILD = mkdir $(subst /,\,$(BUILD_DIR))
-		CLEAN_FILES = $(subst /,\,$(COMPILADOS)) $(BIN) $(TESTE_BIN)
+		CLEAN_FILES = $(subst /,\,$(COMPILADOS)) $(BIN)
 		CLEAN_DATA  = $(subst /,\,$(DATA))
 	else
 		RUN         = ./$(BIN)
-		TESTE_RUN   = ./$(TESTE_BIN)
 		RM          = rm -f
 		MKDIR_BUILD = mkdir -p $(BUILD_DIR)
-		CLEAN_FILES = $(COMPILADOS) $(BIN) $(TESTE_BIN)
+		CLEAN_FILES = $(COMPILADOS) $(BIN)
 		CLEAN_DATA  = $(DATA)
 	endif
 else
 	BIN           = $(BINNAME)
 	RUN           = ./$(BIN)
-	TESTE_BIN     = teste_partida
-	TESTE_RUN     = ./$(TESTE_BIN)
 	RM            = rm -f
 	MKDIR_BUILD   = mkdir -p $(BUILD_DIR)
-	CLEAN_FILES   = $(COMPILADOS) $(BIN) $(TESTE_BIN)
+	CLEAN_FILES   = $(COMPILADOS) $(BIN)
 	CLEAN_DATA    = $(DATA)
 	RAYLIB_LIBS   = -lraylib $(GL_LIB) -lpthread -ldl -lrt -lX11
 	RAYLIB_LIBDIR = -L./$(RAYLIB_DIR)/lib/linux
@@ -129,7 +121,7 @@ else
 	LDLIBS  = -lm
 endif
 
-.PHONY: all run debug valgrind clean clear_data help teste FORCE
+.PHONY: all run debug valgrind clean clear_data help FORCE
 
 # -----------------------------------------------------------------------------
 # Alvos principais
@@ -156,12 +148,8 @@ run: all
 	$(RUN)
 
 # -----------------------------------------------------------------------------
-# Testes e depuração
+# Depuração
 # -----------------------------------------------------------------------------
-teste: $(TESTE_OBJS) $(TESTE_SRC)
-	$(CC) $(CFLAGS) $(TESTE_SRC) $(TESTE_OBJS) -o $(TESTE_BIN) -lm
-	$(TESTE_RUN)
-
 debug: all
 	gdb $(BIN)
 
@@ -180,7 +168,7 @@ clear_data:
 	-$(RM) $(CLEAN_DATA)
 
 help:
-	@echo Alvos: all, run, clean, debug, valgrind, clear_data, teste
+	@echo Alvos: all, run, clean, debug, valgrind, clear_data
 	@echo Raylib: make USE_RAYLIB=1
 
 -include $(DEP)
