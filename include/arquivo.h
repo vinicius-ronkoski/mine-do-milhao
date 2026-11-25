@@ -53,4 +53,11 @@ Status dat_carregar(const char *caminho, Banco *banco);
  */
 Status dat_salvar(const char *caminho, const Banco *banco);
 
+/**
+ * @brief Troca `destino` por `origem` de uma vez (o antigo só some se der certo). Usada por
+ *        dat_salvar e save_gravar, que gravam primeiro num temporário.
+ * @return true se a troca foi feita.
+ */
+bool arquivo_substituir(const char *origem, const char *destino);
+
 #endif /* ARQUIVO_H */

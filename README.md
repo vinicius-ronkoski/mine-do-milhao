@@ -80,6 +80,7 @@ jogo-milhao-minecraft/
 | `botao.h/.c`          | Botões clicáveis com atalho de teclado                            | sim |
 | `dialogo.h/.c`        | Motor das falas: sequência, máquina de escrever e caixa de diálogo | sim |
 | `historia.h/.c`       | Conteúdo da história: falas de cada cena e reações do apresentador | sim |
+| `save.h/.c`           | Save em `data/save.txt`: boss em que continuar, saldo e "eliminar duas" usada | não |
 | `tela.h/.c`           | Atualização e desenho de cada tela                                | sim |
 | `escala.h/.c`         | Tela cheia (F11) e janela redimensionável: ajusta o quadro 1280x720 à tela, mantendo a pixel art nítida | sim |
 | `jogo.h/.c`           | Janela, laço principal e troca de telas                           | sim |

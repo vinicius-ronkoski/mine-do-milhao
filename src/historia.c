@@ -11,9 +11,9 @@
 #include "historia.h"
 
 /** Nome do apresentador nas falas. */
-#define NOME_APRESENTADOR "Silvio Aldeão"
+#define NOME_APRESENTADOR "Sílvio Aldeão"
 
-/* ---- 1. Falas de cada cena (escreva aqui) ---- */
+/* ---- 1. Falas de cada cena  ---- */
 
 Status historia_anexar_cena(Dialogo *dialogo, CenaId cena)
 {

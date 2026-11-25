@@ -69,7 +69,8 @@ static Status criar_botoes_menu(Jogo *jogo)
         status = botao_criar(&jogo->botoes[BOTAO_SAIR], area_sair, "Sair do jogo", KEY_NULL);
     }
 
-    /* Ainda sem save e sem tela de créditos: aparecem apagados (habilite quando existirem) */
+    /* Créditos: apagado até existir a tela. "Carregar jogo" é habilitado ao entrar no menu,
+     * se houver save válido (tela_menu_atualizar). */
     jogo->botoes[BOTAO_CARREGAR].habilitado = false;
     jogo->botoes[BOTAO_CREDITOS].habilitado = false;
     return status;
@@ -259,6 +260,37 @@ Status jogo_nova_partida(Jogo *jogo)
     jogo_tocar_cena(jogo, CENA_INTRO, TELA_PERGUNTA);
     jogo_anexar_cena(jogo, CENA_HISTORIA_1);
     jogo_anexar_cena(jogo, historia_cena_do_boss(partida_boss_atual(&jogo->partida)->id));
+    return STATUS_OK;
+}
+
+Status jogo_continuar_save(Jogo *jogo)
+{
+    Save save;
+    Status status;
+
+    if (jogo == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    jogo->ultimo_erro = STATUS_OK;
+    jogo->tempo_do_erro = 0.0f;
+    jogo->ultima_variante_reacao = -1;
+
+    status = save_ler(CAMINHO_SAVE, &save);
+    if (status != STATUS_OK) {
+        return status;
+    }
+    status = partida_iniciar_no_boss(&jogo->partida, jogo->banco, save.boss, save.esmeraldas,
+                                     save.eliminacao_usada);
+    if (status != STATUS_OK) {
+        return status;
+    }
+    status = jogo_preparar_botoes_pergunta(jogo);
+    if (status != STATUS_OK) {
+        return status;
+    }
+
+    /* Começa onde a luta começa: a entrada do boss (que também troca a música da seção) */
+    jogo_tocar_cena(jogo, historia_cena_do_boss(save.boss), TELA_PERGUNTA);
     return STATUS_OK;
 }
 

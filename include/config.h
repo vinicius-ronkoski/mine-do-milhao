@@ -48,6 +48,9 @@
 /** Pasta da opção "Exportar CSV". */
 #define CAMINHO_EXPORTADOS "data/exportados/"
 
+/** Save do jogo (texto: boss, esmeraldas e "eliminar duas" usada; ver save.h). Fora do Git. */
+#define CAMINHO_SAVE "data/save.txt"
+
 /** @name Regras da partida (partida.c) */
 /**@{*/
 /** Perguntas por partida. */

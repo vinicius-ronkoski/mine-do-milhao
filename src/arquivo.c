@@ -323,7 +323,7 @@ Status dat_carregar(const char *caminho, Banco *banco)
  *
  * @return true se a troca foi feita.
  */
-static bool substituir_arquivo(const char *origem, const char *destino)
+bool arquivo_substituir(const char *origem, const char *destino)
 {
 #ifdef _WIN32
     return MoveFileExA(origem, destino, MOVEFILE_REPLACE_EXISTING) != 0;
@@ -375,7 +375,7 @@ Status dat_salvar(const char *caminho, const Banco *banco)
 
     // Deu tudo certo: o temporário vira o .dat definitivo. Se falhou, apaga o temporário
     // e deixa o .dat antigo como estava.
-    if (status == STATUS_OK && !substituir_arquivo(temporario, caminho)) {
+    if (status == STATUS_OK && !arquivo_substituir(temporario, caminho)) {
         perror(caminho);
         status = STATUS_ERRO_ARQUIVO;
     }

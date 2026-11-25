@@ -13,7 +13,7 @@
 
 /* ---------- Menu principal ---------- */
 
-/** @brief Toca a música principal ao entrar; Novo jogo -> carregamento e jogo_nova_partida; Sair -> TELA_SAIR. */
+/** @brief Ao entrar: música principal e "Carregar jogo" habilitado se há save. Novo jogo/Carregar -> carregamento; Sair -> TELA_SAIR. */
 void tela_menu_atualizar(Jogo *jogo, float dt);
 
 /** @brief Fundo (IMG_FUNDO_MENU), logo (IMG_TITULO ou texto), os 4 botões e TEXTO_VERSAO. */
@@ -21,7 +21,7 @@ void tela_menu_desenhar(const Jogo *jogo);
 
 /* ---------- Carregamento (placeholder) ---------- */
 
-/** @brief Após DURACAO_CARREGANDO vai para tela_apos_carregar (TELA_DIALOGO = jogo_nova_partida). */
+/** @brief Após DURACAO_CARREGANDO executa acao_apos_carregar (menu, jogo_nova_partida ou jogo_continuar_save). */
 void tela_carregando_atualizar(Jogo *jogo, float dt);
 
 /** @brief Fundo do menu escurecido, "Carregando..." e uma barra enchendo. */
@@ -53,7 +53,7 @@ void tela_pergunta_desenhar(const Jogo *jogo);
 /**
  * @brief Som de dano ao entrar; Continuar -> partida_confirmar_revelacao e decide o destino:
  *        erro -> CENA_DERROTA e resultado; vitória -> CENA_HISTORIA_FIM e resultado;
- *        boss caiu -> CENA_HISTORIA_2..5 + próximo boss; senão, próxima pergunta.
+ *        boss caiu -> grava o save, CENA_HISTORIA_2..5 + próximo boss; senão, próxima pergunta.
  */
 void tela_revelacao_atualizar(Jogo *jogo, float dt);
 

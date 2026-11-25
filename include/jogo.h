@@ -18,6 +18,7 @@
 #include "partida.h"
 #include "dialogo.h"
 #include "historia.h"
+#include "save.h"
 #include "botao.h"
 
 /** Alterna a tela cheia (escala.h). */
@@ -35,13 +36,20 @@
 /** Telas do jogo. */
 typedef enum {
     TELA_MENU = 0,      /**< Menu principal (tela inicial). */
-    TELA_CARREGANDO,    /**< Intermediária: vai para tela_apos_carregar. */
+    TELA_CARREGANDO,    /**< Intermediária: executa acao_apos_carregar. */
     TELA_DIALOGO,       /**< Falas (história, reação, entrada de boss). */
     TELA_PERGUNTA,      /**< Pergunta, alternativas, ajudas e Parar. */
     TELA_REVELACAO,     /**< Resultado da resposta e dano no boss. */
     TELA_RESULTADO,     /**< Prêmio final. */
     TELA_SAIR           /**< Encerra o laço (volta ao menu de texto). */
 } TelaJogo;
+
+/** O que a tela de carregamento faz quando a barra enche. */
+typedef enum {
+    ACAO_IR_AO_MENU = 0,  /**< Volta ao menu principal. */
+    ACAO_NOVA_PARTIDA,    /**< jogo_nova_partida (começa na CENA_INTRO). */
+    ACAO_CONTINUAR_SAVE   /**< jogo_continuar_save (começa na entrada do boss salvo). */
+} AcaoCarregamento;
 
 /**
  * Botões do jogo, guardados em Jogo.botoes[] (botão novo: id aqui, antes de BOTAO_QUANTIDADE,
@@ -57,7 +65,7 @@ typedef enum {
     BOTAO_ELIMINAR,           /**< Tecla E. */
     BOTAO_CONTINUAR,          /**< Revelação e resultado (ENTER). */
     BOTAO_JOGAR,              /**< Menu: "Novo jogo" (ENTER). */
-    BOTAO_CARREGAR,           /**< Menu: "Carregar jogo" (desabilitado até existir o save). */
+    BOTAO_CARREGAR,           /**< Menu: "Carregar jogo" (habilitado só com save válido). */
     BOTAO_CREDITOS,           /**< Menu: "Créditos" (desabilitado até existir a tela). */
     BOTAO_SAIR,               /**< Menu: "Sair do jogo" (volta ao menu de texto). */
     BOTAO_QUANTIDADE          /**< Quantidade de botões (não é um botão). */
@@ -77,7 +85,7 @@ typedef struct {
 
     TelaJogo tela;                        /**< Tela ativa. */
     TelaJogo tela_apos_dialogo;           /**< Para onde ir quando o diálogo acabar. */
-    TelaJogo tela_apos_carregar;          /**< TELA_MENU, ou TELA_DIALOGO = começar partida nova. */
+    AcaoCarregamento acao_apos_carregar;  /**< O que fazer quando o carregamento terminar. */
     float tempo_na_tela;                  /**< Segundos na tela atual. */
     float tempo_total;                    /**< Segundos desde o início (animação dos bosses). */
     bool efeito_da_tela_tocado;           /**< Som de entrada da tela já tocado. */
@@ -105,6 +113,13 @@ void jogo_encerrar(Jogo *jogo);
 
 /** @brief partida_iniciar, prepara os botões e toca intro + HISTORIA_1 + entrada do 1º boss (também no Reiniciar). */
 Status jogo_nova_partida(Jogo *jogo);
+
+/**
+ * @brief Continua do save (botão "Carregar jogo"): save_ler, partida_iniciar_no_boss, botões e a
+ *        cena de entrada do boss salvo.
+ * @return STATUS_OK ou o erro de save_ler/partida_iniciar_no_boss (a tela não muda).
+ */
+Status jogo_continuar_save(Jogo *jogo);
 
 /** @brief Por quadro: F11, escala, fonte, música, relógios, tela_X_atualizar e cursor. */
 void jogo_atualizar(Jogo *jogo, float dt);

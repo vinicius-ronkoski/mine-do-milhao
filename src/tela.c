@@ -161,18 +161,24 @@ void tela_menu_atualizar(Jogo *jogo, float dt)
         return;
     }
     if (!jogo->efeito_da_tela_tocado) {
+        Save save;
+
         assets_trocar_musica(&jogo->assets, MUSICA_PRINCIPAL);
+        /* "Carregar jogo" só com um save válido (o arquivo pode ter mudado desde a última vez) */
+        jogo->botoes[BOTAO_CARREGAR].habilitado = save_ler(CAMINHO_SAVE, &save) == STATUS_OK;
         jogo->efeito_da_tela_tocado = true;
     }
 
     if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_JOGAR])) {
-        jogo->tela_apos_carregar = TELA_DIALOGO;   /* partida nova, começando pela CENA_INTRO */
+        jogo->acao_apos_carregar = ACAO_NOVA_PARTIDA;
+        jogo_trocar_tela(jogo, TELA_CARREGANDO);
+    } else if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_CARREGAR])) {
+        jogo->acao_apos_carregar = ACAO_CONTINUAR_SAVE;
         jogo_trocar_tela(jogo, TELA_CARREGANDO);
     } else if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_SAIR])) {
         jogo_trocar_tela(jogo, TELA_SAIR);
     }
-    /* Carregar jogo e Créditos: desabilitados (ver criar_botoes_menu em jogo.c) */
-    botao_atualizar(&jogo->botoes[BOTAO_CARREGAR]);
+    /* Créditos: desabilitado (ver criar_botoes_menu em jogo.c) */
     botao_atualizar(&jogo->botoes[BOTAO_CREDITOS]);
 }
 
@@ -207,15 +213,19 @@ void tela_carregando_atualizar(Jogo *jogo, float dt)
     if (jogo == NULL || jogo->tempo_na_tela < DURACAO_CARREGANDO) {
         return;
     }
-    if (jogo->tela_apos_carregar == TELA_MENU) {
+    switch (jogo->acao_apos_carregar) {
+    case ACAO_NOVA_PARTIDA:      /* sorteio, botões e CENA_INTRO */
+        status = jogo_nova_partida(jogo);
+        break;
+    case ACAO_CONTINUAR_SAVE:    /* partida a partir do boss salvo */
+        status = jogo_continuar_save(jogo);
+        break;
+    default:
         jogo_trocar_tela(jogo, TELA_MENU);
         return;
     }
-
-    /* Partida nova: sorteio, botões e CENA_INTRO (jogo_nova_partida troca para TELA_DIALOGO) */
-    status = jogo_nova_partida(jogo);
     if (status != STATUS_OK) {
-        jogo_registrar_erro(jogo, status, "nova partida");
+        jogo_registrar_erro(jogo, status, "carregar partida");
         jogo_trocar_tela(jogo, TELA_MENU);
     }
 }
@@ -419,7 +429,10 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
     case ESTADO_FIM_ERRO:        /* errou: agradecimento e tela de derrota */
         jogo_tocar_cena(jogo, CENA_DERROTA, TELA_RESULTADO);
         break;
-    case ESTADO_FIM_VITORIA:     /* acertou a 15ª: o último boss caiu */
+    case ESTADO_FIM_VITORIA:     /* acertou a 15ª: o último boss caiu e o save não serve mais */
+        if (save_apagar(CAMINHO_SAVE) != STATUS_OK) {
+            jogo_registrar_erro(jogo, STATUS_ERRO_ARQUIVO, "apagar save");
+        }
         jogo_tocar_cena(jogo, CENA_HISTORIA_FIM, TELA_RESULTADO);
         break;
     default:                     /* a partida continua */
@@ -429,6 +442,16 @@ void tela_revelacao_atualizar(Jogo *jogo, float dt)
             /* Boss caiu: história da transição e entrada do boss do próximo nível.
              * A primeira cena começa o diálogo (tocar); a entrada do boss vem anexada. */
             CenaId historia = CENA_QUANTIDADE;   /* CENA_QUANTIDADE = sem história */
+            Save save;
+
+            /* Save antes da luta: o próximo boss, o saldo e a ajuda já usada (a derrota não apaga) */
+            save.boss = proximo_boss->id;
+            save.esmeraldas = partida_saldo(&jogo->partida);
+            save.eliminacao_usada = jogo->partida.eliminacao_usada;
+            status = save_gravar(CAMINHO_SAVE, &save);
+            if (status != STATUS_OK) {
+                jogo_registrar_erro(jogo, status, "salvar jogo");
+            }
 
             switch (proximo_boss->id) {
             case BOSS_WITHER:       historia = CENA_HISTORIA_2; break;  /* indo para o Nether */
@@ -514,7 +537,7 @@ void tela_resultado_atualizar(Jogo *jogo, float dt)
 
     /* Volta ao menu principal passando pelo carregamento */
     if (jogo_botao_acionado(jogo, &jogo->botoes[BOTAO_CONTINUAR])) {
-        jogo->tela_apos_carregar = TELA_MENU;
+        jogo->acao_apos_carregar = ACAO_IR_AO_MENU;
         jogo_trocar_tela(jogo, TELA_CARREGANDO);
     }
 }

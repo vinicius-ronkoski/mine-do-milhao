@@ -352,3 +352,65 @@ int partida_premio_final(const Partida *partida)
     premio -= partida->esmeraldas_gastas;
     return premio > 0 ? premio : 0;
 }
+
+int partida_primeira_rodada_do_nivel(int nivel)
+{
+    int anterior, rodada = 0;
+
+    if (nivel < NIVEL_MIN || nivel > NIVEL_MAX) {
+        return -1;
+    }
+    for (anterior = NIVEL_MIN; anterior < nivel; anterior++) {
+        rodada += contagem_do_nivel(anterior);
+    }
+    return rodada;
+}
+
+Status partida_iniciar_no_boss(Partida *partida, const Banco *banco, BossId boss, int saldo,
+                               bool eliminacao_usada)
+{
+    Partida nova;
+    int nivel, nivel_boss = 0, rodada;
+    Status status;
+
+    if (partida == NULL) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    for (nivel = NIVEL_MIN; nivel <= NIVEL_MAX; nivel++) {
+        if (boss_id_do_nivel(nivel) == boss) {
+            nivel_boss = nivel;
+        }
+    }
+    if (nivel_boss == 0) {
+        return STATUS_ERRO_PARAMETRO;   /* boss inválido */
+    }
+
+    status = partida_iniciar(&nova, banco);
+    if (status != STATUS_OK) {
+        return status;
+    }
+
+    /* Começa na 1ª pergunta do nível do boss; os bosses anteriores já caíram */
+    nova.rodada = partida_primeira_rodada_do_nivel(nivel_boss);
+    for (nivel = NIVEL_MIN; nivel < nivel_boss; nivel++) {
+        nova.bosses[nivel - NIVEL_MIN].vida_atual = 0;
+    }
+
+    /* Prêmio = o da última rodada acertada; garantido = o do último marco já passado */
+    nova.esmeraldas = nova.rodada > 0 ? partida_premio_da_rodada(nova.rodada - 1) : 0;
+    for (rodada = 0; rodada < nova.rodada; rodada++) {
+        if (partida_eh_marco(rodada)) {
+            nova.esmeraldas_garantidas = partida_premio_da_rodada(rodada);
+        }
+    }
+
+    /* O gasto em ajudas é o que falta para o saldo salvo */
+    if (saldo < 0 || saldo > nova.esmeraldas) {
+        return STATUS_ERRO_PARAMETRO;
+    }
+    nova.esmeraldas_gastas = nova.esmeraldas - saldo;
+    nova.eliminacao_usada = eliminacao_usada;
+
+    *partida = nova;
+    return STATUS_OK;
+}

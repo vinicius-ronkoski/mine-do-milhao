@@ -34,3 +34,7 @@ data/perguntas.dat.tmp
 
 # imagens originais em resolução cheia (os jogos usam as versões 1280x720)
 assets/originais/
+
+# save do jogo (cada computador tem o seu)
+data/save.txt
+data/save.txt.tmp
