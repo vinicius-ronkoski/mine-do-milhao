@@ -44,6 +44,9 @@
  *  Os fundos têm 854 px ou mais; retratos e ícones, no máximo 600 px. */
 #define LARGURA_MINIMA_SUAVIZADA 800
 
+/** 0 = fundos nítidos (POINT); 1 = fundos suavizados (BILINEAR, padrão). Troque aqui para comparar. */
+#define SUAVIZAR_FUNDOS 1
+
 /** Maior ampliação usada para reler a fonte (4x = 128 px: monitores 4K e acima reaproveitam este atlas). */
 #define ZOOM_MAXIMO_FONTE 4.0f
 
@@ -308,12 +311,11 @@ static bool carregar_textura_de_arquivo(const char *caminho, Texture2D *destino)
         return false;
     }
 
-    /* Filtro de ampliação/redução:
-     *   - imagens grandes (fundos e cenas, desenhos com muitas cores): BILINEAR, que suaviza
-     *     quando a tela cheia amplia o fundo de 1280x720 (sem isso apareceriam serrilhados);
-     *   - imagens pequenas (pixel art: bosses, retratos, ícones): POINT (padrão da raylib),
-     *     que mantém cada pixel da arte como um bloco nítido. */
-    if (destino->width >= LARGURA_MINIMA_SUAVIZADA) {
+    /* Filtro de ampliação/redução. Padrão: POINT (nítido) em TODAS as imagens, inclusive os
+     * fundos: em tela cheia as bordas dos blocos continuam duras (com escala 1,5 alguns pixels
+     * do fundo saem 1 px maiores). Com SUAVIZAR_FUNDOS = 1, as imagens grandes (fundos e cenas)
+     * passam a BILINEAR: sem serrilhado, mas mais borradas. A pixel art pequena é sempre POINT. */
+    if (SUAVIZAR_FUNDOS && destino->width >= LARGURA_MINIMA_SUAVIZADA) {
         SetTextureFilter(*destino, TEXTURE_FILTER_BILINEAR);
     }
     return true;
