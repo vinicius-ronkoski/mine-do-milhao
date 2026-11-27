@@ -33,7 +33,10 @@
 /** Nome sugerido quando o usuário só aperta ENTER ao exportar. */
 #define NOME_EXPORTACAO_PADRAO "perguntas.csv"
 
-void exibir_menu(void)
+/**
+ * @brief Desenha as opções do menu principal.
+ */
+static void exibir_menu(void)
 {
     printf(COR_VERDE "=====================================\n");
     printf("        MINE DO MILHÃO - MENU\n");
@@ -49,7 +52,12 @@ void exibir_menu(void)
     printf(" 0 - Sair\n\n");
 }
 
-bool escolher_resultado(const char *prompt, size_t total, size_t *escolhido)
+/**
+ * @brief Pergunta ao usuário um número de resultado (1 a total).
+ *
+ * @return true se escolheu; false se cancelou (digitou 0) ou a entrada acabou.
+ */
+static bool escolher_resultado(const char *prompt, size_t total, size_t *escolhido)
 {
     int numero;
 
@@ -60,7 +68,14 @@ bool escolher_resultado(const char *prompt, size_t total, size_t *escolhido)
     return true;
 }
 
-void listar_resultados(const Banco *banco, const size_t *indices, size_t total)
+/**
+ * @brief Lista resumida dos resultados (posição, nível e enunciado).
+ *
+ * @param banco   Banco consultado.
+ * @param indices Posições dos resultados dentro do banco.
+ * @param total   Quantidade de resultados.
+ */
+static void listar_resultados(const Banco *banco, const size_t *indices, size_t total)
 {
     size_t i;
 
@@ -72,7 +87,19 @@ void listar_resultados(const Banco *banco, const size_t *indices, size_t total)
     }
 }
 
-bool buscar_e_escolher(const Banco *banco, const char *acao, size_t *indices, size_t *escolhido)
+/**
+ * @brief Pede um trecho do enunciado, busca no banco e deixa o usuário escolher um resultado.
+ *
+ * Usada por pesquisar, alterar e excluir, pois as três começam do mesmo jeito.
+ *
+ * @param banco     Banco consultado.
+ * @param acao      Verbo mostrado no prompt (ex.: "alterar").
+ * @param indices   Vetor de saída (precisa ter banco->quantidade posições).
+ * @param escolhido Recebe a posição, DENTRO DO BANCO, da pergunta escolhida.
+ * @return true se o usuário escolheu uma pergunta; false se nada foi escolhido.
+ */
+static bool buscar_e_escolher(const Banco *banco, const char *acao,
+                             size_t *indices, size_t *escolhido)
 {
     char trecho[TAM_ENUNCIADO];
     char prompt[64];
@@ -104,7 +131,16 @@ bool buscar_e_escolher(const Banco *banco, const char *acao, size_t *indices, si
     return true;
 }
 
-bool ler_campo(const char *rotulo, char *destino, size_t tamanho, const char *atual)
+/**
+ * @brief Lê um campo de texto obrigatório; ao alterar, ENTER mantém o valor atual.
+ *
+ * @param rotulo   Nome do campo.
+ * @param destino  Buffer que recebe o texto.
+ * @param tamanho  Tamanho do buffer.
+ * @param atual    Valor atual (NULL ao cadastrar: então o campo é obrigatório).
+ * @return true se o campo ficou preenchido; false se a entrada terminou.
+ */
+static bool ler_campo(const char *rotulo, char *destino, size_t tamanho, const char *atual)
 {
     char prompt[96];
     char buffer[TAM_ENUNCIADO];
@@ -132,7 +168,16 @@ bool ler_campo(const char *rotulo, char *destino, size_t tamanho, const char *at
     }
 }
 
-bool ler_correta(char *correta)
+/**
+ * @brief Lê a letra da alternativa correta (A a D).
+ *
+ * Se *correta já contém uma letra válida (alterar), ENTER mantém o valor atual.
+ * Se não (cadastrar, com a Pergunta zerada), o campo é obrigatório.
+ *
+ * @param correta Letra atual (entrada) e letra lida (saída).
+ * @return true se leu; false se a entrada terminou.
+ */
+static bool ler_correta(char *correta)
 {
     char buffer[16];
     bool tem_valor_atual = (*correta >= 'A' && *correta < 'A' + NUM_ALTERNATIVAS);
@@ -156,7 +201,16 @@ bool ler_correta(char *correta)
     }
 }
 
-bool ler_nivel(int *nivel)
+/**
+ * @brief Lê o nível de dificuldade.
+ *
+ * Se *nivel já contém um nível válido (alterar), ENTER mantém o valor atual.
+ * Se não (cadastrar, com a Pergunta zerada), o campo é obrigatório.
+ *
+ * @param nivel Nível atual (entrada) e nível lido (saída).
+ * @return true se leu; false se a entrada terminou.
+ */
+static bool ler_nivel(int *nivel)
 {
     char buffer[16];
     char prompt[64];
@@ -184,7 +238,21 @@ bool ler_nivel(int *nivel)
     }
 }
 
-void exibir_paginas(const Banco *banco, const size_t *indices, size_t total, const char *titulo, size_t por_pagina)
+/**
+ * @brief Mostra perguntas página a página e deixa o usuário navegar entre elas.
+ *
+ * Usada por "Listar todas" (várias perguntas por tela) e por "Navegar por nível"
+ * (uma pergunta por tela). Comandos: P (ou ENTER) próxima, A anterior, S sai e um
+ * número pula direto para aquela pergunta.
+ *
+ * @param banco      Banco consultado.
+ * @param indices    Posições, dentro do banco, das perguntas a mostrar.
+ * @param total      Quantidade de posições em indices (maior que zero).
+ * @param titulo     Título exibido no topo da tela.
+ * @param por_pagina Quantas perguntas aparecem por tela (maior que zero).
+ */
+static void exibir_paginas(const Banco *banco, const size_t *indices, size_t total,
+                           const char *titulo, size_t por_pagina)
 {
     size_t primeira = 0;        /* Posição, em indices, da primeira pergunta da tela */
     size_t ultima, i;           /* ultima = uma posição depois da última exibida */
@@ -255,7 +323,12 @@ void exibir_paginas(const Banco *banco, const size_t *indices, size_t total, con
     }
 }
 
-void tela_cadastrar(Banco *banco)
+/**
+ * @brief Tela "Cadastrar pergunta": lê todos os campos e insere no banco.
+ *
+ * A Pergunta começa zerada, então todos os campos são obrigatórios.
+ */
+static void tela_cadastrar(Banco *banco)
 {
     Pergunta nova;
     Status status;
@@ -299,7 +372,10 @@ void tela_cadastrar(Banco *banco)
     utils_pausar();
 }
 
-void tela_listar(const Banco *banco)
+/**
+ * @brief Tela "Listar todas as perguntas": mostra o banco inteiro, página a página.
+ */
+static void tela_listar(const Banco *banco)
 {
     size_t *indices, i;
 
@@ -327,7 +403,10 @@ void tela_listar(const Banco *banco)
     free(indices);
 }
 
-void tela_pesquisar(const Banco *banco)
+/**
+ * @brief Tela "Pesquisar pergunta": busca por trecho do enunciado e mostra a escolhida.
+ */
+static void tela_pesquisar(const Banco *banco)
 {
     size_t *indices, escolhido;
 
@@ -356,7 +435,12 @@ void tela_pesquisar(const Banco *banco)
     utils_pausar();
 }
 
-void tela_alterar(Banco *banco)
+/**
+ * @brief Tela "Alterar pergunta": busca, mostra a atual e pede os novos dados.
+ *
+ * Trabalha numa CÓPIA da pergunta: só grava no banco se tudo for válido.
+ */
+static void tela_alterar(Banco *banco)
 {
     size_t *indices, escolhido;
     Pergunta copia;
@@ -413,7 +497,10 @@ void tela_alterar(Banco *banco)
     utils_pausar();
 }
 
-void tela_excluir(Banco *banco)
+/**
+ * @brief Tela "Excluir pergunta": busca, mostra a escolhida e pede confirmação.
+ */
+static void tela_excluir(Banco *banco)
 {
     size_t *indices, escolhido;
     Status status;
@@ -459,7 +546,10 @@ void tela_excluir(Banco *banco)
     utils_pausar();
 }
 
-void tela_navegar_nivel(const Banco *banco)
+/**
+ * @brief Tela "Navegar por nível": escolhe um nível e percorre suas perguntas uma a uma.
+ */
+static void tela_navegar_nivel(const Banco *banco)
 {
     size_t *indices, total;
     char titulo[64];
@@ -511,14 +601,25 @@ void tela_navegar_nivel(const Banco *banco)
     free(indices);
 }
 
-bool termina_com_csv(const char *nome)
+/**
+ * @brief Confere se o nome do arquivo termina com ".csv".
+ *
+ * @param nome Nome do arquivo.
+ * @return true se termina com ".csv"; false caso contrário.
+ */
+static bool termina_com_csv(const char *nome)
 {
     size_t tamanho = strlen(nome);
 
     return tamanho >= 4 && strcmp(nome + tamanho - 4, ".csv") == 0;
 }
 
-void tela_exportar(const Banco *banco)
+/**
+ * @brief Tela "Exportar CSV": grava o banco atual em CAMINHO_EXPORTADOS.
+ *
+ * O arquivo gerado tem o mesmo formato do CSV inicial, então pode ser lido de volta.
+ */
+static void tela_exportar(const Banco *banco)
 {
     char nome[TAM_NOME_EXPORTACAO];
     char caminho[sizeof(CAMINHO_EXPORTADOS) + TAM_NOME_EXPORTACAO];
@@ -587,7 +688,13 @@ void tela_exportar(const Banco *banco)
     utils_pausar();
 }
 
-void tela_jogar(const Banco *banco)
+/**
+ * @brief Tela "Jogar": abre a janela do jogo (raylib) e volta ao menu quando ela fecha.
+ *
+ * Sem USE_RAYLIB o jogo não existe no executável; avisa como compilar.
+ * Assets que faltarem não impedem o jogo (fallback), só geram um aviso.
+ */
+static void tela_jogar(const Banco *banco)
 {
 #ifdef USE_RAYLIB
     Status status;
